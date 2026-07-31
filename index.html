@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Lizard Path Animator</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app">
+  <div class="ornament-panel" id="ornamentPanel">
+    <h2>Ornaments</h2>
+    <p class="hint">Drag an ornament onto the background to place it. Drag a placed one to move it, scroll over it to resize it, or right-click it to remove it.</p>
+    <div id="ornamentList" class="ornament-list"></div>
+
+    <div id="ornamentSelectedPanel" class="ornament-selected-panel" hidden>
+      <h2>Selected: <span id="ornamentSelectedLabel">—</span></h2>
+      <p class="hint">Drag the handle above it to rotate. Scroll over it to resize.</p>
+      <label><input type="checkbox" id="ornamentShadowToggle" /> Shadow</label>
+    </div>
+  </div>
+  <div class="stage-wrap">
+    <div class="stage-pad" id="stagePad">
+      <canvas id="stage" width="1600" height="900"></canvas>
+      <canvas id="overlayCanvas" class="overlay-canvas"></canvas>
+    </div>
+    <p class="hint">Click anywhere — including the blank margin around the video, to start/end a waypoint off-screen — to add a waypoint for the animal being edited. Drag a marker to move it. Right-click a marker to delete it.</p>
+    <p class="hint">Timeline (click/drag to seek) — <span id="timeLabel" class="time-label">0.0s / 0.0s</span></p>
+    <canvas id="timelineCanvas" class="timeline-canvas" height="40"></canvas>
+    <input type="range" id="scrub" min="0" max="1000" value="0" hidden />
+  </div>
+  <div class="sidebar" id="sidebar">
+    <h1>Path Animator</h1>
+
+    <label class="scrub-label">
+      Scene
+      <select id="sceneSelect"></select>
+    </label>
+
+    <div class="controls-row">
+      <button id="reloadScenesBtn">Reload Scenes</button>
+      <button id="openConfigBtn" hidden>Open Config File</button>
+    </div>
+    <p id="configStatus" class="status"></p>
+    <p class="hint">To add/edit scenes: edit config/scenes.json, add images to image/, run "npm run prepare-assets", then click Reload Scenes.</p>
+
+    <h2>Animals</h2>
+    <p class="hint">Check an animal to include it in the scene. Click its name to edit its path/options below.</p>
+    <div id="animalList" class="animal-list"></div>
+
+    <div class="controls-row transport-row">
+      <button id="seekStartBtn" title="Jump to start">⏮</button>
+      <button id="stepBackBtn" title="Step back">⏪</button>
+      <button id="playBtn">Play</button>
+      <button id="stepForwardBtn" title="Step forward">⏩</button>
+      <button id="seekEndBtn" title="Jump to end">⏭</button>
+      <button id="clearBtn">Clear Path</button>
+    </div>
+
+    <div class="toggles">
+      <label><input type="checkbox" id="optRotation" checked /> Rotate to face path</label>
+      <label><input type="checkbox" id="optFlip" checked /> Flip when moving left</label>
+      <label><input type="checkbox" id="optWalkCycle" checked /> Walk-cycle legs</label>
+      <label class="bob-amp">
+        Stride length
+        <input type="range" id="strideLength" min="40" max="400" value="140" />
+      </label>
+      <label class="bob-amp">
+        Path speed
+        <input type="range" id="pathSpeed" min="0.25" max="3" step="0.05" value="1" />
+        <span id="pathSpeedLabel" class="time-label">1.00x</span>
+      </label>
+      <label class="bob-amp">
+        Size
+        <input type="range" id="sizeScale" min="0.3" max="3" step="0.05" value="1" />
+        <span id="sizeScaleLabel" class="time-label">1.00x</span>
+      </label>
+      <label><input type="checkbox" id="optBobbing" /> Bobbing</label>
+      <label class="bob-amp">
+        Bob amount
+        <input type="range" id="bobAmplitude" min="0" max="20" value="6" />
+      </label>
+    </div>
+
+    <div class="controls-row">
+      <button id="saveBtn">Save Path</button>
+      <button id="loadBtn">Load Path</button>
+    </div>
+    <p id="status" class="status"></p>
+
+    <h2>Templates</h2>
+    <p class="hint">Save the current animal paths and ornament placement as a named template, then load it onto any scene.</p>
+    <label class="scrub-label">
+      Template
+      <select id="templateSelect"></select>
+    </label>
+    <div class="controls-row">
+      <button id="saveTemplateBtn">Save as Template</button>
+      <button id="loadTemplateBtn">Load Template</button>
+      <button id="deleteTemplateBtn">Delete</button>
+    </div>
+    <p id="templateStatus" class="status"></p>
+
+    <div class="controls-row">
+      <button id="exportBtn" hidden>Export Video</button>
+    </div>
+    <p id="exportProgress" class="status"></p>
+
+    <h2>Waypoints — <span id="editingAnimalLabel">—</span></h2>
+    <div id="waypointList" class="waypoint-list"></div>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

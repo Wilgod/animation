@@ -1,0 +1,101 @@
+{
+  "defaultAnimal": {
+    "rotationOffsetDeg": 90,
+    "strideLengthPx": 140
+  },
+
+  "animals": [
+    {
+      "id": "blue",
+      "label": "Blue",
+      "source": "image/animal/small Lizard.png",
+      "motionGrid": {
+        "source": "image/animal/small Lizard motion.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/blue-walk.mp3" }
+    },
+    {
+      "id": "green",
+      "label": "Green",
+      "source": "image/animal/small green Lizard static.png",
+      "motionGrid": {
+        "source": "image/animal/small green Lizard.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/green-walk.mp3" }
+    },
+    {
+      "id": "red",
+      "label": "Red",
+      "source": "image/animal/small red Lizard static.png",
+      "motionGrid": {
+        "source": "image/animal/small red Lizard motion.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/red-walk.mp3" }
+    },
+    {
+      "id": "spider",
+      "label": "Spider",
+      "source": "image/animal/spider static.png",
+      "motionGrid": {
+        "source": "image/animal/spider.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/spider-walk.mp3" }
+    }
+  ],
+
+  "ornaments": [
+    { "id": "clock", "label": "Clock", "source": "image/ornaments/clock.png" },
+    { "id": "vase", "label": "Vase", "source": "image/ornaments/Vase with Dried Flowers.png" },
+    { "id": "teacup", "label": "Teacup", "source": "image/ornaments/Ceramic Teacup.png" },
+    { "id": "globe", "label": "Globe", "source": "image/ornaments/Globe.png" },
+    { "id": "books", "label": "Books", "source": "image/ornaments/Stacked Books.png" },
+    { "id": "camera", "label": "Camera", "source": "image/ornaments/Vintage Camera.png" },
+    { "id": "lamp", "label": "Lamp", "source": "image/ornaments/Vintage Table Lamp.png" }
+  ],
+
+  "scenes": [
+    {
+      "id": "gecko-blue-tiles",
+      "label": "Gecko on Blue Tiles",
+      "background": { "source": "image/backgroud/Gecko on Blue Tiles.png" }
+    },
+    {
+      "id": "floor2",
+      "label": "Floor 2",
+      "background": { "source": "image/backgroud/floor2.png" }
+    },
+    {
+      "id": "wall2",
+      "label": "Wall 2",
+      "background": { "source": "image/backgroud/wall2.png" }
+    },
+    {
+      "id": "wall3",
+      "label": "Wall 3",
+      "background": { "source": "image/backgroud/wall3.png" }
+    },
+    {
+      "id": "bathroom-mosaic-tile",
+      "label": "Bathroom Mosaic Tile Wall Corner",
+      "background": { "source": "image/backgroud/Bathroom Mosaic Tile Wall Corner.png" }
+    },
+    {
+      "id": "cardboard-box-surface",
+      "label": "Cardboard Box Surface",
+      "background": { "source": "image/backgroud/Cardboard Box Surface.png" }
+    },
+    {
+      "id": "kitchen-subway-tile",
+      "label": "Kitchen Subway Tile Wall",
+      "background": { "source": "image/backgroud/Kitchen Subway Tile Wall.png" }
+    }
+  ]
+}
