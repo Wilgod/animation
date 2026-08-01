@@ -38,6 +38,7 @@
   const exportProgressEl = document.getElementById("exportProgress");
   const reloadScenesBtn = document.getElementById("reloadScenesBtn");
   const openConfigBtn = document.getElementById("openConfigBtn");
+  const newWindowBtn = document.getElementById("newWindowBtn");
   const configStatusEl = document.getElementById("configStatus");
   const animalListEl = document.getElementById("animalList");
   const ornamentListEl = document.getElementById("ornamentList");
@@ -56,6 +57,7 @@
   const pathSpeedLabel = document.getElementById("pathSpeedLabel");
   const sizeScale = document.getElementById("sizeScale");
   const sizeScaleLabel = document.getElementById("sizeScaleLabel");
+  const optShadow = document.getElementById("optShadow");
 
   const MARKER_RADIUS = 9;
   const ROTATE_HANDLE_OFFSET = 30; // canvas px above the ornament's top edge
@@ -95,6 +97,7 @@
   let editingAnimalId = null;
   let path = []; // editingAnimalId's path (same array reference as animalData's copy)
   let isPlaying = false;
+  let isExporting = false; // true while a video export is in flight (see setExportUIState)
   let playStartPerf = 0;
   let playStartT = 0;
   let draggingIndex = -1;
@@ -103,14 +106,6 @@
   let draggingResizeOrnamentId = null; // instanceId whose resize handle is being dragged, or null
   let selectedOrnamentId = null; // instanceId showing selection UI (rotate/resize handles) in the sidebar, or null
   let timelineDragging = false;
-
-  function defaultPath() {
-    return [
-      { x: 220, y: 460, durationToNextMs: 1500 },
-      { x: 800, y: 460, durationToNextMs: 1500 },
-      { x: 1380, y: 460, durationToNextMs: 0 },
-    ];
-  }
 
   function animalDefFor(id) {
     return animalDefs.find((a) => a.id === id);
@@ -126,12 +121,13 @@
     return {
       rotationFollowsPath: o.rotationFollowsPath !== undefined ? !!o.rotationFollowsPath : true,
       flip: o.flip !== undefined ? !!o.flip : true,
-      useWalkCycle: o.useWalkCycle !== false,
+      useWalkCycle: o.useWalkCycle !== undefined ? !!o.useWalkCycle : def.useWalkCycle !== false,
       bobbing: !!o.bobbing,
       bobbingAmplitude: o.bobbingAmplitude ?? 6,
       strideLengthPx: o.strideLengthPx ?? def.strideLengthPx ?? 140,
       pathSpeedMultiplier: o.pathSpeedMultiplier ?? 1,
       sizeScale: o.sizeScale ?? 1,
+      shadow: !!o.shadow,
     };
   }
 
@@ -145,6 +141,7 @@
       strideLengthPx: Number(strideLength.value),
       pathSpeedMultiplier: Number(pathSpeed.value) || 1,
       sizeScale: Number(sizeScale.value) || 1,
+      shadow: optShadow.checked,
     };
   }
 
@@ -157,6 +154,7 @@
       optBobbing,
       bobAmplitude,
       pathSpeed,
+      optShadow,
       sizeScale,
       clearBtn,
       saveBtn,
@@ -164,6 +162,33 @@
       saveTemplateBtn,
       loadTemplateBtn,
     ].forEach((el) => (el.disabled = !enabled));
+  }
+
+  // Exporting spawns its own hidden window that reads the *saved* path for
+  // currentScene.id — changing the scene, editing paths/ornaments, or
+  // switching animals in the main window mid-export doesn't corrupt the
+  // in-flight render, but it does desync what you're looking at from what's
+  // actually being exported, which is confusing and easy to mistake for a
+  // broken export. Lock down everything that could do that until it's done.
+  function setExportUIState(exporting) {
+    isExporting = exporting;
+    [
+      sceneSelect,
+      reloadScenesBtn,
+      openConfigBtn,
+      templateSelect,
+      deleteTemplateBtn,
+      playBtn,
+      seekStartBtn,
+      stepBackBtn,
+      stepForwardBtn,
+      seekEndBtn,
+      ornamentShadowToggleEl,
+      exportBtn,
+    ].forEach((el) => (el.disabled = exporting));
+    setControlsEnabled(!exporting && !!editingAnimalId);
+    renderAnimalList();
+    renderOrnamentList();
   }
 
   function applyOptionsToEngine() {
@@ -630,6 +655,7 @@
   }
 
   stagePad.addEventListener("mousedown", (evt) => {
+    if (isExporting) return;
     const rawPos = canvasCoordsFromEvent(evt);
 
     if (hitTestRotateHandle(rawPos)) {
@@ -741,6 +767,7 @@
 
   stagePad.addEventListener("contextmenu", (evt) => {
     evt.preventDefault();
+    if (isExporting) return;
     const pos = canvasCoordsFromEvent(evt);
     const ornamentHit = hitTestOrnament(pos);
     if (ornamentHit) {
@@ -768,6 +795,7 @@
   stagePad.addEventListener(
     "wheel",
     (evt) => {
+      if (isExporting) return;
       const pos = canvasCoordsFromEvent(evt);
       const hit = hitTestOrnament(pos);
       if (!hit) return;
@@ -788,6 +816,7 @@
 
   stagePad.addEventListener("drop", async (evt) => {
     evt.preventDefault();
+    if (isExporting) return;
     const ornamentId = evt.dataTransfer.getData("text/plain");
     if (!ornamentId || !ornamentDefFor(ornamentId)) return;
     const pos = canvasCoordsFromEvent(evt);
@@ -811,6 +840,7 @@
     }
     const total = window.AnimEngine.getTotalDurationMs();
     if (total <= 0) return;
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
     playStartT = Number(scrub.value) >= total ? 0 : Number(scrub.value);
     playStartPerf = performance.now();
     isPlaying = true;
@@ -849,6 +879,7 @@
   }
 
   timelineCanvas.addEventListener("mousedown", (evt) => {
+    if (isExporting) return;
     timelineDragging = true;
     seekFromTimelineEvent(evt);
   });
@@ -869,7 +900,7 @@
     afterPathStructureChange();
   });
 
-  [optRotation, optFlip, optWalkCycle, strideLength, optBobbing, bobAmplitude, pathSpeed, sizeScale].forEach((el) => {
+  [optRotation, optFlip, optWalkCycle, strideLength, optBobbing, bobAmplitude, pathSpeed, sizeScale, optShadow].forEach((el) => {
     el.addEventListener("input", () => {
       applyOptionsToEngine();
       renderEditorFrame(Number(scrub.value));
@@ -1027,10 +1058,16 @@
       loadImage(`${base}/animal.png?v=${assetCacheBust}`),
       Promise.all(walkFramePaths.map((p) => loadImage(p))).catch(() => []),
     ]);
+    const rotationOffsetRad = ((def && def.rotationOffsetDeg) || 0) * (Math.PI / 180);
     const entry = {
       lizardImage,
       walkFrames,
-      rotationOffsetRad: ((def && def.rotationOffsetDeg) || 0) * (Math.PI / 180),
+      rotationOffsetRad,
+      // A hand-authored static "source" image is drawn neutrally horizontal
+      // (offset 0). When there's no separate source, the static pose is
+      // derived from a walk-cycle frame instead (see prepare-assets.js), so
+      // it shares that frame's own (non-horizontal) neutral orientation.
+      staticRotationOffsetRad: def && def.source ? 0 : rotationOffsetRad,
       strideLengthPx: (def && def.strideLengthPx) || 140,
     };
     spriteCache.set(id, entry);
@@ -1075,7 +1112,7 @@
     ornamentDefs.forEach((def) => {
       const item = document.createElement("div");
       item.className = "ornament-item";
-      item.draggable = true;
+      item.draggable = !isExporting;
       item.title = `Drag onto the background to place a ${def.label || def.id}`;
 
       const img = document.createElement("img");
@@ -1105,6 +1142,27 @@
     renderEditorFrame(Number(scrub.value));
   });
 
+  // Shared Web Audio context, created lazily — only needed for animals whose
+  // configured walkSound.volume exceeds 1, since HTMLAudioElement.volume is
+  // capped at 1 and can't actually amplify a quiet recording.
+  let audioCtx = null;
+
+  // Applies a per-animal volume multiplier (config's walkSound.volume,
+  // default 1). At or below 1 this is just the element's native volume
+  // (quieter than the recording). Above 1, the native property can't help —
+  // it clamps at 1 — so instead the element is routed through a Web Audio
+  // gain node, which can genuinely amplify past the recording's own level.
+  function applyAudioVolume(audio, volume) {
+    if (volume <= 1) {
+      audio.volume = Math.max(0, volume);
+      return;
+    }
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const gain = audioCtx.createGain();
+    gain.gain.value = volume;
+    audioCtx.createMediaElementSource(audio).connect(gain).connect(audioCtx.destination);
+  }
+
   // Walking sound (looped), only if this animal defines one. Its playback
   // rate gets synced to the animal's actual instantaneous speed each frame
   // (see updateAnimalAudio) so faster movement sounds faster, not just
@@ -1121,6 +1179,7 @@
     const audio = new Audio(`${src}?v=${assetCacheBust}`);
     audio.loop = true;
     audio.preload = "auto";
+    applyAudioVolume(audio, def.walkSound.volume ?? 1);
     audioCache.set(id, audio);
     return audio;
   }
@@ -1128,7 +1187,7 @@
   async function activateAnimal(id, pathOverride, optionsOverride, startAtMsOverride) {
     if (!animalData.has(id)) {
       animalData.set(id, {
-        path: pathOverride && pathOverride.length > 0 ? pathOverride : defaultPath(),
+        path: pathOverride || [],
         options: normalizeOptions(id, optionsOverride),
         startAtMs: Math.max(0, startAtMsOverride || 0),
       });
@@ -1137,6 +1196,7 @@
     const sprite = await ensureActorSprite(id);
     window.AnimEngine.setActorSprite(id, sprite.lizardImage, sprite.walkFrames, {
       rotationOffsetRad: sprite.rotationOffsetRad,
+      staticRotationOffsetRad: sprite.staticRotationOffsetRad,
       strideLengthPx: sprite.strideLengthPx,
     });
     ensureActorAudio(id);
@@ -1216,6 +1276,7 @@
       pathSpeedLabel.textContent = `${(entry.options.pathSpeedMultiplier ?? 1).toFixed(2)}x`;
       sizeScale.value = entry.options.sizeScale ?? 1;
       sizeScaleLabel.textContent = `${(entry.options.sizeScale ?? 1).toFixed(2)}x`;
+      optShadow.checked = !!entry.options.shadow;
     } else {
       path = [];
     }
@@ -1251,6 +1312,7 @@
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = activeAnimalIds.has(def.id);
+      checkbox.disabled = isExporting;
       checkbox.addEventListener("click", (evt) => evt.stopPropagation());
       checkbox.addEventListener("change", () => toggleAnimalActive(def.id, checkbox.checked));
       row.appendChild(checkbox);
@@ -1267,7 +1329,7 @@
       startInput.type = "number";
       startInput.min = "0";
       startInput.step = "0.1";
-      startInput.disabled = !activeAnimalIds.has(def.id);
+      startInput.disabled = isExporting || !activeAnimalIds.has(def.id);
       const entryForStart = animalData.get(def.id);
       startInput.value = entryForStart ? (entryForStart.startAtMs || 0) / 1000 : 0;
       startInput.title = "Seconds into the timeline before this animal appears and starts walking";
@@ -1286,7 +1348,7 @@
       row.appendChild(startLabel);
 
       row.addEventListener("click", () => {
-        if (activeAnimalIds.has(def.id)) selectEditingAnimal(def.id);
+        if (!isExporting && activeAnimalIds.has(def.id)) selectEditingAnimal(def.id);
       });
 
       animalListEl.appendChild(row);
@@ -1348,7 +1410,13 @@
     await applyLayoutData(saved);
   }
 
-  async function loadScene(sceneId) {
+  // loadSavedLayout: whether to replace the current animals/paths/placed
+  // ornaments with whatever's saved for `sceneId`. Defaults to false so
+  // picking a different background from the dropdown just swaps the
+  // backdrop — it does not discard whatever you're currently working on;
+  // use "Load Path" (or pass true, as the initial page load does) to
+  // actually pull in that scene's own saved layout.
+  async function loadScene(sceneId, { loadSavedLayout = false } = {}) {
     isPlaying = false;
     pauseAllAnimalAudio();
     playBtn.textContent = "Play";
@@ -1366,7 +1434,7 @@
     if (!isExportMode) localStorage.setItem(LAST_SCENE_STORAGE_KEY, scene.id);
 
     draggingIndex = -1;
-    await loadSavedPathsForScene();
+    if (loadSavedLayout) await loadSavedPathsForScene();
     scrub.value = "0";
     renderEditorFrame(0);
     updateTimeLabel();
@@ -1430,7 +1498,7 @@
 
     sceneSelect.addEventListener("change", () => loadScene(sceneSelect.value));
 
-    await loadScene(initialSceneId);
+    await loadScene(initialSceneId, { loadSavedLayout: true });
     window.__ready = true;
   }
 
@@ -1442,6 +1510,8 @@
     exportBtn.hidden = false;
     openConfigBtn.hidden = false;
     openConfigBtn.addEventListener("click", () => window.electronAPI.openConfigFile());
+    newWindowBtn.hidden = false;
+    newWindowBtn.addEventListener("click", () => window.electronAPI.openNewWindow());
 
     window.electronAPI.onExportProgress(({ sceneId, frame, total }) => {
       if (!currentScene || sceneId !== currentScene.id) return;
@@ -1449,7 +1519,7 @@
     });
 
     exportBtn.addEventListener("click", async () => {
-      exportBtn.disabled = true;
+      setExportUIState(true);
       exportProgressEl.innerHTML = "Starting export…";
       try {
         const result = await window.electronAPI.exportScene(currentScene.id, { gif: false });
@@ -1460,7 +1530,7 @@
       } catch (err) {
         exportProgressEl.textContent = "Export failed: " + err.message;
       } finally {
-        exportBtn.disabled = false;
+        setExportUIState(false);
       }
     });
   }

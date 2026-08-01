@@ -39,6 +39,13 @@
     <div class="controls-row">
       <button id="reloadScenesBtn">Reload Scenes</button>
       <button id="openConfigBtn" hidden>Open Config File</button>
+      <button
+        id="newWindowBtn"
+        hidden
+        title="Opens another independent editor window — edit a different scene or run another export at the same time"
+      >
+        New Window
+      </button>
     </div>
     <p id="configStatus" class="status"></p>
     <p class="hint">To add/edit scenes: edit config/scenes.json, add images to image/, run "npm run prepare-assets", then click Reload Scenes.</p>
@@ -79,6 +86,7 @@
         Bob amount
         <input type="range" id="bobAmplitude" min="0" max="20" value="6" />
       </label>
+      <label><input type="checkbox" id="optShadow" /> Shadow</label>
     </div>
 
     <div class="controls-row">

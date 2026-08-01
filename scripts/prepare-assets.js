@@ -36,7 +36,11 @@ async function buildBackground(scene, sceneOutDir) {
   console.log(`  background.jpg (${(stat.size / 1024).toFixed(0)} KB)`);
 }
 
+// Animals with only a motion-grid source (no separate standalone static
+// photo) skip this — main() copies the first walk frame as animal.png
+// instead, once buildWalkFrames has produced it.
 async function buildAnimalStatic(animal, animalOutDir) {
+  if (!animal.source) return;
   const src = resolveSource(`Animal "${animal.id}"`, animal.source, "animal");
   const outFile = path.join(animalOutDir, "animal.png");
   const maxWidth = animal.staticMaxWidth || DEFAULT_STATIC_MAX_WIDTH;
@@ -77,7 +81,13 @@ async function buildWalkFrames(animal, animalOutDir) {
   const cellW = Math.floor(gridMeta.width / cols);
   const cellH = Math.floor(gridMeta.height / rows);
 
-  let frameIndex = 0;
+  // First pass: extract, key, and trim each cell down to its actual content.
+  // Grid cells aren't always perfectly registered — the subject can sit at
+  // a slightly different position within its cell from frame to frame — so
+  // trimming to content here and re-anchoring in the second pass (rather
+  // than trusting raw cell placement) is what keeps the sprite from
+  // visibly jumping position as the walk cycle plays.
+  const trimmedFrames = [];
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const left = col * cellW + inset;
@@ -86,17 +96,42 @@ async function buildWalkFrames(animal, animalOutDir) {
       const height = cellH - inset * 2;
       const cellBuffer = await sharp(src).extract({ left, top, width, height }).png().toBuffer();
       const keyed = await removeWhiteBackground(cellBuffer);
-      const framePng = await sharp(keyed.data, {
+      // Resize while still at full cell size (matching every other frame's
+      // scale) *then* trim — trimming first would crop to content before
+      // the common scale is applied, so the same physical creature would
+      // resize (and appear) larger the more of the cell's blank margin got
+      // cropped away, inflating on-screen size inconsistently per frame.
+      const resizedBuffer = await sharp(keyed.data, {
         raw: { width: keyed.info.width, height: keyed.info.height, channels: 4 },
       })
         .resize({ width: maxWidth, withoutEnlargement: true })
         .png()
         .toBuffer();
-      fs.writeFileSync(path.join(framesDir, `frame_${String(frameIndex).padStart(2, "0")}.png`), framePng);
-      frameIndex++;
+      const trimmedBuffer = await sharp(resizedBuffer).trim().toBuffer();
+      const meta = await sharp(trimmedBuffer).metadata();
+      trimmedFrames.push({ buffer: trimmedBuffer, width: meta.width, height: meta.height });
     }
   }
-  console.log(`  walk_frames/ (${frameIndex} frames)`);
+
+  // Second pass: composite every frame onto one shared canvas, each one
+  // centered — engine.js draws every walk frame centered on the actor's
+  // (x, y), so centering here is what keeps that point anchored to the
+  // creature's actual body across frames instead of drifting with however
+  // each raw grid cell happened to be cropped.
+  const canvasW = Math.max(...trimmedFrames.map((f) => f.width));
+  const canvasH = Math.max(...trimmedFrames.map((f) => f.height));
+  for (let i = 0; i < trimmedFrames.length; i++) {
+    const frame = trimmedFrames[i];
+    const left = Math.round((canvasW - frame.width) / 2);
+    const top = Math.round((canvasH - frame.height) / 2);
+    await sharp({
+      create: { width: canvasW, height: canvasH, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    })
+      .composite([{ input: frame.buffer, left, top }])
+      .png()
+      .toFile(path.join(framesDir, `frame_${String(i).padStart(2, "0")}.png`));
+  }
+  console.log(`  walk_frames/ (${trimmedFrames.length} frames, ${canvasW}x${canvasH})`);
 }
 
 // A source that already carries real (non-uniform) alpha was pre-cut by
@@ -169,6 +204,15 @@ async function main() {
     fs.mkdirSync(animalOutDir, { recursive: true });
     await buildAnimalStatic(animal, animalOutDir);
     await buildWalkFrames(animal, animalOutDir);
+
+    if (!animal.source) {
+      const firstFrame = path.join(animalOutDir, "walk_frames", "frame_00.png");
+      if (!fs.existsSync(firstFrame)) {
+        throw new Error(`Animal "${animal.id}": no "source" and no motion grid to derive a static pose from.`);
+      }
+      fs.copyFileSync(firstFrame, path.join(animalOutDir, "animal.png"));
+      console.log(`  animal.png (from walk_frames/frame_00.png — no static source configured)`);
+    }
   }
 
   for (const ornament of config.ornaments || []) {

@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   showItemInFolder: (filePath) => ipcRenderer.invoke("export:reveal", filePath),
   openConfigFile: () => ipcRenderer.invoke("config:open"),
+  openNewWindow: () => ipcRenderer.invoke("window:new"),
 });

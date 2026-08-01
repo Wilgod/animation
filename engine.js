@@ -24,6 +24,7 @@
     bobbingAmplitude: 6,
     useWalkCycle: true,
     sizeScale: 1,
+    shadow: false,
   };
 
   function easeInOutCubic(t) {
@@ -210,7 +211,7 @@
     if (actor.walkFrames && actor.walkFrames.length > 0 && actor.options.useWalkCycle) {
       return { rotationOffsetRad: actor.walkRotationOffsetRad, isWalkCycle: true };
     }
-    return { rotationOffsetRad: 0, isWalkCycle: false };
+    return { rotationOffsetRad: actor.staticRotationOffsetRad || 0, isWalkCycle: false };
   }
 
   // Full pose (position, heading, flip, bob offset) at absolute time tMs.
@@ -286,6 +287,12 @@
     ctx.translate(pose.x, pose.y);
     if (pose.flipped) ctx.scale(-1, 1);
     if (pose.angle) ctx.rotate(pose.angle);
+    if (actor.options.shadow) {
+      ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetX = 6;
+      ctx.shadowOffsetY = 10;
+    }
     ctx.drawImage(spriteImage, -w / 2, -h / 2, w, h);
     ctx.restore();
   }
@@ -335,13 +342,24 @@
     },
 
     // Registers/updates the sprite assets for actor `id`.
-    // rotationOffsetRad: how far (radians) this sprite's neutral drawn
-    // orientation sits from "facing right" (atan2's 0-angle convention).
-    setActorSprite(id, lizardImg, frames, { rotationOffsetRad = Math.PI / 2, strideLengthPx = 140 } = {}) {
+    // rotationOffsetRad: how far (radians) the walk-cycle frames' neutral
+    // drawn orientation sits from "facing right" (atan2's 0-angle
+    // convention). staticRotationOffsetRad: same, for the static pose —
+    // normally 0 (hand-authored static art is drawn neutrally horizontal),
+    // but non-zero when the static pose is itself derived from a walk-cycle
+    // frame (see prepare-assets.js's no-"source" fallback), since it then
+    // shares the walk frames' non-horizontal neutral orientation.
+    setActorSprite(
+      id,
+      lizardImg,
+      frames,
+      { rotationOffsetRad = Math.PI / 2, staticRotationOffsetRad = 0, strideLengthPx = 140 } = {}
+    ) {
       const actor = getActor(id);
       actor.lizardImage = lizardImg;
       actor.walkFrames = frames && frames.length > 0 ? frames : null;
       actor.walkRotationOffsetRad = rotationOffsetRad;
+      actor.staticRotationOffsetRad = staticRotationOffsetRad;
       actor.walkStrideLengthPx = strideLengthPx;
     },
 

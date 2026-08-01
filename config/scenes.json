@@ -14,7 +14,7 @@
         "cols": 4,
         "rows": 2
       },
-      "walkSound": { "source": "audio/blue-walk.mp3" }
+      "walkSound": { "source": "audio/blue-walk.mp3", "volume": 1.4 }
     },
     {
       "id": "green",
@@ -25,7 +25,7 @@
         "cols": 4,
         "rows": 2
       },
-      "walkSound": { "source": "audio/green-walk.mp3" }
+      "walkSound": { "source": "audio/green-walk.mp3", "volume": 1.4 }
     },
     {
       "id": "red",
@@ -36,7 +36,7 @@
         "cols": 4,
         "rows": 2
       },
-      "walkSound": { "source": "audio/red-walk.mp3" }
+      "walkSound": { "source": "audio/red-walk.mp3", "volume": 1.4 }
     },
     {
       "id": "spider",
@@ -48,6 +48,39 @@
         "rows": 2
       },
       "walkSound": { "source": "audio/spider-walk.mp3" }
+    },
+    {
+      "id": "mantis",
+      "label": "Praying Mantis",
+      "rotationOffsetDeg": 20,
+      "motionGrid": {
+        "source": "image/animal/praying-mantis-walk.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/praying-mantis-walk.mp3" }
+    },
+    {
+      "id": "ladybug",
+      "label": "Ladybug",
+      "rotationOffsetDeg": -30,
+      "motionGrid": {
+        "source": "image/animal/ladybug.png",
+        "cols": 4,
+        "rows": 3
+      },
+      "walkSound": { "source": "audio/ladybug-walk.MP3", "volume": 0.4 }
+    },
+    {
+      "id": "butterfly",
+      "label": "Butterfly",
+      "rotationOffsetDeg": 25,
+      "motionGrid": {
+        "source": "image/animal/Butterfly.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/butterfly.MP3" }
     }
   ],
 
@@ -96,6 +129,31 @@
       "id": "kitchen-subway-tile",
       "label": "Kitchen Subway Tile Wall",
       "background": { "source": "image/backgroud/Kitchen Subway Tile Wall.png" }
+    },
+    {
+      "id": "balcony-flower-bed",
+      "label": "Balcony Flower Bed Corner",
+      "background": { "source": "image/backgroud/Balcony Flower Bed Corner.png" }
+    },
+    {
+      "id": "entryway-tatami-mat",
+      "label": "Entryway Tatami Mat Floor",
+      "background": { "source": "image/backgroud/Entryway Tatami Mat Floor.png" }
+    },
+    {
+      "id": "garden-pebble-stone",
+      "label": "Garden Pebble Stone Floor",
+      "background": { "source": "image/backgroud/Garden Pebble Stone Floor.png" }
+    },
+    {
+      "id": "raw-concrete-floor",
+      "label": "Raw Concrete Floor",
+      "background": { "source": "image/backgroud/Raw Concrete Floor.png" }
+    },
+    {
+      "id": "warm-wooden-plank",
+      "label": "Warm Wooden Plank Floor",
+      "background": { "source": "image/backgroud/Warm Wooden Plank Floor.png" }
     }
   ]
 }

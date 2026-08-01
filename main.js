@@ -40,7 +40,8 @@ function resolveSceneId(requested) {
 }
 
 let serverInstance = null;
-let mainWindow = null;
+let mainWindow = null; // the first editor window opened — used by the smoke test only
+const editorWindows = new Set(); // every open editor window, including mainWindow
 
 function pathsDir() {
   return path.join(app.getPath("userData"), "paths");
@@ -51,8 +52,14 @@ async function startServer() {
   return serverInstance.address().port;
 }
 
-async function createMainWindow(port) {
-  mainWindow = new BrowserWindow({
+// Each editor window is a full, independent instance of the app (its own
+// in-memory scene/path/ornament state, own export lock) that happens to
+// share the same local server/config/paths storage — so you can keep
+// editing a different scene in one window while another window's video
+// export runs in the background, and multiple windows can export at the
+// same time without interfering with each other.
+async function createEditorWindow(port) {
+  const win = new BrowserWindow({
     width: 1440,
     height: 960,
     show: !isSmokeTest,
@@ -64,10 +71,13 @@ async function createMainWindow(port) {
     },
   });
 
-  if (isDev) mainWindow.webContents.openDevTools();
+  editorWindows.add(win);
+  win.on("closed", () => editorWindows.delete(win));
 
-  await mainWindow.loadURL(`http://127.0.0.1:${port}/index.html`);
-  return mainWindow;
+  if (isDev) win.webContents.openDevTools();
+
+  await win.loadURL(`http://127.0.0.1:${port}/index.html`);
+  return win;
 }
 
 // Headless verification mode: open the editor, confirm the page actually
@@ -182,8 +192,21 @@ app.whenReady().then(async () => {
     return;
   }
 
-  await createMainWindow(port);
+  mainWindow = await createEditorWindow(port);
 
+  // Resolve with a plain boolean, not the BrowserWindow itself — the
+  // renderer's ipcRenderer.invoke() promise rejects if the resolved value
+  // can't be structured-cloned across the IPC boundary, and a BrowserWindow
+  // instance can't be.
+  ipcMain.handle("window:new", async () => {
+    await createEditorWindow(port);
+    return true;
+  });
+
+  // Not scoped to a specific window — exportScene spawns its own hidden
+  // capture window per call and runs fully independently of whichever
+  // window invoked it, so concurrent exports (from the same or different
+  // editor windows) just run in parallel with no shared state between them.
   ipcMain.handle("export:run", async (event, sceneId, opts) => {
     const result = await exportScene({
       port,

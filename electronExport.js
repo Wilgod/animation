@@ -94,7 +94,13 @@ async function __exportSceneAudio() {
     if (!src) continue;
     const totalDurMs = window.AnimEngine.getActorTotalDurationMs(id);
     if (totalDurMs <= 0) continue;
-    jobs.push({ id, src, startAtMs: window.AnimEngine.getActorStartAtMs(id), totalDurMs });
+    jobs.push({
+      id,
+      src,
+      volume: def.walkSound.volume ?? 1,
+      startAtMs: window.AnimEngine.getActorStartAtMs(id),
+      totalDurMs,
+    });
   }
   if (jobs.length === 0) return null;
 
@@ -110,7 +116,12 @@ async function __exportSceneAudio() {
     const source = offlineCtx.createBufferSource();
     source.buffer = audioBuffer;
     source.loop = true;
-    source.connect(offlineCtx.destination);
+    // OfflineAudioContext has no volume cap the way HTMLAudioElement does,
+    // so a plain gain node handles both quieter (<1) and louder (>1) —
+    // matching the live-preview volume from app.js's applyAudioVolume.
+    const gainNode = offlineCtx.createGain();
+    gainNode.gain.value = job.volume;
+    source.connect(gainNode).connect(offlineCtx.destination);
 
     const startSec = job.startAtMs / 1000;
     const durSec = job.totalDurMs / 1000;
@@ -150,12 +161,13 @@ async function renderSceneAudio(win) {
 
 async function captureFrames({ port, sceneId, framesDir, onProgress }) {
   const win = new BrowserWindow({
-    // Deliberately larger than the 1600x900 canvas: the page has its own
-    // layout padding around the canvas (even in export mode), and the
-    // window's *content* viewport needs room for that plus any title-bar
-    // chrome, or the page overflows and shows scrollbars — which would
-    // otherwise appear in captured frames. We crop to the canvas's exact
-    // bounding rect below regardless, so extra window space is harmless.
+    // Starting guess — resized below, once the page has actually loaded, to
+    // whatever its content really needs. The page has its own layout
+    // padding around the canvas (even in export mode) plus hint text/a
+    // timeline strip below it, so a fixed guess here previously fell short:
+    // the window overflowed, a scrollbar ate into the viewport, and the
+    // canvas's captured bounding rect ended up clipped/misaligned as a
+    // result — the exported video wasn't the full 1600x900 canvas.
     width: CANVAS_WIDTH + 200,
     height: CANVAS_HEIGHT + 200,
     useContentSize: true,
@@ -177,6 +189,15 @@ async function captureFrames({ port, sceneId, framesDir, onProgress }) {
           "click Save Path first."
       );
     }
+
+    // Grow the window's content area to fit whatever the page actually
+    // needs (never shrink below the starting guess) so nothing overflows
+    // into a scrollbar, then re-measure — resizing can shift layout.
+    const needed = await win.webContents.executeJavaScript(
+      `({ width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight })`
+    );
+    const [currentW, currentH] = win.getContentSize();
+    win.setContentSize(Math.max(currentW, needed.width), Math.max(currentH, needed.height));
 
     // Capture the canvas element's own bounding rect (not an assumed (0,0)
     // origin) — mirrors Puppeteer's element-scoped screenshot behavior and
@@ -252,6 +273,15 @@ function encodeGif(framesDir, outputFile) {
   });
 }
 
+// Sortable, filename-safe local timestamp (e.g. "20260731-140532") so
+// repeated exports of the same scene land as separate files instead of each
+// one overwriting the last.
+function timestampSuffix() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
 // port: local server port already running (caller's responsibility to start it)
 // sceneId: which scene to render
 // outputDir: where the final video/gif should be written
@@ -264,12 +294,13 @@ async function exportScene({ port, sceneId, outputDir, gif = false, onProgress }
   try {
     const { frameCount, audioPath } = await captureFrames({ port, sceneId, framesDir, onProgress });
 
-    const outputFile = path.join(outputDir, `${sceneId}.mp4`);
+    const stamp = timestampSuffix();
+    const outputFile = path.join(outputDir, `${sceneId}-${stamp}.mp4`);
     await encodeVideo(framesDir, outputFile, audioPath);
 
     let outputGif = null;
     if (gif) {
-      outputGif = path.join(outputDir, `${sceneId}.gif`);
+      outputGif = path.join(outputDir, `${sceneId}-${stamp}.gif`);
       await encodeGif(framesDir, outputGif);
     }
 
