@@ -34,11 +34,20 @@
   const loadTemplateBtn = document.getElementById("loadTemplateBtn");
   const deleteTemplateBtn = document.getElementById("deleteTemplateBtn");
   const templateStatusEl = document.getElementById("templateStatus");
+  const modalOverlayEl = document.getElementById("modalOverlay");
+  const modalMessageEl = document.getElementById("modalMessage");
+  const modalInputEl = document.getElementById("modalInput");
+  const modalOkBtn = document.getElementById("modalOkBtn");
+  const modalCancelBtn = document.getElementById("modalCancelBtn");
   const exportBtn = document.getElementById("exportBtn");
   const exportProgressEl = document.getElementById("exportProgress");
   const reloadScenesBtn = document.getElementById("reloadScenesBtn");
   const openConfigBtn = document.getElementById("openConfigBtn");
   const newWindowBtn = document.getElementById("newWindowBtn");
+  const multiExportSectionEl = document.getElementById("multiExportSection");
+  const multiExportSceneListEl = document.getElementById("multiExportSceneList");
+  const multiExportBtn = document.getElementById("multiExportBtn");
+  const multiExportProgressListEl = document.getElementById("multiExportProgressList");
   const configStatusEl = document.getElementById("configStatus");
   const animalListEl = document.getElementById("animalList");
   const ornamentListEl = document.getElementById("ornamentList");
@@ -58,6 +67,7 @@
   const sizeScale = document.getElementById("sizeScale");
   const sizeScaleLabel = document.getElementById("sizeScaleLabel");
   const optShadow = document.getElementById("optShadow");
+  const sidebarTabsEl = document.getElementById("sidebarTabs");
 
   const MARKER_RADIUS = 9;
   const ROTATE_HANDLE_OFFSET = 30; // canvas px above the ornament's top edge
@@ -98,6 +108,13 @@
   let path = []; // editingAnimalId's path (same array reference as animalData's copy)
   let isPlaying = false;
   let isExporting = false; // true while a video export is in flight (see setExportUIState)
+  const MULTI_EXPORT_MAX = 4;
+  let multiExportSelectedIds = new Set(); // scene ids checked in the batch-export checklist
+  // sceneId -> (frame, total) => void, registered only while that scene's
+  // export is actually in flight — lets the single-export flow and any
+  // number of concurrent batch-export scenes share one onExportProgress
+  // listener without needing a "which mode is active" flag.
+  const exportProgressRoutes = new Map();
   let playStartPerf = 0;
   let playStartT = 0;
   let draggingIndex = -1;
@@ -189,6 +206,7 @@
     setControlsEnabled(!exporting && !!editingAnimalId);
     renderAnimalList();
     renderOrnamentList();
+    renderMultiExportSceneList();
   }
 
   function applyOptionsToEngine() {
@@ -544,9 +562,13 @@
   }
 
   function canvasCoordsFromEvent(evt) {
+    // Map into the logical path-space (AnimEngine.CANVAS_WIDTH/HEIGHT), not
+    // canvas.width/height — the canvas's actual pixel buffer can be rendered
+    // at a higher resolution than that logical space (see engine.js's
+    // setContext), so dividing by it directly would misplace every click.
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const scaleX = window.AnimEngine.CANVAS_WIDTH / rect.width;
+    const scaleY = window.AnimEngine.CANVAS_HEIGHT / rect.height;
     return {
       x: (evt.clientX - rect.left) * scaleX,
       y: (evt.clientY - rect.top) * scaleY,
@@ -909,10 +931,14 @@
 
   // Shared shape for both a per-scene save (/api/path/:sceneId) and a named,
   // reusable template (/api/template/:name) — animal/ornament x,y are in
-  // canvas space (1600x900, same for every background), so a template built
-  // on one scene can be loaded onto any other unchanged.
+  // canvas space (1600x900, same for every background). sceneId records
+  // which background the layout was built on; loadTemplateBtn uses it to
+  // switch to that background automatically. Per-scene saves ignore it
+  // (their filename already pins the scene), so this only really matters
+  // for templates.
   function buildLayoutData() {
     return {
+      sceneId: currentScene ? currentScene.id : null,
       activeAnimals: [...activeAnimalIds],
       animals: Object.fromEntries(
         [...animalData.entries()].map(([id, d]) => [id, { path: d.path, options: d.options, startAtMs: d.startAtMs || 0 }])
@@ -969,17 +995,87 @@
     populateTemplateDropdown(selectName);
   }
 
+  // window.prompt()/window.confirm() replacement: Electron doesn't support
+  // prompt() at all (throws "prompt() is and will not be supported"), and
+  // confirm() is a real OS-blocking dialog there — this in-page modal works
+  // identically in the packaged app and the plain browser dev workflow.
+  // withInput: show a text field (prompt-style) vs. just OK/Cancel (confirm-style).
+  function showModal(message, { withInput = false, defaultValue = "" } = {}) {
+    return new Promise((resolve) => {
+      modalMessageEl.textContent = message;
+      modalInputEl.hidden = !withInput;
+      modalInputEl.value = defaultValue;
+      modalOverlayEl.hidden = false;
+      if (withInput) {
+        modalInputEl.focus();
+        modalInputEl.select();
+      } else {
+        modalOkBtn.focus();
+      }
+
+      function cleanup(result) {
+        modalOverlayEl.hidden = true;
+        modalOkBtn.removeEventListener("click", onOk);
+        modalCancelBtn.removeEventListener("click", onCancel);
+        modalInputEl.removeEventListener("keydown", onKeydown);
+        resolve(result);
+      }
+      function onOk() {
+        cleanup(withInput ? modalInputEl.value : true);
+      }
+      function onCancel() {
+        cleanup(withInput ? null : false);
+      }
+      function onKeydown(evt) {
+        if (evt.key === "Enter") onOk();
+        else if (evt.key === "Escape") onCancel();
+      }
+      modalOkBtn.addEventListener("click", onOk);
+      modalCancelBtn.addEventListener("click", onCancel);
+      modalInputEl.addEventListener("keydown", onKeydown);
+    });
+  }
+
+  function promptDialog(message, defaultValue = "") {
+    return showModal(message, { withInput: true, defaultValue });
+  }
+
+  // Sidebar tabs: Change Background / Select Animal / Ornaments share the
+  // same column, so only one panel is shown at a time. Defaults to
+  // Background (see the "active"/non-hidden panel already set in the HTML).
+  if (sidebarTabsEl) {
+    sidebarTabsEl.addEventListener("click", (evt) => {
+      const btn = evt.target.closest(".tab-btn");
+      if (!btn) return;
+      const tab = btn.dataset.tab;
+      sidebarTabsEl.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
+      document.querySelectorAll(".tab-panel").forEach((panel) => {
+        panel.hidden = panel.id !== `tabPanel-${tab}`;
+      });
+    });
+  }
+
+  function confirmDialog(message) {
+    return showModal(message, { withInput: false });
+  }
+
   saveTemplateBtn.addEventListener("click", async () => {
-    const name = window.prompt("Save as template — name it:", templateSelect.value || "");
-    if (!name || !name.trim()) return;
+    const name = await promptDialog("Save as template — name it:", templateSelect.value || "");
+    if (name === null) return; // cancelled
+    const trimmed = name.trim();
+    if (!trimmed) return;
     try {
-      await fetch(`/api/template/${encodeURIComponent(name.trim())}`, {
+      const res = await fetch(`/api/template/${encodeURIComponent(trimmed)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildLayoutData()),
       });
-      await refreshTemplateList(name.trim());
-      templateStatusEl.textContent = `Saved template "${name.trim()}".`;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      await refreshTemplateList(trimmed);
+      templateStatusEl.textContent = `Saved template "${trimmed}".`;
       setTimeout(() => (templateStatusEl.textContent = ""), 2000);
     } catch (err) {
       templateStatusEl.textContent = "Save failed: " + err.message;
@@ -999,6 +1095,12 @@
         return;
       }
       const saved = await res.json();
+      // Switch to the template's own background first (older templates saved
+      // before sceneId was recorded, or one whose scene no longer exists,
+      // just apply onto whatever background is currently showing).
+      if (saved.sceneId && saved.sceneId !== currentScene?.id && scenes.some((s) => s.id === saved.sceneId)) {
+        await loadScene(saved.sceneId, { loadSavedLayout: false });
+      }
       await applyLayoutData(saved);
       scrub.value = "0";
       renderEditorFrame(0);
@@ -1013,9 +1115,11 @@
   deleteTemplateBtn.addEventListener("click", async () => {
     const name = templateSelect.value;
     if (!name) return;
-    if (!window.confirm(`Delete template "${name}"?`)) return;
+    const confirmed = await confirmDialog(`Delete template "${name}"?`);
+    if (!confirmed) return;
     try {
-      await fetch(`/api/template/${encodeURIComponent(name)}`, { method: "DELETE" });
+      const res = await fetch(`/api/template/${encodeURIComponent(name)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await refreshTemplateList();
       templateStatusEl.textContent = `Deleted "${name}".`;
       setTimeout(() => (templateStatusEl.textContent = ""), 2000);
@@ -1455,6 +1559,71 @@
     });
   }
 
+  // Checklist for the "Batch Export" feature: pick up to MULTI_EXPORT_MAX
+  // scenes to save the current layout to and export all at once. Kept in
+  // sync with `scenes` (re-render on reload) and with isExporting (locked
+  // the same way the rest of the editor is during any export).
+  function renderMultiExportSceneList() {
+    multiExportSceneListEl.innerHTML = "";
+    const atCap = multiExportSelectedIds.size >= MULTI_EXPORT_MAX;
+    scenes.forEach((scene) => {
+      const row = document.createElement("label");
+      row.className = "animal-row scene-check-row";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = multiExportSelectedIds.has(scene.id);
+      checkbox.disabled = isExporting || (!checkbox.checked && atCap);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) multiExportSelectedIds.add(scene.id);
+        else multiExportSelectedIds.delete(scene.id);
+        renderMultiExportSceneList();
+      });
+      row.appendChild(checkbox);
+
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = scene.label || scene.id;
+      row.appendChild(name);
+
+      multiExportSceneListEl.appendChild(row);
+    });
+
+    multiExportBtn.disabled = isExporting || multiExportSelectedIds.size === 0;
+    multiExportBtn.textContent =
+      multiExportSelectedIds.size > 0
+        ? `Export Selected (${multiExportSelectedIds.size}/${MULTI_EXPORT_MAX})`
+        : "Export Selected";
+  }
+
+  function renderMultiExportProgressList(sceneIds) {
+    multiExportProgressListEl.innerHTML = "";
+    sceneIds.forEach((sceneId) => {
+      const scene = scenes.find((s) => s.id === sceneId);
+      const row = document.createElement("div");
+      row.className = "scene-progress-row";
+
+      const label = document.createElement("span");
+      label.textContent = scene ? scene.label || scene.id : sceneId;
+      row.appendChild(label);
+
+      const status = document.createElement("span");
+      status.className = "scene-progress-status";
+      status.id = `multiExportStatus-${sceneId}`;
+      status.textContent = "Queued…";
+      row.appendChild(status);
+
+      multiExportProgressListEl.appendChild(row);
+    });
+  }
+
+  function setMultiExportRowStatus(sceneId, text, kind) {
+    const el = document.getElementById(`multiExportStatus-${sceneId}`);
+    if (!el) return;
+    el.textContent = text;
+    el.className = "scene-progress-status" + (kind ? ` ${kind}` : "");
+  }
+
   reloadScenesBtn.addEventListener("click", async () => {
     const previousSceneId = currentScene ? currentScene.id : null;
     try {
@@ -1469,6 +1638,8 @@
       ornamentDefs = config.ornaments || [];
       populateSceneDropdown();
       renderOrnamentList();
+      multiExportSelectedIds = new Set([...multiExportSelectedIds].filter((id) => scenes.some((s) => s.id === id)));
+      renderMultiExportSceneList();
       const nextSceneId =
         (previousSceneId && scenes.some((s) => s.id === previousSceneId) && previousSceneId) ||
         (scenes[0] && scenes[0].id);
@@ -1487,6 +1658,7 @@
     ornamentDefs = config.ornaments || [];
     populateSceneDropdown();
     renderOrnamentList();
+    renderMultiExportSceneList();
     refreshTemplateList();
 
     const requestedScene = urlParams.get("scene");
@@ -1512,17 +1684,26 @@
     openConfigBtn.addEventListener("click", () => window.electronAPI.openConfigFile());
     newWindowBtn.hidden = false;
     newWindowBtn.addEventListener("click", () => window.electronAPI.openNewWindow());
+    multiExportSectionEl.hidden = false;
+    renderMultiExportSceneList();
 
+    // Routed by sceneId (see exportProgressRoutes) instead of filtering to
+    // currentScene.id, so both the single-export flow and any number of
+    // concurrent batch-export scenes can each track their own progress.
     window.electronAPI.onExportProgress(({ sceneId, frame, total }) => {
-      if (!currentScene || sceneId !== currentScene.id) return;
-      exportProgressEl.textContent = `Rendering frame ${frame}/${total}…`;
+      const route = exportProgressRoutes.get(sceneId);
+      if (route) route(frame, total);
     });
 
     exportBtn.addEventListener("click", async () => {
       setExportUIState(true);
       exportProgressEl.innerHTML = "Starting export…";
+      const sceneId = currentScene.id;
+      exportProgressRoutes.set(sceneId, (frame, total) => {
+        exportProgressEl.textContent = `Rendering frame ${frame}/${total}…`;
+      });
       try {
-        const result = await window.electronAPI.exportScene(currentScene.id, { gif: false });
+        const result = await window.electronAPI.exportScene(sceneId, { gif: false });
         exportProgressEl.innerHTML = `Done: ${result.outputFile} <button id="revealBtn">Show in folder</button>`;
         document.getElementById("revealBtn").addEventListener("click", () => {
           window.electronAPI.showItemInFolder(result.outputFile);
@@ -1530,8 +1711,69 @@
       } catch (err) {
         exportProgressEl.textContent = "Export failed: " + err.message;
       } finally {
+        exportProgressRoutes.delete(sceneId);
         setExportUIState(false);
       }
+    });
+
+    multiExportBtn.addEventListener("click", async () => {
+      const sceneIds = [...multiExportSelectedIds];
+      if (sceneIds.length === 0) return;
+
+      const confirmed = await confirmDialog(
+        `Save the current animal paths/ornament placement as the saved layout for ${sceneIds.length} ` +
+          `scene(s) (overwriting each one's existing saved path), then export ${sceneIds.length} video(s)?`
+      );
+      if (!confirmed) return;
+
+      setExportUIState(true);
+      renderMultiExportProgressList(sceneIds);
+
+      // Captured once, up front — the same layout is applied to every
+      // selected scene, and the editor is locked for the duration anyway
+      // (setExportUIState(true) above), so this can't drift mid-batch.
+      const layoutSnapshot = buildLayoutData();
+
+      async function saveAndExportOne(sceneId) {
+        setMultiExportRowStatus(sceneId, "Saving…", "info");
+        const saveRes = await fetch(`/api/path/${sceneId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(layoutSnapshot),
+        });
+        if (!saveRes.ok) throw new Error(`Save failed (HTTP ${saveRes.status})`);
+
+        setMultiExportRowStatus(sceneId, "Starting export…", "info");
+        exportProgressRoutes.set(sceneId, (frame, total) => {
+          setMultiExportRowStatus(sceneId, `Rendering frame ${frame}/${total}…`, "info");
+        });
+        try {
+          const result = await window.electronAPI.exportScene(sceneId, { gif: false });
+          setMultiExportRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
+          return result;
+        } finally {
+          exportProgressRoutes.delete(sceneId);
+        }
+      }
+
+      const results = await Promise.allSettled(sceneIds.map(saveAndExportOne));
+
+      results.forEach((r, i) => {
+        if (r.status === "rejected") {
+          setMultiExportRowStatus(sceneIds[i], "Failed: " + (r.reason?.message || String(r.reason)), "error");
+        }
+      });
+
+      const failCount = results.filter((r) => r.status === "rejected").length;
+      const summaryEl = document.createElement("p");
+      summaryEl.className = "status";
+      summaryEl.textContent =
+        failCount === 0
+          ? `All ${sceneIds.length} scene(s) exported successfully.`
+          : `${sceneIds.length - failCount}/${sceneIds.length} succeeded, ${failCount} failed.`;
+      multiExportProgressListEl.appendChild(summaryEl);
+
+      setExportUIState(false);
     });
   }
 

@@ -7,7 +7,7 @@
   "animals": [
     {
       "id": "blue",
-      "label": "Blue",
+      "label": "Yellow Lizard",
       "source": "image/animal/small Lizard.png",
       "motionGrid": {
         "source": "image/animal/small Lizard motion.png",
@@ -18,7 +18,7 @@
     },
     {
       "id": "green",
-      "label": "Green",
+      "label": "Green Lizard",
       "source": "image/animal/small green Lizard static.png",
       "motionGrid": {
         "source": "image/animal/small green Lizard.png",
@@ -29,7 +29,7 @@
     },
     {
       "id": "red",
-      "label": "Red",
+      "label": "Red Lizard",
       "source": "image/animal/small red Lizard static.png",
       "motionGrid": {
         "source": "image/animal/small red Lizard motion.png",

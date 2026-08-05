@@ -15,8 +15,8 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 const FPS = 30;
 const GIF_FPS = 15;
 const GIF_WIDTH = 800;
-const CANVAS_WIDTH = 1600;
-const CANVAS_HEIGHT = 900;
+const CANVAS_WIDTH = 3840;
+const CANVAS_HEIGHT = 2160;
 
 // Runs *inside* the headless BrowserWindow (serialized via toString() below,
 // never executed in Node). Renders every active animal's walk sound into one
@@ -167,7 +167,7 @@ async function captureFrames({ port, sceneId, framesDir, onProgress }) {
     // timeline strip below it, so a fixed guess here previously fell short:
     // the window overflowed, a scrollbar ate into the viewport, and the
     // canvas's captured bounding rect ended up clipped/misaligned as a
-    // result — the exported video wasn't the full 1600x900 canvas.
+    // result — the exported video wasn't the full 3840x2160 canvas.
     width: CANVAS_WIDTH + 200,
     height: CANVAS_HEIGHT + 200,
     useContentSize: true,
@@ -220,8 +220,14 @@ async function captureFrames({ port, sceneId, framesDir, onProgress }) {
       // HiDPI resolution rather than forcing scale-factor 1 app-wide).
       const image = await win.webContents.capturePage(canvasRect);
       const resized = image.resize({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, quality: "best" });
-      const framePath = path.join(framesDir, `frame_${String(i).padStart(5, "0")}.png`);
-      fs.writeFileSync(framePath, resized.toPNG());
+      // JPEG, not PNG: these frames are throwaway intermediates immediately
+      // re-encoded to lossy H.264 by ffmpeg below, and profiling showed
+      // PNG's own encode step (resized.toPNG()) was ~78% of total export
+      // time — PNG compression is CPU-heavy on complex/photographic frames.
+      // JPEG at this quality is visually lossless once re-compressed to
+      // H.264 but encodes dramatically faster.
+      const framePath = path.join(framesDir, `frame_${String(i).padStart(5, "0")}.jpg`);
+      fs.writeFileSync(framePath, resized.toJPEG(92));
       onProgress?.(i + 1, frameCount);
     }
 
@@ -243,7 +249,7 @@ async function captureFrames({ port, sceneId, framesDir, onProgress }) {
 
 function encodeVideo(framesDir, outputFile, audioPath) {
   return new Promise((resolve, reject) => {
-    const cmd = ffmpeg().input(path.join(framesDir, "frame_%05d.png")).inputFPS(FPS);
+    const cmd = ffmpeg().input(path.join(framesDir, "frame_%05d.jpg")).inputFPS(FPS);
     const outputOptions = ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-r", String(FPS)];
     if (audioPath) {
       cmd.input(audioPath);
@@ -264,7 +270,7 @@ function encodeGif(framesDir, outputFile) {
   return new Promise((resolve, reject) => {
     const filter = `fps=${GIF_FPS},scale=${GIF_WIDTH}:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse`;
     ffmpeg()
-      .input(path.join(framesDir, "frame_%05d.png"))
+      .input(path.join(framesDir, "frame_%05d.jpg"))
       .inputFPS(FPS)
       .outputOptions(["-filter_complex", filter])
       .on("error", reject)

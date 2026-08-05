@@ -10,12 +10,23 @@ const ASSETS_ROOT = path.join(ROOT, "assets");
 const ANIMALS_OUT_DIR = path.join(ASSETS_ROOT, "_animals");
 const ORNAMENTS_OUT_DIR = path.join(ASSETS_ROOT, "_ornaments");
 
-const CANVAS_WIDTH = 1600;
-const CANVAS_HEIGHT = 900;
-const DEFAULT_STATIC_MAX_WIDTH = 350;
-const DEFAULT_WALK_FRAME_MAX_WIDTH = 260;
+// Output pixel resolution for background.jpg — this is the actual render
+// target (see index.html's #stage canvas size + style.css's export-mode
+// rule), decoupled from the 1600x900 logical coordinate space that
+// paths/waypoints/ornament positions are stored in (engine.js's own
+// CANVAS_WIDTH/CANVAS_HEIGHT, left untouched so saved layouts still apply).
+const CANVAS_WIDTH = 3840;
+const CANVAS_HEIGHT = 2160;
+// Animal/ornament sprites are rendered at this many times their intended
+// on-canvas (logical-space) size so they stay sharp at the higher render
+// resolution above — engine.js divides back out by the same factor when
+// drawing them, so their on-screen size/placement is unaffected. Keep in
+// sync with ASSET_UPRES_FACTOR in engine.js.
+const ASSET_UPRES_FACTOR = 2.4;
+const DEFAULT_STATIC_MAX_WIDTH = Math.round(350 * ASSET_UPRES_FACTOR);
+const DEFAULT_WALK_FRAME_MAX_WIDTH = Math.round(260 * ASSET_UPRES_FACTOR);
 const DEFAULT_GRID_CELL_INSET = 10;
-const DEFAULT_ORNAMENT_MAX_WIDTH = 300;
+const DEFAULT_ORNAMENT_MAX_WIDTH = Math.round(300 * ASSET_UPRES_FACTOR);
 
 function resolveSource(label, relativePath, kind) {
   const abs = path.join(ROOT, relativePath);

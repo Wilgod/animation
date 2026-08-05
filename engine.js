@@ -11,6 +11,12 @@
   const HEADING_EPSILON_MS = 8;
   const BOB_WAVELENGTH_PX = 55;
   const ARC_LENGTH_SAMPLES = 240;
+  // scripts/prepare-assets.js renders animal/ornament sprites at this many
+  // times their intended on-canvas (logical-space) size, so they stay sharp
+  // once drawn onto a higher-resolution canvas buffer (see setContext) —
+  // divide back out here so on-screen size/placement is unaffected. Keep in
+  // sync with ASSET_UPRES_FACTOR in prepare-assets.js.
+  const ASSET_UPRES_FACTOR = 2.4;
 
   let ctx = null;
   let bgImage = null;
@@ -280,8 +286,8 @@
 
     const pose = getPose(actor, localT, sprite.rotationOffsetRad);
     const sizeScale = actor.options.sizeScale || 1;
-    const w = spriteImage.naturalWidth * pose.scale * sizeScale;
-    const h = spriteImage.naturalHeight * pose.scale * sizeScale;
+    const w = (spriteImage.naturalWidth / ASSET_UPRES_FACTOR) * pose.scale * sizeScale;
+    const h = (spriteImage.naturalHeight / ASSET_UPRES_FACTOR) * pose.scale * sizeScale;
 
     ctx.save();
     ctx.translate(pose.x, pose.y);
@@ -303,8 +309,8 @@
   function drawOrnament(ornament) {
     const { image, x, y, scale, rotation, shadow } = ornament;
     if (!image) return;
-    const w = image.naturalWidth * scale;
-    const h = image.naturalHeight * scale;
+    const w = (image.naturalWidth / ASSET_UPRES_FACTOR) * scale;
+    const h = (image.naturalHeight / ASSET_UPRES_FACTOR) * scale;
     ctx.save();
     ctx.translate(x, y);
     if (rotation) ctx.rotate(rotation);
@@ -336,9 +342,18 @@
     CANVAS_WIDTH,
     CANVAS_HEIGHT,
 
+    // The canvas element's actual pixel buffer (canvas.width/height) can be
+    // rendered at a higher resolution than the CANVAS_WIDTH x CANVAS_HEIGHT
+    // logical coordinate space that paths/waypoints/ornament positions are
+    // stored in (e.g. a 3840x2160 buffer for 4K output over the same 1600x900
+    // path space) — setTransform (not scale, which would compound on every
+    // scene reload) maps every logical-space draw call onto the real buffer
+    // so saved layouts render correctly regardless of output resolution.
     setContext(canvasCtx, backgroundImg) {
       ctx = canvasCtx;
       bgImage = backgroundImg;
+      const el = ctx.canvas;
+      ctx.setTransform(el.width / CANVAS_WIDTH, 0, 0, el.height / CANVAS_HEIGHT, 0, 0);
     },
 
     // Registers/updates the sprite assets for actor `id`.

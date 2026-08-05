@@ -49,7 +49,39 @@ body {
 
 .sidebar {
   flex: 1 1 320px;
-  max-width: 360px;
+  max-width: 420px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 12px;
+  border-bottom: 1px solid #3a3d41;
+}
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  color: #999;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 8px 6px;
+  font-size: 12px;
+}
+
+.tab-btn:hover {
+  background: #26282b;
+  color: #eee;
+}
+
+.tab-btn.active {
+  color: #78c8ff;
+  border-bottom-color: #78c8ff;
+}
+
+.tab-panel {
+  margin-bottom: 10px;
 }
 
 .sidebar h1 {
@@ -211,6 +243,42 @@ button:hover {
   padding: 2px 4px;
 }
 
+.multi-export-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+
+.scene-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  background: #26282b;
+  border: 1px solid #3a3d41;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.scene-progress-status {
+  color: #999;
+  text-align: right;
+}
+
+.scene-progress-status.info {
+  color: #ffcc33;
+}
+
+.scene-progress-status.done {
+  color: #7fd67f;
+}
+
+.scene-progress-status.error {
+  color: #ff5a5a;
+}
+
 .waypoint-list {
   display: flex;
   flex-direction: column;
@@ -262,20 +330,9 @@ body.export-mode .sidebar {
   display: none;
 }
 
-.ornament-panel {
-  flex: 0 0 150px;
-  max-width: 150px;
-}
-
-.ornament-panel h2 {
-  font-size: 14px;
-  margin: 4px 0 8px;
-  color: #aaa;
-}
-
 .ornament-list {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 10px;
 }
@@ -285,6 +342,7 @@ body.export-mode .sidebar {
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  width: 96px;
   background: #26282b;
   border: 1px solid #3a3d41;
   border-radius: 4px;
@@ -298,8 +356,8 @@ body.export-mode .sidebar {
 
 .ornament-item img {
   width: 100%;
-  max-width: 90px;
-  max-height: 90px;
+  max-width: 76px;
+  max-height: 76px;
   object-fit: contain;
   pointer-events: none;
 }
@@ -308,10 +366,6 @@ body.export-mode .sidebar {
   font-size: 12px;
   color: #ccc;
   text-align: center;
-}
-
-body.export-mode .ornament-panel {
-  display: none;
 }
 
 .ornament-selected-panel {
@@ -334,10 +388,62 @@ body.export-mode .ornament-panel {
   margin-top: 6px;
 }
 
-/* Export capture must match the canvas's intrinsic 1600x900 resolution
+/* Export capture must match the canvas's intrinsic 3840x2160 (4K) resolution
    exactly, since Puppeteer's element screenshot captures rendered CSS
    pixels, not the canvas's internal drawing buffer size. */
 body.export-mode #stage {
-  width: 1600px;
-  height: 900px;
+  width: 3840px;
+  height: 2160px;
+}
+
+/* window.prompt()/confirm() aren't reliable in Electron (prompt() isn't
+   supported there at all) — this in-page modal replaces both, so it works
+   the same in the packaged app and the plain browser dev workflow. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* [hidden]'s default `display: none` and this class's own `display` have
+   equal CSS specificity, so without this the class rule below would win the
+   cascade and the overlay would render even while `hidden` — as it did,
+   baked right into every exported video frame, until this was caught. */
+.modal-overlay:not([hidden]) {
+  display: flex;
+}
+
+.modal-box {
+  background: #202225;
+  border: 1px solid #3a3d41;
+  border-radius: 6px;
+  padding: 18px;
+  width: 320px;
+  max-width: calc(100vw - 40px);
+}
+
+.modal-message {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #e8e8e8;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: #141517;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #eee;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
