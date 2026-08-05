@@ -117,11 +117,6 @@
       "background": { "source": "image/backgroud/Colorful Terrazzo Floor.png" }
     },
     {
-      "id": "cardboard-box-surface",
-      "label": "紙箱表面",
-      "background": { "source": "image/backgroud/Cardboard Box Surface.png" }
-    },
-    {
       "id": "entryway-tatami-mat",
       "label": "玄關榻榻米地板",
       "background": { "source": "image/backgroud/Entryway Tatami Mat Floor.png" }
@@ -140,11 +135,6 @@
       "id": "warm-wooden-plank",
       "label": "溫暖木質地板",
       "background": { "source": "image/backgroud/Warm Wooden Plank Floor.png" }
-    },
-    {
-      "id": "bedroom-wooden-headboard",
-      "label": "臥室木質床頭板",
-      "background": { "source": "image/backgroud/Bedroom Wooden Headboard Panel.png" }
     },
     {
       "id": "cork-memo-board",
@@ -215,11 +205,6 @@
       "id": "woven-outdoor-rug",
       "label": "陽台編織地墊",
       "background": { "source": "image/backgroud/Woven Outdoor Rug Mat.png" }
-    },
-    {
-      "id": "washing-machine-lid",
-      "label": "洗衣機蓋表面",
-      "background": { "source": "image/backgroud/Washing Machine Lid Surface.png" }
     },
     {
       "id": "window-side-wall-shelf",
