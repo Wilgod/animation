@@ -20,6 +20,16 @@
   <div class="sidebar" id="sidebar">
     <h1>Path Animator</h1>
 
+    <div id="autoGenSection">
+      <button id="autoGenerateBtn">Generate Video…</button>
+      <p class="hint" id="autoGenSectionHint">
+        Pick animals, which backgrounds, and a length in seconds. Each animal automatically walks
+        in from off-screen, wanders, and walks back off before the video ends — with multiple
+        animals starting at different times and a different random path on every background.
+      </p>
+      <div id="autoGenProgressList" class="multi-export-progress"></div>
+    </div>
+
     <div class="tabs" id="sidebarTabs">
       <button type="button" class="tab-btn active" data-tab="background">Change Background</button>
       <button type="button" class="tab-btn" data-tab="animals">Select Animal</button>
@@ -48,7 +58,7 @@
     </div>
 
     <div class="tab-panel" id="tabPanel-animals" hidden>
-      <p class="hint">Check an animal to include it in the scene. Click its name to edit its path/options below.</p>
+      <p class="hint">Drag an animal onto the video to place it at the current timeline time. You can also check it to include it, then click its name to edit.</p>
       <div id="animalList" class="animal-list"></div>
     </div>
 
@@ -148,6 +158,35 @@
     <div class="modal-actions">
       <button id="modalCancelBtn">Cancel</button>
       <button id="modalOkBtn">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="autoGenOverlay" class="modal-overlay" hidden>
+  <div class="modal-box autogen-box">
+    <p class="modal-message">Generate Video</p>
+    <p class="hint">Choose which animals can appear, which backgrounds to generate, and how many seconds each video should run.</p>
+
+    <label class="scrub-label">
+      Animals (ctrl/cmd-click to select multiple)
+      <select id="autoGenAnimalSelect" class="multi-select" multiple size="8"></select>
+    </label>
+
+    <label class="scrub-label">
+      Backgrounds (ctrl/cmd-click to select multiple, up to 4)
+      <select id="autoGenBgSelect" class="multi-select" multiple size="10"></select>
+    </label>
+    <p class="hint" id="autoGenBgCountHint"></p>
+
+    <label class="scrub-label">
+      Length (seconds)
+      <input type="number" id="autoGenSeconds" min="3" max="120" step="1" value="8" />
+    </label>
+
+    <p id="autoGenModalStatus" class="status"></p>
+    <div class="modal-actions">
+      <button id="autoGenCancelBtn">Cancel</button>
+      <button id="autoGenGoBtn">Generate &amp; Export</button>
     </div>
   </div>
 </div>

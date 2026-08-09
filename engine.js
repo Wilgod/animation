@@ -264,15 +264,24 @@
     };
   }
 
-  // Picks a gait-cycle frame by distance traveled (not wall-clock time), so
-  // leg-stepping speed automatically scales with how fast the lizard is
+  // Picks a gait-cycle position by distance traveled (not wall-clock time),
+  // so leg-stepping speed automatically scales with how fast the lizard is
   // actually moving along the path instead of ticking at a fixed rate.
-  function currentWalkFrame(actor, tMs) {
+  // Returns the two neighboring frames (the sheet loops, so the frame after
+  // the last one wraps to the first) plus how far between them we are, so
+  // drawActor can cross-fade instead of hard-cutting between poses — with
+  // only 8-12 frames per animal, snapping to the nearest one reads as a
+  // choppy flipbook, especially at slow speeds where one frame holds for a
+  // long stretch and then jumps.
+  function currentWalkFrames(actor, tMs) {
     const dist = distanceTraveledAt(actor, tMs);
     const cycle = actor.walkStrideLengthPx > 0 ? actor.walkStrideLengthPx : 1;
-    const phase = (((dist % cycle) + cycle) % cycle) / cycle;
-    const idx = Math.min(actor.walkFrames.length - 1, Math.floor(phase * actor.walkFrames.length));
-    return actor.walkFrames[idx];
+    const n = actor.walkFrames.length;
+    const phase = ((((dist % cycle) + cycle) % cycle) / cycle) * n;
+    const i0 = Math.floor(phase) % n;
+    const i1 = (i0 + 1) % n;
+    const frac = phase - Math.floor(phase);
+    return { frame: actor.walkFrames[i0], nextFrame: actor.walkFrames[i1], frac };
   }
 
   function drawActor(actor, tMs) {
@@ -281,7 +290,8 @@
     if (actor.path.length === 0) return;
 
     const sprite = activeSprite(actor);
-    const spriteImage = sprite.isWalkCycle ? currentWalkFrame(actor, localT) : actor.lizardImage;
+    const walk = sprite.isWalkCycle ? currentWalkFrames(actor, localT) : null;
+    const spriteImage = walk ? walk.frame : actor.lizardImage;
     if (!spriteImage) return;
 
     const pose = getPose(actor, localT, sprite.rotationOffsetRad);
@@ -300,6 +310,11 @@
       ctx.shadowOffsetY = 10;
     }
     ctx.drawImage(spriteImage, -w / 2, -h / 2, w, h);
+    if (walk && walk.nextFrame && walk.nextFrame !== walk.frame && walk.frac > 0.004) {
+      ctx.globalAlpha = walk.frac;
+      ctx.drawImage(walk.nextFrame, -w / 2, -h / 2, w, h);
+      ctx.globalAlpha = 1;
+    }
     ctx.restore();
   }
 

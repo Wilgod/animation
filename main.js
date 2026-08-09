@@ -154,7 +154,12 @@ async function runSmokeTest(port) {
 // Puppeteer-based export.js CLI.
 async function runExportCli(port) {
   const sceneId = resolveSceneId(argValue("--scene"));
-  const outputDir = path.join(__dirname, "output");
+  // In a packaged build, __dirname resolves inside the read-only app.asar
+  // archive — mkdirSync-ing "output" under it fails (ENOTDIR), since asar
+  // isn't a real writable filesystem. Dev mode (unpacked) keeps writing to
+  // the repo's own output/ folder as before; packaged builds fall back to
+  // the same real, writable folder the in-app Export button already uses.
+  const outputDir = app.isPackaged ? app.getPath("videos") : path.join(__dirname, "output");
 
   console.log(`Scene: ${sceneId}`);
   console.log("Rendering frames deterministically...");
@@ -185,7 +190,7 @@ app.whenReady().then(async () => {
     try {
       await runExportCli(port);
     } catch (err) {
-      console.error(err.message);
+      console.error(err.stack || err.message);
       process.exitCode = 1;
       app.quit();
     }
@@ -213,6 +218,7 @@ app.whenReady().then(async () => {
       sceneId,
       outputDir: app.getPath("videos"),
       gif: !!opts?.gif,
+      sequence: opts?.sequence,
       onProgress: (frame, total) => {
         event.sender.send("export:progress", { sceneId, frame, total });
       },

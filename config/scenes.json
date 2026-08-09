@@ -14,7 +14,7 @@
         "cols": 4,
         "rows": 2
       },
-      "walkSound": { "source": "audio/blue-walk.mp3", "volume": 1.4 }
+      "walkSound": { "source": "audio/yellow-lizard-walk.mp3", "volume": 1.0 }
     },
     {
       "id": "green",
@@ -25,7 +25,7 @@
         "cols": 4,
         "rows": 2
       },
-      "walkSound": { "source": "audio/green-walk.mp3", "volume": 1.4 }
+      "walkSound": { "source": "audio/green-lizard-walk.mp3", "volume": 1.0 }
     },
     {
       "id": "red",
@@ -36,7 +36,7 @@
         "cols": 4,
         "rows": 2
       },
-      "walkSound": { "source": "audio/red-walk.mp3", "volume": 1.4 }
+      "walkSound": { "source": "audio/red-lizard-walk.mp3", "volume": 1.0 }
     },
     {
       "id": "spider",
@@ -92,6 +92,106 @@
         "rows": 2
       },
       "walkSound": { "source": "audio/Sparrow-fly.mp3" }
+    },
+    {
+      "id": "squirrel",
+      "label": "松鼠",
+      "rotationOffsetDeg": 0,
+      "motionGrid": {
+        "source": "image/animal/squirrel-walk.png",
+        "cols": 4,
+        "rows": 4
+      },
+      "walkSound": { "source": "audio/squirrel-walk.mp3" }
+    },
+    {
+      "id": "bee",
+      "label": "蜜蜂",
+      "rotationOffsetDeg": 0,
+      "motionGrid": {
+        "source": "image/animal/bee-fly.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/bee-fly.mp3" }
+    },
+    {
+      "id": "pigeon",
+      "label": "鴿子",
+      "source": "image/animal/Pigeon.png",
+      "rotationOffsetDeg": 0,
+      "motionGrid": {
+        "source": "image/animal/Pigeon-walk.png",
+        "cols": 4,
+        "rows": 3
+      },
+      "walkSound": { "source": "audio/pigeon-walk.mp3" }
+    },
+    {
+      "id": "pigeon-flying",
+      "label": "飛行鴿子",
+      "rotationOffsetDeg": 0,
+      "motionGrid": {
+        "source": "image/animal/Pigeon-fly.png",
+        "cols": 4,
+        "rows": 3
+      },
+      "walkSound": { "source": "audio/pigeon-fly.mp3" }
+    },
+    {
+      "id": "crab",
+      "label": "螃蟹",
+      "rotationFollowsPath": false,
+      "motionGrid": {
+        "source": "image/animal/crab-walk.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/crab-walk.mp3" }
+    },
+    {
+      "id": "frog",
+      "label": "青蛙",
+      "rotationOffsetDeg": 0,
+      "motionGrid": {
+        "source": "image/animal/frog-walk.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/frog-walk.mp3" }
+    },
+    {
+      "id": "cicada",
+      "label": "蟬",
+      "rotationOffsetDeg": 0,
+      "motionGrid": {
+        "source": "image/animal/cycle-fly.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/cicada-fly.mp3" }
+    },
+    {
+      "id": "goldfish",
+      "label": "金魚",
+      "rotationOffsetDeg": 0,
+      "motionGrid": {
+        "source": "image/animal/goldfish-swim.png",
+        "cols": 4,
+        "rows": 4
+      },
+      "walkSound": { "source": "audio/goldfish-swim.mp3" }
+    },
+    {
+      "id": "fieldmouse",
+      "label": "田鼠",
+      "rotationOffsetDeg": 0,
+      "motionGrid": {
+        "source": "image/animal/fieldmouse-walk.png",
+        "cols": 4,
+        "rows": 2
+      },
+      "walkSound": { "source": "audio/fieldmouse-walk.mp3" }
     }
   ],
 
@@ -109,117 +209,146 @@
     {
       "id": "gecko-blue-tiles",
       "label": "藍色瓷磚",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Gecko on Blue Tiles.png" }
     },
     {
       "id": "colorful-terrazzo-floor",
       "label": "彩色石粒水磨石地板",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Colorful Terrazzo Floor.png" }
     },
     {
       "id": "entryway-tatami-mat",
       "label": "玄關榻榻米地板",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Entryway Tatami Mat Floor.png" }
     },
     {
       "id": "garden-pebble-stone",
       "label": "花園鵝卵石地面",
+      "category": "outdoor",
       "background": { "source": "image/backgroud/Garden Pebble Stone Floor.png" }
     },
     {
       "id": "raw-concrete-floor",
       "label": "原始混凝土地面",
+      "category": "floor",
       "background": { "source": "image/backgroud/Raw Concrete Floor.png" }
     },
     {
       "id": "warm-wooden-plank",
       "label": "溫暖木質地板",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Warm Wooden Plank Floor.png" }
     },
     {
       "id": "cork-memo-board",
       "label": "軟木便箋板牆面",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Cork Memo Board Wall.png" }
     },
     {
       "id": "desk-green-leather-blotter",
       "label": "書桌綠色皮革桌墊",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Desk Green Leather Blotter Pad.png" }
     },
     {
       "id": "fresh-snow-ground",
       "label": "雪地表面",
+      "category": "outdoor",
       "background": { "source": "image/backgroud/Fresh Snow Ground Surface.png" }
     },
     {
       "id": "garden-lawn-grass",
       "label": "草坪綠地面",
+      "category": "outdoor",
       "background": { "source": "image/backgroud/Garden Lawn Grass Ground.png" }
     },
     {
       "id": "kitchen-marble-island",
       "label": "廚房大理石中島檯面",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Kitchen Marble Island Countertop.png" }
     },
     {
       "id": "large-leaf-closeup",
       "label": "大片綠色葉面特寫",
+      "category": "outdoor",
       "background": { "source": "image/backgroud/Large Leaf Surface Close-Up.png" }
     },
     {
       "id": "living-room-grey-carpet",
       "label": "客廳灰色地毯絨面",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Living Room Grey Carpet Pile.png" }
     },
     {
       "id": "marble-bathroom-vanity",
       "label": "大理石浴室洗手台檯面",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Marble Bathroom Vanity Countertop.png" }
     },
     {
       "id": "outdoor-wooden-deck",
       "label": "戶外木棧板露台地板",
+      "category": "outdoor",
       "background": { "source": "image/backgroud/Outdoor Wooden Deck Planks.png" }
     },
     {
       "id": "sunroom-rattan-chair",
       "label": "陽光房藤椅椅面",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Sunroom Rattan Chair Seat Surface.png" }
     },
     {
       "id": "wicker-storage-basket",
       "label": "藤編置物籃外壁",
+      "category": "floor",
       "background": { "source": "image/backgroud/Wicker Storage Basket Exterior Weave.png" }
     },
     {
       "id": "wooden-edge",
       "label": "木質邊緣",
+      "category": "floor",
       "background": { "source": "image/backgroud/Wooden Edge.png" }
     },
     {
       "id": "wooden-picket-fence",
       "label": "木柵欄前視面",
+      "category": "outdoor",
       "background": { "source": "image/backgroud/Wooden Picket Fence Front View.png" }
     },
     {
       "id": "woven-outdoor-rug",
       "label": "陽台編織地墊",
+      "category": "outdoor",
       "background": { "source": "image/backgroud/Woven Outdoor Rug Mat.png" }
     },
     {
       "id": "window-side-wall-shelf",
       "label": "窗邊牆架",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Window-Side Wall Shelf.png" }
     },
     {
       "id": "corner-woven-hanging-basket",
       "label": "牆角編織掛籃",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Corner Woven Hanging Basket.png" }
     },
     {
       "id": "kitchen-subway-tile-countertop-edge",
       "label": "廚房地鐵磚牆與檯面邊緣",
+      "category": "indoor",
       "background": { "source": "image/backgroud/Kitchen Subway Tile Wall & Countertop Edge.png" }
+    },
+    {
+      "id": "balcony-herb-garden-corner",
+      "label": "陽台香草花圃一角",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Balcony Herb Garden Corner.png" }
     }
   ]
 }

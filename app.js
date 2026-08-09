@@ -48,6 +48,17 @@
   const multiExportSceneListEl = document.getElementById("multiExportSceneList");
   const multiExportBtn = document.getElementById("multiExportBtn");
   const multiExportProgressListEl = document.getElementById("multiExportProgressList");
+  const autoGenSectionHintEl = document.getElementById("autoGenSectionHint");
+  const autoGenerateBtn = document.getElementById("autoGenerateBtn");
+  const autoGenProgressListEl = document.getElementById("autoGenProgressList");
+  const autoGenOverlayEl = document.getElementById("autoGenOverlay");
+  const autoGenAnimalSelectEl = document.getElementById("autoGenAnimalSelect");
+  const autoGenBgSelectEl = document.getElementById("autoGenBgSelect");
+  const autoGenBgCountHintEl = document.getElementById("autoGenBgCountHint");
+  const autoGenSecondsEl = document.getElementById("autoGenSeconds");
+  const autoGenModalStatusEl = document.getElementById("autoGenModalStatus");
+  const autoGenCancelBtn = document.getElementById("autoGenCancelBtn");
+  const autoGenGoBtn = document.getElementById("autoGenGoBtn");
   const configStatusEl = document.getElementById("configStatus");
   const animalListEl = document.getElementById("animalList");
   const ornamentListEl = document.getElementById("ornamentList");
@@ -110,6 +121,9 @@
   let isExporting = false; // true while a video export is in flight (see setExportUIState)
   const MULTI_EXPORT_MAX = 4;
   let multiExportSelectedIds = new Set(); // scene ids checked in the batch-export checklist
+  let autoGenSelectedAnimalIds = new Set(); // animal ids checked in the auto-generate modal
+  let autoGenSelectedBgIds = new Set(); // scene ids checked in the auto-generate modal
+  const AUTO_GEN_MAX_BACKGROUNDS = MULTI_EXPORT_MAX; // same cap as Batch Export — each selected background spawns its own concurrent hidden export window
   // sceneId -> (frame, total) => void, registered only while that scene's
   // export is actually in flight — lets the single-export flow and any
   // number of concurrent batch-export scenes share one onExportProgress
@@ -136,7 +150,13 @@
     const def = animalDefFor(id) || {};
     const o = opts || {};
     return {
-      rotationFollowsPath: o.rotationFollowsPath !== undefined ? !!o.rotationFollowsPath : true,
+      // Most animals rotate to face the direction they're walking (a lizard
+      // walking north points "up"). A few move sideways relative to their
+      // own facing instead — e.g. a crab — so config can opt an animal out
+      // of that by default (per-scene saved paths can still override it via
+      // the editor's "Rotate to face path" toggle), same pattern as
+      // useWalkCycle below.
+      rotationFollowsPath: o.rotationFollowsPath !== undefined ? !!o.rotationFollowsPath : def.rotationFollowsPath !== false,
       flip: o.flip !== undefined ? !!o.flip : true,
       useWalkCycle: o.useWalkCycle !== undefined ? !!o.useWalkCycle : def.useWalkCycle !== false,
       bobbing: !!o.bobbing,
@@ -202,6 +222,7 @@
       seekEndBtn,
       ornamentShadowToggleEl,
       exportBtn,
+      autoGenerateBtn,
     ].forEach((el) => (el.disabled = exporting));
     setControlsEnabled(!exporting && !!editingAnimalId);
     renderAnimalList();
@@ -827,10 +848,8 @@
     { passive: false }
   );
 
-  // Native HTML5 drag-and-drop: dragstart is wired per-item in
-  // renderOrnamentList(); this pair on stagePad accepts the drop and
-  // converts the drop point from screen to canvas coordinates the same
-  // way click-to-add-waypoint does (see canvasCoordsFromEvent).
+  // Native HTML5 drag-and-drop for animals and ornaments. Drop coordinates
+  // use the same logical canvas space as click-to-add-waypoint.
   stagePad.addEventListener("dragover", (evt) => {
     evt.preventDefault();
     evt.dataTransfer.dropEffect = "copy";
@@ -839,6 +858,33 @@
   stagePad.addEventListener("drop", async (evt) => {
     evt.preventDefault();
     if (isExporting) return;
+
+    const animalId = evt.dataTransfer.getData("application/x-path-animator-animal");
+    if (animalId && animalDefFor(animalId)) {
+      const pos = clampOffScreen(canvasCoordsFromEvent(evt));
+      const startAtMs = Math.max(0, Number(scrub.value) || 0);
+
+      if (!activeAnimalIds.has(animalId)) {
+        await activateAnimal(animalId, undefined, undefined, startAtMs);
+      }
+
+      const entry = animalData.get(animalId);
+      if (!entry) return;
+      entry.startAtMs = startAtMs;
+      if (entry.path.length === 0) {
+        entry.path.push({ x: pos.x, y: pos.y, durationToNextMs: 1000 });
+      } else {
+        entry.path[0].x = pos.x;
+        entry.path[0].y = pos.y;
+      }
+
+      window.AnimEngine.setActorStartAtMs(animalId, startAtMs);
+      selectEditingAnimal(animalId);
+      afterPathStructureChange();
+      statusEl.textContent = `${animalDefFor(animalId).label || animalId} starts at ${(startAtMs / 1000).toFixed(1)}s.`;
+      return;
+    }
+
     const ornamentId = evt.dataTransfer.getData("text/plain");
     if (!ornamentId || !ornamentDefFor(ornamentId)) return;
     const pos = canvasCoordsFromEvent(evt);
@@ -1424,6 +1470,14 @@
       const name = document.createElement("span");
       name.className = "name";
       name.textContent = def.label || def.id;
+      name.draggable = !isExporting;
+      name.title = "Drag onto the video to place this animal at the current timeline time";
+      name.addEventListener("dragstart", (evt) => {
+        evt.stopPropagation();
+        evt.dataTransfer.setData("application/x-path-animator-animal", def.id);
+        evt.dataTransfer.setData("text/plain", def.id);
+        evt.dataTransfer.effectAllowed = "copy";
+      });
       row.appendChild(name);
 
       const startLabel = document.createElement("label");
@@ -1549,14 +1603,40 @@
     return res.json();
   }
 
+  // Scenes without a category (or an unrecognized one) fall into their own
+  // trailing group rather than being silently dropped, so a future scene
+  // added without a category still shows up somewhere.
+  const SCENE_CATEGORY_ORDER = [
+    { key: "outdoor", label: "Outdoor" },
+    { key: "indoor", label: "Indoor" },
+    { key: "floor", label: "Floor / Other" },
+  ];
+
   function populateSceneDropdown() {
     sceneSelect.innerHTML = "";
+    const byCategory = new Map(SCENE_CATEGORY_ORDER.map((c) => [c.key, []]));
+    const uncategorized = [];
     scenes.forEach((scene) => {
-      const opt = document.createElement("option");
-      opt.value = scene.id;
-      opt.textContent = scene.label || scene.id;
-      sceneSelect.appendChild(opt);
+      const bucket = byCategory.get(scene.category);
+      if (bucket) bucket.push(scene);
+      else uncategorized.push(scene);
     });
+
+    const appendGroup = (label, list) => {
+      if (list.length === 0) return;
+      const group = document.createElement("optgroup");
+      group.label = label;
+      list.forEach((scene) => {
+        const opt = document.createElement("option");
+        opt.value = scene.id;
+        opt.textContent = scene.label || scene.id;
+        group.appendChild(opt);
+      });
+      sceneSelect.appendChild(group);
+    };
+
+    SCENE_CATEGORY_ORDER.forEach(({ key, label }) => appendGroup(label, byCategory.get(key)));
+    appendGroup("Other", uncategorized);
   }
 
   // Checklist for the "Batch Export" feature: pick up to MULTI_EXPORT_MAX
@@ -1651,6 +1731,364 @@
     setTimeout(() => (configStatusEl.textContent = ""), 2500);
   });
 
+  // ---------------------------------------------------------------------
+  // Auto-Generate Video: builds a random walk-in/wander/walk-out path for
+  // each chosen animal on each chosen background, then saves + exports each
+  // background exactly like Batch Export does — just with a computer-
+  // generated layout instead of whatever's currently on the canvas.
+  // ---------------------------------------------------------------------
+
+  const AUTO_GEN_OFFSCREEN_MARGIN = 220; // how far past the canvas edge entry/exit points land — enough that the sprite is fully hidden, not just clipped at the edge
+  const AUTO_GEN_MIN_SEGMENT_MS = 600; // floor per leg so a short hop never reads as an instant jump
+  const AUTO_GEN_SPEED_MIN = 90; // px/sec
+  const AUTO_GEN_SPEED_MAX = 200; // px/sec
+  const AUTO_GEN_DWELL_MIN_MS = 1500; // how long the animal pauses at its on-screen stop — long enough to actually register on screen, not just flash past
+  const AUTO_GEN_DWELL_MAX_MS = 2600;
+  const AUTO_GEN_INTERIOR_PAD_FRACTION = 0.22; // keeps the dwell point well clear of the edges (not just technically on-canvas), so it isn't half-clipped by the frame
+
+  function randRange(min, max) {
+    return min + Math.random() * (max - min);
+  }
+
+  function pickRandomSide(excludeSide) {
+    const sides = ["left", "right", "top", "bottom"].filter((s) => s !== excludeSide);
+    return sides[Math.floor(Math.random() * sides.length)];
+  }
+
+  function randomEdgePoint(side, w, h, margin) {
+    switch (side) {
+      case "left":
+        return { x: -margin, y: randRange(0, h) };
+      case "right":
+        return { x: w + margin, y: randRange(0, h) };
+      case "top":
+        return { x: randRange(0, w), y: -margin };
+      default:
+        return { x: randRange(0, w), y: h + margin };
+    }
+  }
+
+  function randomInteriorPoint(w, h, pad) {
+    return { x: randRange(pad, w - pad), y: randRange(pad, h - pad) };
+  }
+
+  // Entry (off-screen) -> dwell (a clearly-on-screen point, visited twice in a
+  // row so the animal actually pauses there rather than just passing through
+  // it for a single instant) -> exit (off-screen). Durations are computed
+  // from distance at a random-but-constant speed, except the dwell itself,
+  // which uses a fixed range independent of distance — that's the segment
+  // that guarantees the animal is visible for a real stretch of time, not a
+  // blink. Entry/exit sides are randomized on every call, so calling this
+  // again — even for the same animal — produces a visibly different path
+  // (used to guarantee every background gets its own route).
+  function generateAutoWalkPath() {
+    const w = window.AnimEngine.CANVAS_WIDTH;
+    const h = window.AnimEngine.CANVAS_HEIGHT;
+    const entrySide = pickRandomSide();
+    const exitSide = Math.random() < 0.55 ? entrySide : pickRandomSide(entrySide);
+    const pad = Math.round(Math.min(w, h) * AUTO_GEN_INTERIOR_PAD_FRACTION);
+
+    const entry = randomEdgePoint(entrySide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
+    const dwell = randomInteriorPoint(w, h, pad);
+    const exit = randomEdgePoint(exitSide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
+
+    const speed = randRange(AUTO_GEN_SPEED_MIN, AUTO_GEN_SPEED_MAX);
+    const distIn = Math.hypot(dwell.x - entry.x, dwell.y - entry.y);
+    const distOut = Math.hypot(exit.x - dwell.x, exit.y - dwell.y);
+    const durIn = Math.max(AUTO_GEN_MIN_SEGMENT_MS, Math.round((distIn / speed) * 1000));
+    const durOut = Math.max(AUTO_GEN_MIN_SEGMENT_MS, Math.round((distOut / speed) * 1000));
+    const dwellMs = Math.round(randRange(AUTO_GEN_DWELL_MIN_MS, AUTO_GEN_DWELL_MAX_MS));
+
+    return { entry, dwell, exit, durIn, dwellMs, durOut };
+  }
+
+  // Fits a generateAutoWalkPath() shape into budgetMs, prioritizing the dwell
+  // segment — the only part of the path that's actually on screen — over the
+  // (mostly off-screen) entry/exit legs. A short video or a tight per-animal
+  // budget compresses the legs first, down to their own minimum floor, and
+  // only eats into the dwell itself once the legs can't shrink any further;
+  // this is what actually fixes animals being generated with a walk-through
+  // so brief it's easy to never see on screen at all.
+  function fitAutoWalkToBudget({ entry, dwell, exit, durIn, dwellMs, durOut }, budgetMs) {
+    const legFloor = AUTO_GEN_MIN_SEGMENT_MS;
+    const naturalTotal = durIn + dwellMs + durOut;
+    if (naturalTotal <= budgetMs) {
+      return { path: buildDwellPath(entry, dwell, exit, durIn, dwellMs, durOut), totalDurationMs: naturalTotal };
+    }
+
+    const legsBudget = Math.max(legFloor * 2, budgetMs - dwellMs);
+    const legsTotal = durIn + durOut;
+    const legsFactor = legsBudget / legsTotal;
+    let fitDurIn = Math.max(legFloor, Math.round(durIn * legsFactor));
+    let fitDurOut = Math.max(legFloor, Math.round(durOut * legsFactor));
+    let fitDwellMs = dwellMs;
+
+    // Even both legs at their floor plus the full dwell might still exceed a
+    // very tight budget (many animals crammed into a very short video) — as
+    // a last resort, shrink the dwell too, but never below a small floor so
+    // there's still *something* to see rather than nothing.
+    const remainingForDwell = budgetMs - fitDurIn - fitDurOut;
+    if (remainingForDwell < fitDwellMs) {
+      fitDwellMs = Math.max(400, remainingForDwell);
+    }
+
+    const path = buildDwellPath(entry, dwell, exit, fitDurIn, fitDwellMs, fitDurOut);
+    return { path, totalDurationMs: fitDurIn + fitDwellMs + fitDurOut };
+  }
+
+  function buildDwellPath(entry, dwell, exit, durIn, dwellMs, durOut) {
+    return [
+      { x: entry.x, y: entry.y, durationToNextMs: durIn },
+      { x: dwell.x, y: dwell.y, durationToNextMs: dwellMs },
+      { x: dwell.x, y: dwell.y, durationToNextMs: durOut },
+      { x: exit.x, y: exit.y, durationToNextMs: 0 },
+    ];
+  }
+
+  // Builds a full saved-layout object (same shape as buildLayoutData/what
+  // /api/path/:sceneId expects) for one background: every animal in
+  // animalIds gets its own random walk path, and start times are staggered
+  // across the timeline so animals don't all walk in at once.
+  //
+  // Each animal's *intended* start time is chosen first, independent of how
+  // long its path naturally takes — only then is its path fitted (if needed)
+  // to the time left before the video ends. Fitting every animal to the same
+  // shared cap would collapse all their start times to that cap whenever
+  // paths come out longer than the video (the common case for a short clip),
+  // defeating the stagger; computing the budget from each animal's own
+  // intended start avoids that, while still guaranteeing startAtMs + its
+  // path duration never exceeds totalMs — so every animal has always walked
+  // back off-screen by the end.
+  function buildAutoLayoutForScene(sceneId, animalIds, totalMs) {
+    const n = animalIds.length;
+    const shuffled = [...animalIds].sort(() => Math.random() - 0.5);
+    const animals = {};
+
+    shuffled.forEach((id, i) => {
+      const staggerBase = n > 1 ? (i / n) * totalMs * 0.5 : 0;
+      const jitter = randRange(0, totalMs * 0.12);
+      const desiredStart = staggerBase + jitter;
+      const buffer = totalMs * 0.03;
+      const budget = Math.max(totalMs * 0.25, totalMs - desiredStart - buffer);
+
+      const shape = generateAutoWalkPath();
+      const { path, totalDurationMs } = fitAutoWalkToBudget(shape, budget);
+
+      const maxStart = Math.max(0, totalMs - totalDurationMs);
+      const startAtMs = Math.round(Math.min(maxStart, desiredStart));
+      animals[id] = { path, options: normalizeOptions(id, {}), startAtMs };
+    });
+
+    return { sceneId, activeAnimals: shuffled, animals, placedOrnaments: [] };
+  }
+
+  function renderAutoGenAnimalList() {
+    autoGenAnimalSelectEl.innerHTML = "";
+    animalDefs.forEach((def) => {
+      const opt = document.createElement("option");
+      opt.value = def.id;
+      opt.textContent = def.label || def.id;
+      opt.selected = autoGenSelectedAnimalIds.has(def.id);
+      autoGenAnimalSelectEl.appendChild(opt);
+    });
+  }
+
+  // <select multiple> for which backgrounds to generate videos for, capped
+  // at AUTO_GEN_MAX_BACKGROUNDS for the same reason as Batch Export's own
+  // checklist (renderMultiExportSceneList) — each selected background spawns
+  // its own concurrent hidden export window. A native multi-select has no
+  // per-option "disabled once at cap" affordance the way checkboxes did, so
+  // the cap is enforced after the fact: if a change event leaves more than
+  // the cap selected, the newest picks beyond the cap are deselected again.
+  function renderAutoGenBgList() {
+    autoGenBgSelectEl.innerHTML = "";
+    scenes.forEach((scene) => {
+      const opt = document.createElement("option");
+      opt.value = scene.id;
+      opt.textContent = scene.label || scene.id;
+      opt.selected = autoGenSelectedBgIds.has(scene.id);
+      autoGenBgSelectEl.appendChild(opt);
+    });
+    updateAutoGenBgHint();
+  }
+
+  function updateAutoGenBgHint() {
+    const count = autoGenBgSelectEl.selectedOptions.length;
+    autoGenBgCountHintEl.textContent = `${count}/${AUTO_GEN_MAX_BACKGROUNDS} selected — each becomes its own video.`;
+  }
+
+  autoGenBgSelectEl.addEventListener("change", () => {
+    const selected = [...autoGenBgSelectEl.selectedOptions];
+    if (selected.length > AUTO_GEN_MAX_BACKGROUNDS) {
+      const newlySelected = selected.filter((opt) => !autoGenSelectedBgIds.has(opt.value));
+      let overflow = selected.length - AUTO_GEN_MAX_BACKGROUNDS;
+      // Deselect the most recently added picks first (falling back to the
+      // tail of the whole selection if everything was already selected
+      // before this change, e.g. a shift-click range spanning past the cap).
+      for (const opt of newlySelected.length > 0 ? newlySelected : [...selected].reverse()) {
+        if (overflow <= 0) break;
+        opt.selected = false;
+        overflow--;
+      }
+    }
+    autoGenSelectedBgIds = new Set([...autoGenBgSelectEl.selectedOptions].map((o) => o.value));
+    updateAutoGenBgHint();
+  });
+
+  function renderAutoGenProgressList(sceneIds) {
+    autoGenProgressListEl.innerHTML = "";
+    sceneIds.forEach((sceneId) => {
+      const scene = scenes.find((s) => s.id === sceneId);
+      const row = document.createElement("div");
+      row.className = "scene-progress-row";
+
+      const label = document.createElement("span");
+      label.textContent = scene ? scene.label || scene.id : sceneId;
+      row.appendChild(label);
+
+      const status = document.createElement("span");
+      status.className = "scene-progress-status";
+      status.id = `autoGenStatus-${sceneId}`;
+      status.textContent = "Queued…";
+      row.appendChild(status);
+
+      autoGenProgressListEl.appendChild(row);
+    });
+  }
+
+  function setAutoGenRowStatus(sceneId, text, kind) {
+    const el = document.getElementById(`autoGenStatus-${sceneId}`);
+    if (!el) return;
+    el.textContent = text;
+    el.className = "scene-progress-status" + (kind ? ` ${kind}` : "");
+  }
+
+  // The plain browser dev workflow (npm start, no window.electronAPI) has no
+  // way to spawn ffmpeg/a headless capture window, so it can generate and
+  // save each background's random layout (exactly like Save Path) but can't
+  // render an actual video file — only the Electron app/packaged exe can go
+  // all the way through to export. Both flows share every other step (path
+  // generation, per-scene checklist, progress rows), just not the final
+  // render call.
+  if (!window.electronAPI) {
+    autoGenSectionHintEl.textContent =
+      "Pick animals, which backgrounds, and a length in seconds. Each animal automatically walks " +
+      "in from off-screen, wanders, and walks back off before the video ends, and every selected " +
+      "background gets its own random path. This saves the generated layout for each background " +
+      "(like Save Path) — open the desktop app or the packaged .exe to actually render the videos.";
+  }
+
+  autoGenerateBtn.addEventListener("click", () => {
+    if (isExporting) return;
+    autoGenSelectedAnimalIds = new Set(
+      activeAnimalIds.size > 0 ? activeAnimalIds : [animalDefs[0] && animalDefs[0].id].filter(Boolean)
+    );
+    renderAutoGenAnimalList();
+    autoGenSelectedBgIds = new Set(
+      currentScene ? [currentScene.id] : [scenes[0] && scenes[0].id].filter(Boolean)
+    );
+    renderAutoGenBgList();
+    autoGenGoBtn.textContent = window.electronAPI ? "Generate & Export" : "Generate & Save Paths";
+    autoGenModalStatusEl.textContent = "";
+    autoGenProgressListEl.innerHTML = "";
+    autoGenOverlayEl.hidden = false;
+  });
+
+  autoGenCancelBtn.addEventListener("click", () => {
+    autoGenOverlayEl.hidden = true;
+  });
+
+  autoGenGoBtn.addEventListener("click", async () => {
+    const selectedAnimalIds = [...autoGenAnimalSelectEl.selectedOptions].map((o) => o.value);
+    if (selectedAnimalIds.length === 0) {
+      autoGenModalStatusEl.textContent = "Pick at least one animal.";
+      return;
+    }
+    const sceneIds = [...autoGenBgSelectEl.selectedOptions].map((o) => o.value);
+    if (sceneIds.length === 0) {
+      autoGenModalStatusEl.textContent = "Pick at least one background.";
+      return;
+    }
+
+    const seconds = Math.max(3, Math.min(120, Number(autoGenSecondsEl.value) || 8));
+    const totalMs = seconds * 1000;
+    const canExport = !!window.electronAPI;
+
+    const confirmed = await confirmDialog(
+      canExport
+        ? `This generates and overwrites the saved layout for ${sceneIds.length} background(s), then exports ` +
+          `${sceneIds.length} video(s) at ${seconds}s each. Continue?`
+        : `This generates and overwrites the saved layout for ${sceneIds.length} background(s) at ${seconds}s ` +
+          `each. No video file is produced here — open the desktop app to render them. Continue?`
+    );
+    if (!confirmed) return;
+
+    autoGenOverlayEl.hidden = true;
+    setExportUIState(true);
+    renderAutoGenProgressList(sceneIds);
+
+    // A 1-based position appended to the output filename (see
+    // electronExport.js's exportScene) whenever more than one background is
+    // being generated in this batch — keeps every video in a multi-
+    // background run distinctly named (and visibly grouped) even though
+    // they share the same timestamp, instead of relying on the timestamp's
+    // 1-second resolution alone.
+    function sequenceFor(i) {
+      return sceneIds.length > 1 ? i + 1 : undefined;
+    }
+
+    async function generateAndSaveOne(sceneId, i) {
+      setAutoGenRowStatus(sceneId, "Generating path…", "info");
+      const layout = buildAutoLayoutForScene(sceneId, selectedAnimalIds, totalMs);
+
+      setAutoGenRowStatus(sceneId, "Saving…", "info");
+      const saveRes = await fetch(`/api/path/${sceneId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(layout),
+      });
+      if (!saveRes.ok) throw new Error(`Save failed (HTTP ${saveRes.status})`);
+
+      if (!canExport) {
+        setAutoGenRowStatus(sceneId, "Saved.", "done");
+        return { saved: true };
+      }
+
+      setAutoGenRowStatus(sceneId, "Starting export…", "info");
+      exportProgressRoutes.set(sceneId, (frame, total) => {
+        setAutoGenRowStatus(sceneId, `Rendering frame ${frame}/${total}…`, "info");
+      });
+      try {
+        const result = await window.electronAPI.exportScene(sceneId, { gif: false, sequence: sequenceFor(i) });
+        setAutoGenRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
+        return result;
+      } finally {
+        exportProgressRoutes.delete(sceneId);
+      }
+    }
+
+    const results = await Promise.allSettled(sceneIds.map(generateAndSaveOne));
+
+    results.forEach((r, i) => {
+      if (r.status === "rejected") {
+        setAutoGenRowStatus(sceneIds[i], "Failed: " + (r.reason?.message || String(r.reason)), "error");
+      }
+    });
+
+    const failCount = results.filter((r) => r.status === "rejected").length;
+    const summaryEl = document.createElement("p");
+    summaryEl.className = "status";
+    summaryEl.textContent =
+      failCount === 0
+        ? canExport
+          ? `All ${sceneIds.length} video(s) generated successfully.`
+          : `Saved layout for all ${sceneIds.length} background(s). Open the desktop app to render them.`
+        : `${sceneIds.length - failCount}/${sceneIds.length} succeeded, ${failCount} failed.`;
+    autoGenProgressListEl.appendChild(summaryEl);
+
+    setExportUIState(false);
+  });
+
   async function init() {
     const config = await fetchConfig();
     scenes = config.scenes || [];
@@ -1734,7 +2172,14 @@
       // (setExportUIState(true) above), so this can't drift mid-batch.
       const layoutSnapshot = buildLayoutData();
 
-      async function saveAndExportOne(sceneId) {
+      // Same reasoning as Generate Video's sequenceFor: keeps a multi-scene
+      // batch's output filenames distinctly numbered instead of relying
+      // solely on the timestamp's 1-second resolution.
+      function sequenceFor(i) {
+        return sceneIds.length > 1 ? i + 1 : undefined;
+      }
+
+      async function saveAndExportOne(sceneId, i) {
         setMultiExportRowStatus(sceneId, "Saving…", "info");
         const saveRes = await fetch(`/api/path/${sceneId}`, {
           method: "POST",
@@ -1748,7 +2193,7 @@
           setMultiExportRowStatus(sceneId, `Rendering frame ${frame}/${total}…`, "info");
         });
         try {
-          const result = await window.electronAPI.exportScene(sceneId, { gif: false });
+          const result = await window.electronAPI.exportScene(sceneId, { gif: false, sequence: sequenceFor(i) });
           setMultiExportRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
           return result;
         } finally {

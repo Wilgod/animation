@@ -138,7 +138,8 @@ button:hover {
   margin: 10px 0;
 }
 
-.scrub-label input {
+.scrub-label input,
+.scrub-label .animal-list {
   flex-basis: 100%;
 }
 
@@ -158,7 +159,8 @@ button:hover {
 }
 
 .scrub-label input,
-.scrub-label select {
+.scrub-label select,
+.scrub-label .animal-list {
   width: 100%;
 }
 
@@ -201,6 +203,16 @@ button:hover {
   margin: 8px 0 14px;
 }
 
+/* The sidebar's own animal checklist (as opposed to the auto-gen modal's,
+   which scopes its own max-height separately) — with enough animals this
+   would otherwise push the rest of the sidebar (waypoints, export, etc.)
+   far down the page instead of scrolling in place. */
+#animalList {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
 .animal-row {
   display: flex;
   align-items: center;
@@ -224,6 +236,12 @@ button:hover {
 
 .animal-row .name {
   flex: 1;
+  cursor: grab;
+  user-select: none;
+}
+
+.animal-row .name:active {
+  cursor: grabbing;
 }
 
 .animal-row .start-at {
@@ -408,6 +426,16 @@ body.export-mode #stage {
   z-index: 1000;
 }
 
+/* #modalOverlay (the generic confirm/prompt popup) can be triggered while
+   another modal — e.g. #autoGenOverlay — is still open behind it (its
+   confirmDialog() call runs before that overlay is hidden, so a Cancel can
+   return to it). Equal z-index would leave the later-in-DOM #autoGenOverlay
+   painting on top since both are 1000; this keeps the confirm popup always
+   on top regardless of DOM order. */
+#modalOverlay {
+  z-index: 1100;
+}
+
 /* [hidden]'s default `display: none` and this class's own `display` have
    equal CSS specificity, so without this the class rule below would win the
    cascade and the overlay would render even while `hidden` — as it did,
@@ -446,4 +474,39 @@ body.export-mode #stage {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.autogen-box {
+  width: 80%;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.multi-select {
+  background: #141517;
+  color: #eee;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 4px;
+  font-size: 13px;
+}
+
+.multi-select option {
+  padding: 4px 6px;
+  border-radius: 3px;
+}
+
+.multi-select option:checked {
+  background: #2a6f99;
+  color: #fff;
+}
+
+.autogen-box input[type="number"] {
+  width: 100%;
+  padding: 6px 8px;
+  background: #141517;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #eee;
+  font-size: 13px;
 }

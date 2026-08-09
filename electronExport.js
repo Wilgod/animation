@@ -293,7 +293,14 @@ function timestampSuffix() {
 // outputDir: where the final video/gif should be written
 // gif: also produce a palette-optimized GIF alongside the MP4
 // onProgress(frame, total): optional per-frame progress callback
-async function exportScene({ port, sceneId, outputDir, gif = false, onProgress }) {
+// sequence: optional 1-based position within a multi-background batch (Batch
+// Export / Generate Video's "N" selected backgrounds) — appended to the
+// filename alongside the timestamp so a batch's videos are visibly grouped
+// and, since timestampSuffix() only has 1-second resolution, still guaranteed
+// distinct filenames even if two exports in the same batch land in the same
+// second (same-scene reruns without a sequence would otherwise risk
+// overwriting each other).
+async function exportScene({ port, sceneId, outputDir, gif = false, onProgress, sequence }) {
   const framesDir = fs.mkdtempSync(path.join(os.tmpdir(), "pathanim-frames-"));
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -301,12 +308,13 @@ async function exportScene({ port, sceneId, outputDir, gif = false, onProgress }
     const { frameCount, audioPath } = await captureFrames({ port, sceneId, framesDir, onProgress });
 
     const stamp = timestampSuffix();
-    const outputFile = path.join(outputDir, `${sceneId}-${stamp}.mp4`);
+    const seqSuffix = sequence != null ? `-${sequence}` : "";
+    const outputFile = path.join(outputDir, `${sceneId}-${stamp}${seqSuffix}.mp4`);
     await encodeVideo(framesDir, outputFile, audioPath);
 
     let outputGif = null;
     if (gif) {
-      outputGif = path.join(outputDir, `${sceneId}-${stamp}.gif`);
+      outputGif = path.join(outputDir, `${sceneId}-${stamp}${seqSuffix}.gif`);
       await encodeGif(framesDir, outputGif);
     }
 
