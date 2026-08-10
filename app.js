@@ -88,7 +88,7 @@
 
   const TIMELINE_RULER_H = 16;
   const TIMELINE_LANE_H = 20;
-  const ANIMAL_COLORS = { blue: "#4aa3ff", green: "#3ecf6a", red: "#ff5a5a" };
+  const ANIMAL_COLORS = { yellow: "#f2c94c", green: "#3ecf6a", red: "#ff5a5a" };
   const ANIMAL_COLOR_FALLBACK = ["#c98bff", "#ffb648", "#4ad9c9", "#ff8bcb"];
 
   function colorForAnimal(id) {
@@ -108,6 +108,7 @@
   let ornamentDefs = [];
   let templateNames = [];
   let currentScene = null;
+  let currentSceneZones = { bands: [], patches: [] }; // this scene's habitat regions — see scripts/lib/zones.js
   let assetCacheBust = Date.now();
   let spriteCache = new Map(); // animalId -> { lizardImage, walkFrames, rotationOffsetRad, strideLengthPx }
   let ornamentSpriteCache = new Map(); // ornamentId -> HTMLImageElement
@@ -144,6 +145,38 @@
 
   function ornamentDefFor(id) {
     return ornamentDefs.find((o) => o.id === id);
+  }
+
+  function habitatFor(animalId) {
+    const def = animalDefFor(animalId);
+    return (def && def.habitat) || "ground";
+  }
+
+  // Fetches the habitat region map written by prepare-assets.js for a scene
+  // (assets/<sceneId>/zones.json). Missing/unreadable is treated as an
+  // all-ground scene (no bands/patches) rather than an error, so a scene
+  // built before this feature existed still behaves exactly as before.
+  async function fetchSceneZones(sceneId) {
+    try {
+      const res = await fetch(`assets/${sceneId}/zones.json?v=${assetCacheBust}`);
+      if (res.ok) return await res.json();
+    } catch (err) {
+      // fall through to the all-ground default below
+    }
+    return { bands: [], patches: [] };
+  }
+
+  function isHabitatAvailableInScene(habitat, zones) {
+    return window.SceneZones.hasZone(zones, habitat, window.AnimEngine.CANVAS_WIDTH, window.AnimEngine.CANVAS_HEIGHT);
+  }
+
+  function isPointAllowedForAnimal(animalId, x, y) {
+    return window.SceneZones.zoneAt(currentSceneZones, x, y) === habitatFor(animalId);
+  }
+
+  function habitatBlockedMessage(animalId) {
+    const def = animalDefFor(animalId);
+    return `${(def && (def.label || def.id)) || animalId} needs a "${habitatFor(animalId)}" area — can't place it there.`;
   }
 
   function normalizeOptions(id, opts) {
@@ -732,6 +765,10 @@
     if (hit >= 0) {
       draggingIndex = hit;
     } else {
+      if (!isPointAllowedForAnimal(editingAnimalId, pos.x, pos.y)) {
+        statusEl.textContent = habitatBlockedMessage(editingAnimalId);
+        return;
+      }
       path.push({ x: pos.x, y: pos.y, durationToNextMs: 1000 });
       draggingIndex = path.length - 1;
       afterPathStructureChange();
@@ -782,6 +819,10 @@
 
     if (draggingIndex < 0) return;
     const pos = clampOffScreen(canvasCoordsFromEvent(evt));
+    if (!isPointAllowedForAnimal(editingAnimalId, pos.x, pos.y)) {
+      statusEl.textContent = habitatBlockedMessage(editingAnimalId);
+      return; // leave the waypoint at its last valid position
+    }
     path[draggingIndex].x = pos.x;
     path[draggingIndex].y = pos.y;
     syncEngine();
@@ -862,6 +903,10 @@
     const animalId = evt.dataTransfer.getData("application/x-path-animator-animal");
     if (animalId && animalDefFor(animalId)) {
       const pos = clampOffScreen(canvasCoordsFromEvent(evt));
+      if (!isPointAllowedForAnimal(animalId, pos.x, pos.y)) {
+        statusEl.textContent = habitatBlockedMessage(animalId);
+        return;
+      }
       const startAtMs = Math.max(0, Number(scrub.value) || 0);
 
       if (!activeAnimalIds.has(animalId)) {
@@ -1204,9 +1249,10 @@
       { length: frameCount },
       (_, i) => `${base}/walk_frames/frame_${String(i).padStart(2, "0")}.png?v=${assetCacheBust}`
     );
-    const [lizardImage, walkFrames] = await Promise.all([
+    const [lizardImage, walkFrames, rig] = await Promise.all([
       loadImage(`${base}/animal.png?v=${assetCacheBust}`),
       Promise.all(walkFramePaths.map((p) => loadImage(p))).catch(() => []),
+      def && def.rig ? ensureActorRig(id, def, base) : Promise.resolve(null),
     ]);
     const rotationOffsetRad = ((def && def.rotationOffsetDeg) || 0) * (Math.PI / 180);
     const entry = {
@@ -1219,9 +1265,62 @@
       // it shares that frame's own (non-horizontal) neutral orientation.
       staticRotationOffsetRad: def && def.source ? 0 : rotationOffsetRad,
       strideLengthPx: (def && def.strideLengthPx) || 140,
+      rig,
     };
     spriteCache.set(id, entry);
     return entry;
+  }
+
+  // Loads a layered cutout rig's geometry (assets/_animals/<id>/rig/rig.json
+  // + its layer PNGs, built by prepare-assets.js's buildRig) and merges in
+  // this animal's *live* motion tuning straight from scenes.json (restAngle/
+  // swingAmplitude/swingPhaseOffset/drawOrder, config/scenes.json's
+  // animal.rig.limbs) rather than from anything baked into rig.json — so
+  // retuning a swing amplitude is a JSON edit + reload, not an asset rebuild.
+  // Returns null (falling back to walk-cycle frames) if the rig assets
+  // haven't been built yet for this animal.
+  async function ensureActorRig(id, def, base) {
+    const rigDef = def.rig;
+    try {
+      const manifest = await fetch(`${base}/rig/rig.json?v=${assetCacheBust}`).then((res) => {
+        if (!res.ok) throw new Error(`rig manifest HTTP ${res.status}`);
+        return res.json();
+      });
+      const tuningByName = new Map((rigDef.limbs || []).map((l) => [l.name, l]));
+      const [bodyImage, ...limbImages] = await Promise.all([
+        loadImage(`${base}/rig/${manifest.body.file}?v=${assetCacheBust}`),
+        ...manifest.limbs.map((l) => loadImage(`${base}/rig/${l.file}?v=${assetCacheBust}`)),
+      ]);
+      const limbs = manifest.limbs.map((l, i) => {
+        const tuning = tuningByName.get(l.name) || {};
+        return {
+          name: l.name,
+          image: limbImages[i],
+          anchorOffset: l.anchorOffset,
+          pivotLocal: l.pivotLocal,
+          restAngleRad: ((tuning.restAngleDeg || 0) * Math.PI) / 180,
+          swingAmplitudeRad: ((tuning.swingAmplitudeDeg || 0) * Math.PI) / 180,
+          swingPhaseOffset: tuning.swingPhaseOffset || 0,
+          drawOrder: tuning.drawOrder || "front",
+        };
+      });
+      return {
+        bodyImage,
+        bodyDrawOffset: manifest.body.drawOffset,
+        strideLengthPx: (rigDef.gait && rigDef.gait.strideLengthPx) || 140,
+        // Rig layers are cut from the static "source" photo (neutrally
+        // horizontal — same convention as staticRotationOffsetRad above),
+        // which is commonly a different neutral orientation than the
+        // separately-authored walk-cycle motion-grid sheet, so this isn't
+        // necessarily the same as rotationOffsetDeg. Override per-animal via
+        // rig.rotationOffsetDeg if a rig's own source art needs it.
+        rotationOffsetRad: ((rigDef.rotationOffsetDeg || 0) * Math.PI) / 180,
+        limbs,
+      };
+    } catch (err) {
+      console.error(`Animal "${id}": failed to load rig assets, falling back to walk-cycle frames.`, err);
+      return null;
+    }
   }
 
   // Ornament artwork depends only on the ornament def, not the scene, so
@@ -1349,6 +1448,7 @@
       staticRotationOffsetRad: sprite.staticRotationOffsetRad,
       strideLengthPx: sprite.strideLengthPx,
     });
+    window.AnimEngine.setActorRig(id, sprite.rig);
     ensureActorAudio(id);
     const entry = animalData.get(id);
     window.AnimEngine.setActorPath(id, entry.path);
@@ -1459,10 +1559,13 @@
       const row = document.createElement("div");
       row.className = "animal-row" + (def.id === editingAnimalId ? " editing" : "");
 
+      const habitat = def.habitat || "ground";
+      const available = isHabitatAvailableInScene(habitat, currentSceneZones) || activeAnimalIds.has(def.id);
+
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = activeAnimalIds.has(def.id);
-      checkbox.disabled = isExporting;
+      checkbox.disabled = isExporting || !available;
       checkbox.addEventListener("click", (evt) => evt.stopPropagation());
       checkbox.addEventListener("change", () => toggleAnimalActive(def.id, checkbox.checked));
       row.appendChild(checkbox);
@@ -1470,8 +1573,10 @@
       const name = document.createElement("span");
       name.className = "name";
       name.textContent = def.label || def.id;
-      name.draggable = !isExporting;
-      name.title = "Drag onto the video to place this animal at the current timeline time";
+      name.draggable = !isExporting && available;
+      name.title = available
+        ? "Drag onto the video to place this animal at the current timeline time"
+        : `${def.label || def.id} needs a "${habitat}" area, which this scene doesn't have.`;
       name.addEventListener("dragstart", (evt) => {
         evt.stopPropagation();
         evt.dataTransfer.setData("application/x-path-animator-animal", def.id);
@@ -1588,11 +1693,20 @@
     // <img src> re-fetch could otherwise show stale cached image bytes.
     const bgImage = await loadImage(`assets/${scene.id}/background.jpg?v=${assetCacheBust}`);
     window.AnimEngine.setContext(ctx, bgImage);
+    currentSceneZones = await fetchSceneZones(scene.id);
+
+    window.AnimEngine.clearScrollLayers();
+    for (const band of currentSceneZones.bands || []) {
+      if (!band.cloud) continue;
+      const cloudImage = await loadImage(`assets/${scene.id}/${band.cloud.image}?v=${assetCacheBust}`);
+      window.AnimEngine.setScrollLayer(band.zone, cloudImage, band.y0, band.y1, band.cloud.scrollPxPerSec);
+    }
 
     if (!isExportMode) localStorage.setItem(LAST_SCENE_STORAGE_KEY, scene.id);
 
     draggingIndex = -1;
     if (loadSavedLayout) await loadSavedPathsForScene();
+    renderAnimalList(); // habitat availability (currentSceneZones) and/or active set just changed
     scrub.value = "0";
     renderEditorFrame(0);
     updateTimeLabel();
@@ -1772,25 +1886,52 @@
     return { x: randRange(pad, w - pad), y: randRange(pad, h - pad) };
   }
 
-  // Entry (off-screen) -> dwell (a clearly-on-screen point, visited twice in a
-  // row so the animal actually pauses there rather than just passing through
-  // it for a single instant) -> exit (off-screen). Durations are computed
-  // from distance at a random-but-constant speed, except the dwell itself,
-  // which uses a fixed range independent of distance — that's the segment
-  // that guarantees the animal is visible for a real stretch of time, not a
-  // blink. Entry/exit sides are randomized on every call, so calling this
-  // again — even for the same animal — produces a visibly different path
-  // (used to guarantee every background gets its own route).
-  function generateAutoWalkPath() {
+  // Ground's dwell point additionally avoids landing inside another zone
+  // (e.g. a sky band or a water patch) that happens to overlap the padded
+  // interior rectangle — rejection-sampled against the real zone map rather
+  // than just the rectangle, since "ground" has no rect of its own (it's
+  // whatever isn't claimed by another zone). Falls back to the plain
+  // interior point if the scene is unusually zone-dense.
+  function randomGroundDwellPoint(zones, w, h, pad) {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const p = randomInteriorPoint(w, h, pad);
+      if (window.SceneZones.zoneAt(zones, p.x, p.y) === "ground") return p;
+    }
+    return randomInteriorPoint(w, h, pad);
+  }
+
+  // Entry -> dwell (a clearly-on-screen point, visited twice in a row so the
+  // animal actually pauses there rather than just passing through it for a
+  // single instant) -> exit. Durations are computed from distance at a
+  // random-but-constant speed, except the dwell itself, which uses a fixed
+  // range independent of distance — that's the segment that guarantees the
+  // animal is visible for a real stretch of time, not a blink.
+  //
+  // "ground" animals enter/exit from off-screen edges of the whole canvas,
+  // same as before this habitat system existed. Animals confined to a
+  // specific zone (e.g. a goldfish's water patch, a bird's sky band) instead
+  // stay entirely within that zone's rect for the whole path — there's no
+  // "off-screen" for a fish the way there is for something that can walk in
+  // from outside the frame. Either way, calling this again — even for the
+  // same animal — produces a visibly different path (used to guarantee every
+  // background gets its own route).
+  function generateAutoWalkPath(habitat, zones) {
     const w = window.AnimEngine.CANVAS_WIDTH;
     const h = window.AnimEngine.CANVAS_HEIGHT;
-    const entrySide = pickRandomSide();
-    const exitSide = Math.random() < 0.55 ? entrySide : pickRandomSide(entrySide);
-    const pad = Math.round(Math.min(w, h) * AUTO_GEN_INTERIOR_PAD_FRACTION);
 
-    const entry = randomEdgePoint(entrySide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
-    const dwell = randomInteriorPoint(w, h, pad);
-    const exit = randomEdgePoint(exitSide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
+    let entry, dwell, exit;
+    if (habitat === "ground") {
+      const entrySide = pickRandomSide();
+      const exitSide = Math.random() < 0.55 ? entrySide : pickRandomSide(entrySide);
+      const pad = Math.round(Math.min(w, h) * AUTO_GEN_INTERIOR_PAD_FRACTION);
+      entry = randomEdgePoint(entrySide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
+      dwell = randomGroundDwellPoint(zones, w, h, pad);
+      exit = randomEdgePoint(exitSide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
+    } else {
+      entry = window.SceneZones.sampleZonePoint(zones, habitat, w, h);
+      dwell = window.SceneZones.sampleZonePoint(zones, habitat, w, h);
+      exit = window.SceneZones.sampleZonePoint(zones, habitat, w, h);
+    }
 
     const speed = randRange(AUTO_GEN_SPEED_MIN, AUTO_GEN_SPEED_MAX);
     const distIn = Math.hypot(dwell.x - entry.x, dwell.y - entry.y);
@@ -1859,9 +2000,16 @@
   // intended start avoids that, while still guaranteeing startAtMs + its
   // path duration never exceeds totalMs — so every animal has always walked
   // back off-screen by the end.
-  function buildAutoLayoutForScene(sceneId, animalIds, totalMs) {
-    const n = animalIds.length;
-    const shuffled = [...animalIds].sort(() => Math.random() - 0.5);
+  // `zones` is this scene's own habitat region map (fetched by the caller
+  // via fetchSceneZones, since a batch run can target several different
+  // backgrounds — each needs its own zones, not whatever's currently
+  // loaded). Animals whose habitat has nowhere to go in this scene (e.g. a
+  // goldfish selected for a scene with no water patch) are silently dropped
+  // rather than generated somewhere wrong.
+  function buildAutoLayoutForScene(sceneId, animalIds, totalMs, zones) {
+    const eligibleIds = animalIds.filter((id) => isHabitatAvailableInScene(habitatFor(id), zones));
+    const n = eligibleIds.length;
+    const shuffled = [...eligibleIds].sort(() => Math.random() - 0.5);
     const animals = {};
 
     shuffled.forEach((id, i) => {
@@ -1871,7 +2019,7 @@
       const buffer = totalMs * 0.03;
       const budget = Math.max(totalMs * 0.25, totalMs - desiredStart - buffer);
 
-      const shape = generateAutoWalkPath();
+      const shape = generateAutoWalkPath(habitatFor(id), zones);
       const { path, totalDurationMs } = fitAutoWalkToBudget(shape, budget);
 
       const maxStart = Math.max(0, totalMs - totalDurationMs);
@@ -2039,7 +2187,8 @@
 
     async function generateAndSaveOne(sceneId, i) {
       setAutoGenRowStatus(sceneId, "Generating path…", "info");
-      const layout = buildAutoLayoutForScene(sceneId, selectedAnimalIds, totalMs);
+      const zones = await fetchSceneZones(sceneId);
+      const layout = buildAutoLayoutForScene(sceneId, selectedAnimalIds, totalMs, zones);
 
       setAutoGenRowStatus(sceneId, "Saving…", "info");
       const saveRes = await fetch(`/api/path/${sceneId}`, {

@@ -1,12 +1,13 @@
 {
   "defaultAnimal": {
     "rotationOffsetDeg": 90,
-    "strideLengthPx": 140
+    "strideLengthPx": 140,
+    "habitat": "ground"
   },
 
   "animals": [
     {
-      "id": "blue",
+      "id": "yellow",
       "label": "黃蜥蜴",
       "source": "image/animal/small Lizard.png",
       "motionGrid": {
@@ -14,7 +15,51 @@
         "cols": 4,
         "rows": 2
       },
-      "walkSound": { "source": "audio/yellow-lizard-walk.mp3", "volume": 1.0 }
+      "walkSound": { "source": "audio/yellow-lizard-walk.mp3", "volume": 1.0 },
+      "rig": {
+        "sourceDir": "image/animal/yellow-lizard-rig",
+        "bodyLayer": "body.png",
+        "anchor": { "x": 500, "y": 188 },
+        "limbs": [
+          {
+            "name": "front-left-leg",
+            "layer": "front-left-leg.png",
+            "pivot": { "x": 604, "y": 144 },
+            "restAngleDeg": 20,
+            "swingAmplitudeDeg": 20,
+            "swingPhaseOffset": 0.5,
+            "drawOrder": "front"
+          },
+          {
+            "name": "front-right-leg",
+            "layer": "front-right-leg.png",
+            "pivot": { "x": 600, "y": 238 },
+            "restAngleDeg": 18,
+            "swingAmplitudeDeg": 18,
+            "swingPhaseOffset": 0,
+            "drawOrder": "front"
+          },
+          {
+            "name": "back-left-leg",
+            "layer": "back-left-leg.png",
+            "pivot": { "x": 482, "y": 143 },
+            "restAngleDeg": -20,
+            "swingAmplitudeDeg": 20,
+            "swingPhaseOffset": 0,
+            "drawOrder": "front"
+          },
+          {
+            "name": "back-right-leg",
+            "layer": "back-right-leg.png",
+            "pivot": { "x": 480, "y": 238 },
+            "restAngleDeg": -18,
+            "swingAmplitudeDeg": 18,
+            "swingPhaseOffset": 0.5,
+            "drawOrder": "front"
+          }
+        ],
+        "gait": { "strideLengthPx": 140 }
+      }
     },
     {
       "id": "green",
@@ -74,6 +119,7 @@
     {
       "id": "butterfly",
       "label": "蝴蝶",
+      "habitat": "air",
       "rotationOffsetDeg": 25,
       "motionGrid": {
         "source": "image/animal/Butterfly.png",
@@ -85,6 +131,7 @@
     {
       "id": "sparrow",
       "label": "麻雀",
+      "habitat": "air",
       "rotationOffsetDeg": 0,
       "motionGrid": {
         "source": "image/animal/Sparrow-Flying.png",
@@ -107,6 +154,7 @@
     {
       "id": "bee",
       "label": "蜜蜂",
+      "habitat": "air",
       "rotationOffsetDeg": 0,
       "motionGrid": {
         "source": "image/animal/bee-fly.png",
@@ -130,6 +178,7 @@
     {
       "id": "pigeon-flying",
       "label": "飛行鴿子",
+      "habitat": "air",
       "rotationOffsetDeg": 0,
       "motionGrid": {
         "source": "image/animal/Pigeon-fly.png",
@@ -163,6 +212,7 @@
     {
       "id": "cicada",
       "label": "蟬",
+      "habitat": "air",
       "rotationOffsetDeg": 0,
       "motionGrid": {
         "source": "image/animal/cycle-fly.png",
@@ -174,6 +224,7 @@
     {
       "id": "goldfish",
       "label": "金魚",
+      "habitat": "water",
       "rotationOffsetDeg": 0,
       "motionGrid": {
         "source": "image/animal/goldfish-swim.png",
@@ -203,6 +254,13 @@
     { "id": "books", "label": "書籍", "source": "image/ornaments/Stacked Books.png" },
     { "id": "camera", "label": "相機", "source": "image/ornaments/Vintage Camera.png" },
     { "id": "lamp", "label": "檯燈", "source": "image/ornaments/Vintage Table Lamp.png" }
+  ],
+
+  "elements": [
+    { "id": "grass-base", "label": "草坪綠地面（底層）", "source": "image/backgroud/Garden Lawn Grass Ground.png" },
+    { "id": "sky-placeholder", "label": "天空佔位圖（待替換為真實天空素材）", "source": "image/backgroud/Fresh Snow Ground Surface.png" },
+    { "id": "blue-tile-patch", "label": "藍磚水池佔位圖（待替換為真實水面素材）", "source": "image/backgroud/Gecko on Blue Tiles.png" },
+    { "id": "test-cloud-tile", "label": "雲朵貼圖（綠幕去背，捲動示範用）", "source": "image/elements/cloud.png" }
   ],
 
   "scenes": [
@@ -349,6 +407,22 @@
       "label": "陽台香草花圃一角",
       "category": "outdoor",
       "background": { "source": "image/backgroud/Balcony Herb Garden Corner.png" }
+    },
+    {
+      "id": "garden-with-pond-test",
+      "label": "花園池塘（動態背景測試）",
+      "category": "outdoor",
+      "bands": [
+        {
+          "elementId": "sky-placeholder",
+          "zone": "air",
+          "y0": 0,
+          "y1": 180,
+          "cloud": { "elementId": "test-cloud-tile", "scrollPxPerSec": 15 }
+        },
+        { "elementId": "grass-base", "zone": "ground", "y0": 180, "y1": 900 }
+      ],
+      "patches": [{ "elementId": "blue-tile-patch", "zone": "water", "x": 300, "y": 600, "w": 500, "h": 220 }]
     }
   ]
 }

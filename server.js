@@ -35,13 +35,14 @@ function templateFileFor(templatesDir, name) {
 // { path: [...], options: {...} }. Now a scene can have several active
 // animals at once, each with its own path, so the shape is
 // { activeAnimals: [id...], animals: { id: { path, options } } }. Old
-// single-animal files are transparently upgraded on read (as animal "blue",
-// the only animal that used to exist) — nothing needs migrating on disk
-// until the next save.
+// single-animal files are transparently upgraded on read (as animal
+// "yellow", the only animal that used to exist — its id was originally
+// "blue", renamed for consistency with its actual color/label) — nothing
+// needs migrating on disk until the next save.
 function migratePathData(data) {
   if (data && data.animals && typeof data.animals === "object") return data;
   if (data && Array.isArray(data.path)) {
-    return { activeAnimals: ["blue"], animals: { blue: { path: data.path, options: data.options || {} } } };
+    return { activeAnimals: ["yellow"], animals: { yellow: { path: data.path, options: data.options || {} } } };
   }
   return { activeAnimals: [], animals: {} };
 }

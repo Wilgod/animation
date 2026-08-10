@@ -22,6 +22,7 @@
   let bgImage = null;
   const actors = new Map(); // id -> actor state, insertion order = draw order
   const ornaments = new Map(); // instanceId -> { image, x, y, scale }, drawn after actors so they occlude
+  const scrollLayers = new Map(); // zone -> { image, y0, y1, scrollPxPerSec }, drawn over the static background, under actors
 
   const DEFAULT_OPTIONS = {
     rotationFollowsPath: true,
@@ -67,6 +68,8 @@
         walkFrames: null,
         walkRotationOffsetRad: 0,
         walkStrideLengthPx: 140,
+        rig: null,
+        rigRotationOffsetRad: 0,
         path: [],
         options: { ...DEFAULT_OPTIONS },
         arcLengthCache: null,
@@ -209,15 +212,37 @@
     return ((d1 - d0) / (t1 - t0)) * 1000;
   }
 
-  // Which sprite is active right now: the multi-frame walk cycle (if loaded
-  // and enabled) or the single static image. Each sprite's artwork has its
-  // own "neutral" drawn orientation, so each needs its own rotation offset
-  // to align its heading with the direction of travel (see getPose).
+  // Which visual mode is active right now, tiered rig > walk-cycle frames >
+  // static image, purely additive over what existed before rigs: an actor
+  // with no `rig` registered falls through to the exact same walkFrames/
+  // static behavior as always. Each mode's artwork has its own "neutral"
+  // drawn orientation, so each needs its own rotation offset to align its
+  // heading with the direction of travel (see getPose). The rig's offset is
+  // independent of the walk-cycle frames' — a rig is typically cut from the
+  // static "source" photo (neutrally horizontal, offset 0), which is often a
+  // different neutral orientation than the separately-authored motion-grid
+  // sheet the walkFrames offset was tuned for (see setActorRig).
   function activeSprite(actor) {
-    if (actor.walkFrames && actor.walkFrames.length > 0 && actor.options.useWalkCycle) {
-      return { rotationOffsetRad: actor.walkRotationOffsetRad, isWalkCycle: true };
+    if (actor.rig) {
+      return { rotationOffsetRad: actor.rigRotationOffsetRad, mode: "rig" };
     }
-    return { rotationOffsetRad: actor.staticRotationOffsetRad || 0, isWalkCycle: false };
+    if (actor.walkFrames && actor.walkFrames.length > 0 && actor.options.useWalkCycle) {
+      return { rotationOffsetRad: actor.walkRotationOffsetRad, mode: "walkFrames" };
+    }
+    return { rotationOffsetRad: actor.staticRotationOffsetRad || 0, mode: "static" };
+  }
+
+  // Continuous (non-discretized) gait phase in [0, 1), by distance traveled
+  // — same distance-driven idea as currentWalkFrames below, just without
+  // snapping to one of N baked poses, since a rig's limbs move continuously.
+  function gaitPhase01(actor, tMs, strideLengthPx) {
+    const dist = distanceTraveledAt(actor, tMs);
+    const cycle = strideLengthPx > 0 ? strideLengthPx : 1;
+    return ((((dist % cycle) + cycle) % cycle) / cycle);
+  }
+
+  function limbAngleRad(limb, phase01) {
+    return limb.restAngleRad + limb.swingAmplitudeRad * Math.sin(2 * Math.PI * (phase01 + limb.swingPhaseOffset));
   }
 
   // Full pose (position, heading, flip, bob offset) at absolute time tMs.
@@ -284,20 +309,55 @@
     return { frame: actor.walkFrames[i0], nextFrame: actor.walkFrames[i1], frac };
   }
 
+  // Draws a rig-mode actor's body + limb layers, nested inside drawActor's
+  // already-applied translate/flip/heading-rotation/shadow transform (so a
+  // rig is positioned/oriented exactly like any other actor — this function
+  // only handles what's drawn, not where/how the whole actor sits). `k`
+  // converts the rig's authored pixel space (see prepare-assets.js's
+  // buildRig — same upres'd convention as every other sprite asset) into
+  // this frame's actual draw scale. Limbs are drawn behind the body, then
+  // the body, then the remaining limbs, so far-side/near-side legs occlude
+  // correctly for a quadruped's alternating gait.
+  function drawRiggedBody(rig, sizeScale, poseScale, phase01) {
+    const k = (poseScale * sizeScale) / ASSET_UPRES_FACTOR;
+
+    function drawLimb(limb) {
+      const w = limb.image.naturalWidth * k;
+      const h = limb.image.naturalHeight * k;
+      ctx.save();
+      ctx.translate(limb.anchorOffset.x * k, limb.anchorOffset.y * k);
+      ctx.rotate(limbAngleRad(limb, phase01));
+      ctx.drawImage(limb.image, -limb.pivotLocal.x * k, -limb.pivotLocal.y * k, w, h);
+      ctx.restore();
+    }
+
+    for (const limb of rig.limbs) {
+      if (limb.drawOrder === "behind") drawLimb(limb);
+    }
+
+    const bw = rig.bodyImage.naturalWidth * k;
+    const bh = rig.bodyImage.naturalHeight * k;
+    ctx.drawImage(rig.bodyImage, rig.bodyDrawOffset.x * k, rig.bodyDrawOffset.y * k, bw, bh);
+
+    for (const limb of rig.limbs) {
+      if (limb.drawOrder !== "behind") drawLimb(limb);
+    }
+  }
+
   function drawActor(actor, tMs) {
     const localT = tMs - actor.startAtMs;
     if (localT < 0) return; // hasn't started yet — stays offscreen/invisible
     if (actor.path.length === 0) return;
 
     const sprite = activeSprite(actor);
-    const walk = sprite.isWalkCycle ? currentWalkFrames(actor, localT) : null;
+    const isRig = sprite.mode === "rig";
+    const walk = sprite.mode === "walkFrames" ? currentWalkFrames(actor, localT) : null;
     const spriteImage = walk ? walk.frame : actor.lizardImage;
-    if (!spriteImage) return;
+    if (!isRig && !spriteImage) return;
+    if (isRig && !actor.rig.bodyImage) return;
 
     const pose = getPose(actor, localT, sprite.rotationOffsetRad);
     const sizeScale = actor.options.sizeScale || 1;
-    const w = (spriteImage.naturalWidth / ASSET_UPRES_FACTOR) * pose.scale * sizeScale;
-    const h = (spriteImage.naturalHeight / ASSET_UPRES_FACTOR) * pose.scale * sizeScale;
 
     ctx.save();
     ctx.translate(pose.x, pose.y);
@@ -309,11 +369,18 @@
       ctx.shadowOffsetX = 6;
       ctx.shadowOffsetY = 10;
     }
-    ctx.drawImage(spriteImage, -w / 2, -h / 2, w, h);
-    if (walk && walk.nextFrame && walk.nextFrame !== walk.frame && walk.frac > 0.004) {
-      ctx.globalAlpha = walk.frac;
-      ctx.drawImage(walk.nextFrame, -w / 2, -h / 2, w, h);
-      ctx.globalAlpha = 1;
+    if (isRig) {
+      const phase01 = gaitPhase01(actor, localT, actor.rig.strideLengthPx);
+      drawRiggedBody(actor.rig, sizeScale, pose.scale, phase01);
+    } else {
+      const w = (spriteImage.naturalWidth / ASSET_UPRES_FACTOR) * pose.scale * sizeScale;
+      const h = (spriteImage.naturalHeight / ASSET_UPRES_FACTOR) * pose.scale * sizeScale;
+      ctx.drawImage(spriteImage, -w / 2, -h / 2, w, h);
+      if (walk && walk.nextFrame && walk.nextFrame !== walk.frame && walk.frac > 0.004) {
+        ctx.globalAlpha = walk.frac;
+        ctx.drawImage(walk.nextFrame, -w / 2, -h / 2, w, h);
+        ctx.globalAlpha = 1;
+      }
     }
     ctx.restore();
   }
@@ -339,11 +406,36 @@
     ctx.restore();
   }
 
+  // A scrolling texture (e.g. clouds) drawn over its band every frame, tiled
+  // horizontally and sliding sideways over time — unlike the static
+  // background, this can't be pre-baked, so it's redrawn fresh each frame
+  // like a sprite. Positive scrollPxPerSec drifts right; negative drifts
+  // left. The source texture should tile seamlessly left-to-right (its own
+  // left/right edges should match, e.g. via transparent margins) since it's
+  // repeated edge-to-edge to cover the full canvas width with no gaps.
+  function drawScrollLayer(layer, tMs) {
+    const { image, y0, y1, scrollPxPerSec } = layer;
+    if (!image) return;
+    const h = y1 - y0;
+    const w = h * (image.naturalWidth / image.naturalHeight);
+    if (w <= 0) return;
+
+    const offset = ((tMs / 1000) * scrollPxPerSec) % w;
+    const phase = ((offset % w) + w) % w; // normalize into [0, w)
+    let startX = phase - w;
+    for (let x = startX; x < CANVAS_WIDTH; x += w) {
+      ctx.drawImage(image, x, y0, w, h);
+    }
+  }
+
   function drawFrame(tMs) {
     if (!ctx) return;
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     if (bgImage) {
       ctx.drawImage(bgImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
+    for (const layer of scrollLayers.values()) {
+      drawScrollLayer(layer, tMs);
     }
     for (const actor of actors.values()) {
       drawActor(actor, tMs);
@@ -395,6 +487,27 @@
 
     setActorWalkStrideLength(id, px) {
       getActor(id).walkStrideLengthPx = Math.max(1, px);
+    },
+
+    // Registers a layered cutout rig for actor `id` — takes over drawing
+    // from the walkFrames/static sprite (see activeSprite) as long as it
+    // stays registered; call removeActor or setActorRig(id, null) to fall
+    // back. `rigData`: { bodyImage, bodyDrawOffset:{x,y}, strideLengthPx,
+    // rotationOffsetRad, limbs: [{ name, image, anchorOffset:{x,y},
+    // pivotLocal:{x,y}, restAngleRad, swingAmplitudeRad, swingPhaseOffset,
+    // drawOrder }] } — see prepare-assets.js's buildRig for how the geometry
+    // fields are derived, and app.js's ensureActorSprite for how the
+    // per-limb motion fields (restAngleRad etc.) get merged in live from
+    // scenes.json.
+    setActorRig(id, rigData) {
+      const actor = getActor(id);
+      actor.rig = rigData || null;
+      actor.rigRotationOffsetRad = (rigData && rigData.rotationOffsetRad) || 0;
+    },
+
+    actorHasRig(id) {
+      const actor = actors.get(id);
+      return !!(actor && actor.rig && actor.rig.bodyImage);
     },
 
     // When (ms, on the shared timeline) this actor begins animating. Before
@@ -506,6 +619,20 @@
 
     clearOrnaments() {
       ornaments.clear();
+    },
+
+    // Scroll layers: a moving texture (e.g. clouds) tiled across a band's
+    // full width and drawn fresh every frame (see drawScrollLayer) — unlike
+    // ornaments/actors this has no path, just a constant drift speed.
+    // `zoneKey` just needs to be unique per layer (the scene's band zone,
+    // e.g. "air", works well since a scene has at most one cloud layer per
+    // band today).
+    setScrollLayer(zoneKey, image, y0, y1, scrollPxPerSec) {
+      scrollLayers.set(zoneKey, { image, y0, y1, scrollPxPerSec });
+    },
+
+    clearScrollLayers() {
+      scrollLayers.clear();
     },
 
     // Ids of every currently-registered actor, insertion order — used by the
