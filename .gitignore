@@ -1,0 +1,8 @@
+node_modules/
+dist/
+output/
+*.blend1
+*-build.log
+__azurite_db_*
+__blobstorage__/
+__queuestorage__/

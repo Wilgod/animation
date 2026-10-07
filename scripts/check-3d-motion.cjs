@@ -1,0 +1,20 @@
+const assert=require('node:assert/strict');
+const vm=require('node:vm');
+const fs=require('node:fs');
+const sandbox={window:{}};vm.runInNewContext(fs.readFileSync('engine.js','utf8'),sandbox);
+const engine=sandbox.window.AnimEngine;
+let position, mirrored;
+const ctx=new Proxy({canvas:{width:1600,height:900},translate(x,y){position={x,y}},scale(x){if(x<0)mirrored=true}}, {get:(o,k)=>o[k]||(()=>{})});
+engine.setContext(ctx,null);
+engine.setActorSprite('yellow',{},[],{});
+engine.setActor3D('yellow',{render:()=>({})});
+engine.setActorPath('yellow',[{x:100,y:450,durationToNextMs:1000},{x:500,y:450,durationToNextMs:1000},{x:900,y:450,durationToNextMs:1000},{x:1500,y:450}]);
+const sample=t=>{engine.renderFrame(t);return {...position}};
+const speeds=[];for(let t=400;t<2500;t+=20){const a=sample(t),b=sample(t+10);speeds.push(Math.hypot(b.x-a.x,b.y-a.y)/.01)}
+assert.ok(Math.max(...speeds)/Math.min(...speeds)<1.01,'Cruise speed must stay continuous across waypoints');
+assert.equal(sample(0).x,100);assert.equal(sample(3000).x,1500);
+const a=sample(1200);sample(2400);assert.deepEqual(sample(1200),a);
+engine.setActorPath('yellow',[{x:1400,y:450,durationToNextMs:2000},{x:200,y:450}]);
+mirrored=false;sample(1000);assert.equal(mirrored,false,'3D turning must not mirror the mesh');
+assert.ok(Math.abs(sample(2000).x-200)<.001,'Path edits must invalidate motion cache');
+console.log('Smooth cruise, endpoints, scrubbing, path edits, and no mirrored turns: passed');

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lizard · 3D Studio</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e9eee7;color:#203627;font:15px system-ui,sans-serif}header{position:absolute;left:28px;top:24px;z-index:2}a{color:inherit}h1{font-size:28px;margin:12px 0 5px;font-weight:550}p{margin:6px 0;color:#5c6e60}#viewport{width:100vw;height:100vh;display:block;touch-action:none}aside{position:absolute;right:24px;top:24px;width:270px;padding:22px;background:#fffffff0;border:1px solid #d6ded2;border-radius:14px}label{display:block;margin:18px 0 6px}input,select{width:100%;accent-color:#315f3f}button,select{padding:10px 13px;border:1px solid #c3d0bf;background:#f5f8f2;border-radius:7px;color:#203627;cursor:pointer}button.active{background:#315f3f;color:white}.row{display:flex;gap:8px}.row button{flex:1}small{display:block;line-height:1.6;color:#5c6e60;margin-top:16px}#status{position:absolute;bottom:24px;left:28px;background:#ffffffde;padding:12px 18px;border-radius:8px;max-width:65vw}#reference{width:100%;margin-top:14px;border-radius:6px}details{margin-top:18px}summary{cursor:pointer}@media(max-width:700px){aside{top:auto;bottom:70px;right:12px;width:220px;padding:14px}header{left:16px}h1{font-size:23px}details,small{display:none}}
+</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/assets/vendor/three/"}}</script></head>
+<body><header><a href="/">← Path Animator</a><h1>Lizard 3D</h1><p>Your model, moving across the scene</p></header>
+<canvas id="viewport" aria-label="Interactive animated green gecko"></canvas>
+<aside><div class="row"><button id="play" class="active">Pause</button><button id="reset">Reset</button></div>
+<label for="model">Model</label><select id="model"><option value="lizard">Your Lizard.glb</option><option value="gecko">Green gecko prototype</option></select>
+<label for="mode">Movement</label><select id="mode"><option value="inplace">Walk in place</option><option value="wander">Walk around</option><option value="target">Click to walk</option></select>
+<label for="speed">Speed <output id="speedValue">1.0×</output></label><input id="speed" type="range" min="0.2" max="2" value="1" step="0.1">
+<label for="pose">Walk cycle</label><input id="pose" type="range" min="0" max="1000" value="0">
+<label>Camera</label><div class="row"><button id="perspective">Perspective</button><button id="top">Top</button></div>
+<small>Drag to orbit · scroll to zoom.<br>Choose “Click to walk”, then click the ground. Scrub the cycle to inspect the legs and tail.</small>
+<details><summary>Model files & reference</summary><p><a href="assets/models/green-gecko.blend" download>Download Blender project</a></p><p><a id="modelDownload" href="model/Lizard.glb" download>Download animated GLB</a></p><img id="reference" src="assets/models/motion-reference.jpg" alt="Original eight walking poses"></details>
+</aside><div id="status" role="status">Loading the animated model…</div><script type="module" src="gecko-3d.js"></script></body></html>

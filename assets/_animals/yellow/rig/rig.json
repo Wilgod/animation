@@ -1,0 +1,69 @@
+{
+  "body": {
+    "file": "body.png",
+    "widthPx": 624,
+    "heightPx": 282,
+    "drawOffset": {
+      "x": -370.5511811023622,
+      "y": -140.03149606299212
+    }
+  },
+  "limbs": [
+    {
+      "name": "front-left-leg",
+      "file": "front-left-leg.png",
+      "widthPx": 81,
+      "heightPx": 96,
+      "pivotLocal": {
+        "x": 10.236220472440944,
+        "y": 81.68503937007874
+      },
+      "anchorOffset": {
+        "x": 102.15748031496062,
+        "y": -34.39370078740158
+      }
+    },
+    {
+      "name": "front-right-leg",
+      "file": "front-right-leg.png",
+      "widthPx": 70,
+      "heightPx": 103,
+      "pivotLocal": {
+        "x": 10.645669291338583,
+        "y": 12.488188976377952
+      },
+      "anchorOffset": {
+        "x": 98.47244094488188,
+        "y": 41.354330708661415
+      }
+    },
+    {
+      "name": "back-left-leg",
+      "file": "back-left-leg.png",
+      "widthPx": 85,
+      "heightPx": 129,
+      "pivotLocal": {
+        "x": 70.83464566929133,
+        "y": 109.93700787401575
+      },
+      "anchorOffset": {
+        "x": -28.251968503937007,
+        "y": -30.094488188976378
+      }
+    },
+    {
+      "name": "back-right-leg",
+      "file": "back-right-leg.png",
+      "widthPx": 89,
+      "heightPx": 123,
+      "pivotLocal": {
+        "x": 25.79527559055118,
+        "y": 11.05511811023622
+      },
+      "anchorOffset": {
+        "x": -75.13385826771653,
+        "y": 29.480314960629922
+      }
+    }
+  ]
+}

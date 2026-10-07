@@ -1,0 +1,51 @@
+{
+  "activeAnimals": [
+    "yellow"
+  ],
+  "animals": {
+    "yellow": {
+      "path": [
+        {
+          "x": 220,
+          "y": 460,
+          "durationToNextMs": 1500
+        },
+        {
+          "x": 800,
+          "y": 460,
+          "durationToNextMs": 1500
+        },
+        {
+          "x": 1380,
+          "y": 460,
+          "durationToNextMs": 1083
+        },
+        {
+          "x": 846.00625,
+          "y": 196.58372141516645,
+          "durationToNextMs": 1000
+        },
+        {
+          "x": 556.40625,
+          "y": 962.0747897407381,
+          "durationToNextMs": 1000
+        },
+        {
+          "x": 1694.0062500000001,
+          "y": 560.1119065823312,
+          "durationToNextMs": 1000
+        }
+      ],
+      "options": {
+        "rotationFollowsPath": true,
+        "flip": true,
+        "useWalkCycle": true,
+        "bobbing": false,
+        "bobbingAmplitude": 6,
+        "strideLengthPx": 140,
+        "pathSpeedMultiplier": 1
+      },
+      "startAtMs": 0
+    }
+  }
+}

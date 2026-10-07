@@ -107,6 +107,15 @@ body {
   margin: 10px 0;
 }
 
+.output-dir-row {
+  align-items: center;
+}
+
+.output-dir-row input {
+  flex: 1;
+  min-width: 0;
+}
+
 button {
   background: #2c2f33;
   color: #eee;
@@ -348,6 +357,63 @@ body.export-mode .sidebar {
   display: none;
 }
 
+/* Fit the editor (stage + sidebar) inside the current window instead of
+   letting the page grow past it — on smaller/laptop screens the stage's
+   natural 1000x562 size plus the full sidebar don't both fit, which showed
+   up as a page-level scrollbar even with the window maximized. The stage
+   now shrinks (preserving its aspect ratio via object-fit) and the sidebar
+   scrolls internally instead. Scoped to non-export mode: the headless
+   capture window in electronExport.js intentionally lets the page overflow
+   so it can measure and resize to the canvas's true 3840x2160 native size. */
+body:not(.export-mode) {
+  height: 100vh;
+  overflow: hidden;
+}
+
+body:not(.export-mode) .app {
+  height: 100%;
+  align-items: stretch;
+}
+
+body:not(.export-mode) .stage-wrap {
+  /* basis 0 (not auto) so this item's width comes purely from flex-grow
+     distributing the leftover space, instead of from its content's
+     natural/intrinsic size. */
+  flex: 1 1 0%;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+body:not(.export-mode) .stage-pad {
+  /* Absolutely positioned to exactly fill .stage-wrap's resolved box —
+     a plain percentage width/height here is unreliable because
+     .stage-wrap's own size comes from flex-grow rather than an explicit
+     length, and browsers don't always treat that as "definite" for a
+     child's percentage sizing. */
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body:not(.export-mode) #stage {
+  width: 100%;
+  height: 100%;
+  max-width: 1000px;
+  max-height: 562px;
+  object-fit: contain;
+}
+
+body:not(.export-mode) .sidebar {
+  /* grow:0 so the sidebar doesn't compete with .stage-wrap (also grow:1)
+     for extra space — all of it should go to the stage/canvas instead. */
+  flex: 0 1 380px;
+  height: 100%;
+  overflow-y: auto;
+}
+
 .ornament-list {
   display: flex;
   flex-wrap: wrap;
@@ -509,4 +575,46 @@ body.export-mode #stage {
   border-radius: 4px;
   color: #eee;
   font-size: 13px;
+}
+
+.autogen-random {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 4px 0 10px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.autogen-random-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.autogen-random-options[hidden] {
+  display: none;
+}
+
+.effects-panel {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.effects-panel h2 {
+  font-size: 14px;
+  margin: 0 0 2px;
+}
+
+.effects-panel select {
+  margin-left: 4px;
+}
+
+.effects-panel button {
+  align-self: flex-start;
 }

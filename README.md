@@ -1,5 +1,174 @@
 # Path Animator
 
+## 3D crab
+
+Select **3D 螃蟹**, place it on a ground region, add a path, and press Play. The crab has a photo-textured domed shell, raised pincers, eyestalks, and eight articulated walking legs. Its looping Walk clip follows distance along the path; fixed facing preserves sideways travel on horizontal paths. Geometry and hidden surfaces are an approximation of `image/animal/crab-walk.png`.
+
+Model: `assets/models/crab.glb`; editable source: `assets/models/crab.blend`. Rebuild with Blender using `scripts/build-crab.py`. Run `npx electron scripts/check-crab-3d.cjs` to check all eight legs, loop continuity, placement, and deterministic timeline rendering. Add `--packaged` after building to verify packaged assets.
+
+## 3D butterfly
+
+Select **3D 蝴蝶** in a scene with an air region (for example, the garden pond scene), place it in the sky, add a path, and press Play. Four hinged, photo-textured wings use a looping Fly animation during flight and hovering. The body, six legs, clubbed antennae, and curled proboscis are modeled geometry. This is an approximate reconstruction from the first pose in `image/animal/Butterfly.png`; hidden surfaces are mirrored from the visible wing.
+
+Model: `assets/models/butterfly.glb`; editable source: `assets/models/butterfly.blend`. Rebuild with Blender using `scripts/build-butterfly.py`. Verify animation, loop continuity, and editor placement using `npx electron scripts/check-butterfly-3d.cjs` (the check starts its own server). Add `--packaged` to check the packaged assets.
+
+## 3D honeybee
+
+Select **3D 蜜蜂** in a scene with an air region, place it in that region,
+add a path, and press Play. The bee uses actual 3D body, leg, antenna, fur,
+and veined wing geometry inspired by `image/animal/bee-fly.png`; it is an
+approximation, not a photogrammetric reconstruction. Four hinged wings play
+a looping Fly clip based on timeline time, including while hovering.
+
+Model: `assets/models/honeybee.glb`; editable source: `assets/models/honeybee.blend`.
+Rebuild with Blender using `scripts/build-bee.py`. Run
+`npx electron scripts/check-bee-3d.cjs` with the local server running to
+check the wing loop, selector, air placement, and hover animation.
+
+
+## 3D models for the other animals
+
+Spider, mantis, ladybug, squirrel, pigeon, frog and field mouse walk as 3D
+models (viewed from above). Sparrow, flying pigeon and cicada fly (angled
+view). The goldfish swims in water areas. Each is a procedural approximation
+of its reference photo in `image/animal/`, not a scanned reconstruction:
+
+- Walkers use jointed legs whose feet are solved to stay planted. The frog
+  hops; the squirrel bounds; the pigeon bobs its head.
+- Wings and fins flap on hinges; the goldfish body bends on a skeleton.
+- Walk clips follow distance along the path. Fly and swim clips follow time,
+  so they keep moving while hovering.
+
+Models: `assets/models/<id>.glb`, with editable `.blend` files beside them.
+Each has its own build script, `scripts/build-<id>.py`, using shared helpers
+in `scripts/lib/` (`model_kit.py`, `mammal.py`, `bird.py`). Rebuild one with:
+
+```powershell
+& 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python scripts/build-frog.py
+```
+
+A walker's build prints `STRIDE_PX`. Copy that number to the animal's
+`strideLengthPx` in `config/scenes.json` so its feet don't slide.
+With `npm start` running, check all of them with
+`npx electron scripts/check-animals-3d.cjs`.
+
+## Random videos (never the same twice)
+
+Click **Generate Video…** and tick **Random mix**. Set **Videos to make**,
+**Length** (defaults to 15 s), and **Animals per video (up to)**. Every
+animal and background starts selected as the pool; deselect any you don't
+want. For each video the app:
+
+- picks a random background, then 1 to N random animals that can live
+  there (birds need sky, fish need water);
+- generates a fresh random path for each animal: it enters, wanders
+  through extra stops to fill the video, pauses, then leaves, at a random
+  speed, with start times staggered;
+- never reuses a background + animals combination from this run or any
+  earlier run. Once every combination in the pool has been used, the
+  history starts over. Paths are always new, so even then no two videos
+  match.
+
+Videos render 4 at a time into your Videos folder, named like
+`garden-lawn-grass-frog-spider-<timestamp>-3.mp4`. Random runs keep their
+layouts in `paths/_auto/` (in the app's data folder), along with
+`history.json`, the combinations already used. Delete `history.json` to
+start fresh. Your own saved scene layouts are never touched. Random mix
+needs the desktop app or the packaged .exe.
+
+## Background motion
+
+Under **Change Background → Background motion**:
+
+- **Sunlight & leaf shadows**: branch-and-leaf shadows drift and sway
+  across the whole scene, animals included.
+- **Water ripples**: tints water areas, adds moving caustics, and spreads
+  rings behind anything swimming. Shown only on scenes with water.
+- **Falling** leaves, petals, snow or dust in the light. Leaves and petals
+  tumble and cast small shadows.
+- **Camera drift**: a slow push-in or pull-out with a gentle pan. It runs
+  only during Play and export, so your waypoint markers stay put while
+  you edit.
+
+**Swaying plants** come from the scene itself, not from a checkbox. Scenes
+with a `sway` setting in `config/scenes.json` move their plants in the wind:
+the balcony herb garden, the picket fence's flowers, the lawn, the pond
+garden's grass, and the hanging vines on the wall shelf and basket. Every
+other background (terrazzo, wood, stone, carpet…) stays perfectly still. The
+app finds plants by color (green foliage, purple/pink flowers), so wood,
+soil, pots and walls never move. Options:
+`{ "strength": 1, "rootY": 0.8, "tipY": 0.04, "hang": false, "region": { "x0": 0, "x1": 0.6, "y0": 0, "y1": 1 } }`.
+`rootY`/`tipY` (0–1 down the image) anchor side-view plants at their
+roots. Set `hang: true` for vines trailing down from a pot, leave `rootY`
+out for top-down grass, and use `region` to limit what moves.
+
+**Shuffle look** re-rolls the settings of the effects that are on. Effects
+are saved with the layout and in templates. Random-mix videos each get
+their own mix suited to the scene: snow on snow scenes, leaves or petals
+outdoors, dust indoors. Random mix leaves camera drift off unless you tick
+**Camera drift** in its options, because on a floor it looks like the ground
+is moving. Everything is seeded and depends only on time, so exports are
+deterministic.
+
+## Animal sounds
+
+Every animal's sound is a synthesized, seamless WAV loop in `audio/`,
+generated by `python scripts/make-animal-sounds.py` (numpy only). Pass an
+id to rebuild one (for example, `... make-animal-sounds.py frog`).
+
+- Walk sounds place a footstep each time the 3D model's foot lands. The
+  editor plays them faster or slower with the animal's speed, so the steps
+  stay in time with the legs.
+- Wing and fin sounds (`modelAnimation: "fly"`) play at a fixed rate in
+  time with the wingbeat or tail beat.
+- Continuous textures with no footsteps (the snail's slime) set
+  `"fixedRate": true` in `walkSound`, so a slow animal's sound isn't
+  stretched to silence.
+- Loops are loudness-matched, so `walkSound.volume` is only for taste.
+- If you change a walker's `strideLengthPx`, also change the stride in
+  its generator and rebuild its sound.
+
+Video export fades each sound in and out and leaves 3 dB of headroom, so
+overlapping animals don't clip.
+
+## Your lizard in the main editor
+
+Choose **Select Animal → 3D 黃蜥蝪**. Drag its name onto the
+background, add waypoints, and press **Play**. The actual GLB model renders
+on the main scene, with its embedded Walk animation driven by distance along
+the path. Size, heading, stride, timeline scrubbing, saved layouts, and the
+existing MP4/GIF export use the same shared renderer. No separate page is needed.
+
+The supplied file is `model/Lizard.glb`, included in packaged builds.
+With `npm start` running, verify the integration using
+`npx electron scripts/check-editor-3d.cjs`.
+
+## Green gecko 3D prototype
+
+Run `npm start` and open `http://localhost:5173/gecko-3d.html`, and select the green gecko prototype from the Model menu. Drag to orbit, scroll to zoom,
+pause or scrub the walk, and select **Click to walk** to set a destination.
+Run `npm run gecko` to open the preview directly in the desktop app.
+This preview is separate from the 2D path editor and MP4/GIF exporter.
+
+The editable model is `assets/models/green-gecko.blend`; the web-ready model
+is `assets/models/green-gecko.glb`. Both contain a 19-bone skeleton and a Walk
+animation. The supplied eight-pose reference is packed in the Blender file.
+Shape, depth, scale markings, and motion are an approximation of that image,
+not a scanned reconstruction. The mesh uses articulated parts and a smoothly
+weighted tail. Two-link inverse kinematics are baked into the walk: diagonal
+feet alternate between a grounded backward push and a low forward swing.
+Separate ankle joints keep toes level. Straight-line travel matches stance
+speed; turning does not yet use runtime foot locking or terrain adaptation.
+
+Rebuild with Blender:
+
+```powershell
+& 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python scripts/build-green-gecko.py
+```
+
+With the local server running, verify rendering and animation with
+`npx electron scripts/check-gecko-3d.cjs`.
+
 Drag-to-animate tool: pick a background + animal (with an optional walk-cycle
 sprite sheet), draw a waypoint path visually, and export a smooth MP4/GIF of
 the animal walking along it. Runs as a normal local dev tool (browser +

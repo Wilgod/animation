@@ -12,6 +12,8 @@
     "export:gif": "electron . --export --gif",
     "walk-gif": "node scripts/make-walk-gif.js",
     "electron:dev": "electron . --dev",
+    "gecko": "electron . --dev --3d",
+    "predist": "node scripts/copy-three-addons.cjs",
     "dist": "electron-builder"
   },
   "dependencies": {
@@ -40,11 +42,16 @@
       "app.js",
       "engine.js",
       "style.css",
+      "gecko-3d.html",
+      "gecko-3d.js",
+      "animal-3d.js",
       "config/**/*",
       "assets/**/*",
+      "model/**/*.glb",
       "audio/**/*",
       "node_modules/**/*",
       "scripts/lib/scenesConfig.js",
+      "scripts/lib/zones.js",
       "!scripts/prepare-assets.js",
       "!scripts/make-walk-gif.js",
       "!scripts/lib/chromaKey.js",
@@ -61,7 +68,7 @@
       ]
     },
     "portable": {
-      "artifactName": "PathAnimator-${version}-portable.exe"
+      "artifactName": "PathAnimator-1.0.0-portable.exe"
     }
   }
 }

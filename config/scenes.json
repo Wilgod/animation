@@ -1,197 +1,182 @@
 {
   "defaultAnimal": {
     "rotationOffsetDeg": 90,
-    "strideLengthPx": 140
+    "strideLengthPx": 140,
+    "habitat": "ground"
   },
 
   "animals": [
     {
-      "id": "blue",
-      "label": "黃蜥蜴",
-      "source": "image/animal/small Lizard.png",
-      "motionGrid": {
-        "source": "image/animal/small Lizard motion.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/yellow-lizard-walk.mp3", "volume": 1.0 }
+      "id": "turtle",
+      "label": "3D 烏龜",
+      "habitat": "ground",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/turtle.glb",
+      "modelView": "angled",
+      "strideLengthPx": 34
+    },
+    {
+      "id": "snail",
+      "label": "3D 蝸牛",
+      "habitat": "ground",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/snail.glb",
+      "modelView": "angled",
+      "strideLengthPx": 24,
+      "walkSound": { "source": "audio/snail-walk.wav", "fixedRate": true }
+    },
+    {
+      "id": "yellow",
+      "label": "3D 黃蜥蝪",
+      "model3d": "model/Lizard.glb",
+      "rotationOffsetDeg": 0,
+      "strideLengthPx": 140,
+      "habitat": "ground",
+      "walkSound": { "source": "audio/lizard-walk.wav" }
     },
     {
       "id": "green",
-      "label": "綠蜥蜴",
-      "source": "image/animal/small green Lizard static.png",
-      "motionGrid": {
-        "source": "image/animal/small green Lizard.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/green-lizard-walk.mp3", "volume": 1.0 }
+      "label": "3D 綠蜥蝪",
+      "model3d": "model/Lizard.glb",
+      "modelColor": "#579747",
+      "rotationOffsetDeg": 0,
+      "strideLengthPx": 140,
+      "habitat": "ground",
+      "walkSound": { "source": "audio/lizard-walk.wav" }
     },
     {
       "id": "red",
-      "label": "紅蜥蜴",
-      "source": "image/animal/small red Lizard static.png",
-      "motionGrid": {
-        "source": "image/animal/small red Lizard motion.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/red-lizard-walk.mp3", "volume": 1.0 }
+      "label": "3D 紅蜥蝪",
+      "model3d": "model/Lizard.glb",
+      "modelColor": "#bf554b",
+      "rotationOffsetDeg": 0,
+      "strideLengthPx": 140,
+      "habitat": "ground",
+      "walkSound": { "source": "audio/lizard-walk.wav" }
     },
     {
       "id": "spider",
-      "label": "蜘蛛",
-      "source": "image/animal/spider static.png",
-      "motionGrid": {
-        "source": "image/animal/spider.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/spider-walk.mp3" }
+      "label": "3D 蜘蛛",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/spider.glb",
+      "strideLengthPx": 58,
+      "walkSound": { "source": "audio/spider-walk.wav" }
     },
     {
       "id": "mantis",
-      "label": "螳螂",
-      "rotationOffsetDeg": 20,
-      "motionGrid": {
-        "source": "image/animal/praying-mantis-walk.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/praying-mantis-walk.mp3" }
+      "label": "3D 螳螂",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/mantis.glb",
+      "strideLengthPx": 46,
+      "walkSound": { "source": "audio/mantis-walk.wav" }
     },
     {
       "id": "ladybug",
-      "label": "瓢蟲",
-      "rotationOffsetDeg": -30,
-      "motionGrid": {
-        "source": "image/animal/ladybug.png",
-        "cols": 4,
-        "rows": 3
-      },
-      "walkSound": { "source": "audio/ladybug-walk.MP3", "volume": 0.4 }
+      "label": "3D 瓢蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/ladybug.glb",
+      "strideLengthPx": 69,
+      "walkSound": { "source": "audio/ladybug-walk.wav" }
     },
     {
       "id": "butterfly",
-      "label": "蝴蝶",
-      "rotationOffsetDeg": 25,
-      "motionGrid": {
-        "source": "image/animal/Butterfly.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/butterfly.MP3" }
+      "label": "3D 蝴蝶",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/butterfly.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/butterfly-fly.wav" }
     },
     {
       "id": "sparrow",
-      "label": "麻雀",
+      "label": "3D 麻雀",
+      "habitat": "air",
       "rotationOffsetDeg": 0,
-      "motionGrid": {
-        "source": "image/animal/Sparrow-Flying.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/Sparrow-fly.mp3" }
+      "model3d": "assets/models/sparrow.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/sparrow-fly.wav" }
     },
     {
       "id": "squirrel",
-      "label": "松鼠",
+      "label": "3D 松鼠",
       "rotationOffsetDeg": 0,
-      "motionGrid": {
-        "source": "image/animal/squirrel-walk.png",
-        "cols": 4,
-        "rows": 4
-      },
-      "walkSound": { "source": "audio/squirrel-walk.mp3" }
+      "model3d": "assets/models/squirrel.glb",
+      "strideLengthPx": 61,
+      "walkSound": { "source": "audio/squirrel-walk.wav" }
     },
     {
       "id": "bee",
-      "label": "蜜蜂",
+      "label": "3D 蜜蜂",
+      "habitat": "air",
       "rotationOffsetDeg": 0,
-      "motionGrid": {
-        "source": "image/animal/bee-fly.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/bee-fly.mp3" }
+      "model3d": "assets/models/honeybee.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/bee-fly.wav" }
     },
     {
       "id": "pigeon",
-      "label": "鴿子",
-      "source": "image/animal/Pigeon.png",
+      "label": "3D 鴿子",
       "rotationOffsetDeg": 0,
-      "motionGrid": {
-        "source": "image/animal/Pigeon-walk.png",
-        "cols": 4,
-        "rows": 3
-      },
-      "walkSound": { "source": "audio/pigeon-walk.mp3" }
+      "model3d": "assets/models/pigeon.glb",
+      "strideLengthPx": 50,
+      "walkSound": { "source": "audio/pigeon-walk.wav" }
     },
     {
       "id": "pigeon-flying",
-      "label": "飛行鴿子",
+      "label": "3D 飛行鴿子",
+      "habitat": "air",
       "rotationOffsetDeg": 0,
-      "motionGrid": {
-        "source": "image/animal/Pigeon-fly.png",
-        "cols": 4,
-        "rows": 3
-      },
-      "walkSound": { "source": "audio/pigeon-fly.mp3" }
+      "model3d": "assets/models/pigeon-flying.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/pigeon-fly.wav" }
     },
     {
       "id": "crab",
-      "label": "螃蟹",
+      "label": "3D 螃蟹",
       "rotationFollowsPath": false,
-      "motionGrid": {
-        "source": "image/animal/crab-walk.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/crab-walk.mp3" }
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/crab.glb",
+      "strideLengthPx": 100,
+      "walkSound": { "source": "audio/crab-walk.wav" }
     },
     {
       "id": "frog",
-      "label": "青蛙",
+      "label": "3D 青蛙",
       "rotationOffsetDeg": 0,
-      "motionGrid": {
-        "source": "image/animal/frog-walk.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/frog-walk.mp3" }
+      "model3d": "assets/models/frog.glb",
+      "strideLengthPx": 96,
+      "walkSound": { "source": "audio/frog-hop.wav" }
     },
     {
       "id": "cicada",
-      "label": "蟬",
+      "label": "3D 蟬",
+      "habitat": "air",
       "rotationOffsetDeg": 0,
-      "motionGrid": {
-        "source": "image/animal/cycle-fly.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/cicada-fly.mp3" }
+      "model3d": "assets/models/cicada.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/cicada-fly.wav" }
     },
     {
       "id": "goldfish",
-      "label": "金魚",
+      "label": "3D 金魚",
+      "habitat": "water",
       "rotationOffsetDeg": 0,
-      "motionGrid": {
-        "source": "image/animal/goldfish-swim.png",
-        "cols": 4,
-        "rows": 4
-      },
-      "walkSound": { "source": "audio/goldfish-swim.mp3" }
+      "model3d": "assets/models/goldfish.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/goldfish-swim.wav" }
     },
     {
       "id": "fieldmouse",
-      "label": "田鼠",
+      "label": "3D 田鼠",
       "rotationOffsetDeg": 0,
-      "motionGrid": {
-        "source": "image/animal/fieldmouse-walk.png",
-        "cols": 4,
-        "rows": 2
-      },
-      "walkSound": { "source": "audio/fieldmouse-walk.mp3" }
+      "model3d": "assets/models/fieldmouse.glb",
+      "strideLengthPx": 30,
+      "walkSound": { "source": "audio/fieldmouse-walk.wav" }
     }
   ],
 
@@ -203,6 +188,13 @@
     { "id": "books", "label": "書籍", "source": "image/ornaments/Stacked Books.png" },
     { "id": "camera", "label": "相機", "source": "image/ornaments/Vintage Camera.png" },
     { "id": "lamp", "label": "檯燈", "source": "image/ornaments/Vintage Table Lamp.png" }
+  ],
+
+  "elements": [
+    { "id": "grass-base", "label": "草坪綠地面（底層）", "source": "image/backgroud/Garden Lawn Grass Ground.png" },
+    { "id": "sky-placeholder", "label": "天空佔位圖（待替換為真實天空素材）", "source": "image/backgroud/Fresh Snow Ground Surface.png" },
+    { "id": "blue-tile-patch", "label": "藍磚水池佔位圖（待替換為真實水面素材）", "source": "image/backgroud/Gecko on Blue Tiles.png" },
+    { "id": "test-cloud-tile", "label": "雲朵貼圖（綠幕去背，捲動示範用）", "source": "image/elements/cloud.png" }
   ],
 
   "scenes": [
@@ -262,6 +254,7 @@
     },
     {
       "id": "garden-lawn-grass",
+      "sway": { "strength": 0.4 },
       "label": "草坪綠地面",
       "category": "outdoor",
       "background": { "source": "image/backgroud/Garden Lawn Grass Ground.png" }
@@ -316,6 +309,7 @@
     },
     {
       "id": "wooden-picket-fence",
+      "sway": { "strength": 0.8, "rootY": 1, "tipY": 0 },
       "label": "木柵欄前視面",
       "category": "outdoor",
       "background": { "source": "image/backgroud/Wooden Picket Fence Front View.png" }
@@ -328,12 +322,14 @@
     },
     {
       "id": "window-side-wall-shelf",
+      "sway": { "strength": 0.7, "rootY": 0.36, "tipY": 0.78, "hang": true, "region": { "x0": 0.7, "x1": 0.95 } },
       "label": "窗邊牆架",
       "category": "indoor",
       "background": { "source": "image/backgroud/Window-Side Wall Shelf.png" }
     },
     {
       "id": "corner-woven-hanging-basket",
+      "sway": { "strength": 0.7, "rootY": 0.12, "tipY": 0.7, "hang": true, "region": { "x0": 0.1, "x1": 0.4 } },
       "label": "牆角編織掛籃",
       "category": "indoor",
       "background": { "source": "image/backgroud/Corner Woven Hanging Basket.png" }
@@ -346,9 +342,27 @@
     },
     {
       "id": "balcony-herb-garden-corner",
+      "sway": { "strength": 1, "rootY": 0.8, "tipY": 0.04, "region": { "x1": 0.6 } },
       "label": "陽台香草花圃一角",
       "category": "outdoor",
       "background": { "source": "image/backgroud/Balcony Herb Garden Corner.png" }
+    },
+    {
+      "id": "garden-with-pond-test",
+      "sway": { "strength": 0.4 },
+      "label": "花園池塘（動態背景測試）",
+      "category": "outdoor",
+      "bands": [
+        {
+          "elementId": "sky-placeholder",
+          "zone": "air",
+          "y0": 0,
+          "y1": 180,
+          "cloud": { "elementId": "test-cloud-tile", "scrollPxPerSec": 15 }
+        },
+        { "elementId": "grass-base", "zone": "ground", "y0": 180, "y1": 900 }
+      ],
+      "patches": [{ "elementId": "blue-tile-patch", "zone": "water", "x": 300, "y": 600, "w": 500, "h": 220 }]
     }
   ]
 }

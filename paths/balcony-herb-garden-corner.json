@@ -1,0 +1,45 @@
+{
+  "sceneId": "balcony-herb-garden-corner",
+  "activeAnimals": [
+    "yellow"
+  ],
+  "animals": {
+    "yellow": {
+      "path": [
+        {
+          "x": 175.3634761794455,
+          "y": -220,
+          "durationToNextMs": 3399
+        },
+        {
+          "x": 1305.6882727489558,
+          "y": 700.7814646813863,
+          "durationToNextMs": 1311
+        },
+        {
+          "x": 796.8062786177123,
+          "y": 461.97800334761456,
+          "durationToNextMs": 2205
+        },
+        {
+          "x": 141.95536154626217,
+          "y": -220,
+          "durationToNextMs": 0
+        }
+      ],
+      "options": {
+        "rotationFollowsPath": true,
+        "flip": true,
+        "useWalkCycle": true,
+        "bobbing": false,
+        "bobbingAmplitude": 6,
+        "strideLengthPx": 140,
+        "pathSpeedMultiplier": 1,
+        "sizeScale": 1,
+        "shadow": false
+      },
+      "startAtMs": 846
+    }
+  },
+  "placedOrnaments": []
+}

@@ -11,6 +11,8 @@
   if (isExportMode) document.body.classList.add("export-mode");
 
   const canvas = document.getElementById("stage");
+  // Keep interactive playback lightweight; the export window retains 4K.
+  if (!isExportMode) { canvas.width = 1600; canvas.height = 900; }
   const ctx = canvas.getContext("2d");
   const stagePad = document.getElementById("stagePad");
   const overlayCanvas = document.getElementById("overlayCanvas");
@@ -41,6 +43,9 @@
   const modalCancelBtn = document.getElementById("modalCancelBtn");
   const exportBtn = document.getElementById("exportBtn");
   const exportProgressEl = document.getElementById("exportProgress");
+  const outputDirRowEl = document.getElementById("outputDirRow");
+  const outputDirInput = document.getElementById("outputDirInput");
+  const outputDirBrowseBtn = document.getElementById("outputDirBrowseBtn");
   const reloadScenesBtn = document.getElementById("reloadScenesBtn");
   const openConfigBtn = document.getElementById("openConfigBtn");
   const newWindowBtn = document.getElementById("newWindowBtn");
@@ -59,6 +64,20 @@
   const autoGenModalStatusEl = document.getElementById("autoGenModalStatus");
   const autoGenCancelBtn = document.getElementById("autoGenCancelBtn");
   const autoGenGoBtn = document.getElementById("autoGenGoBtn");
+  const autoGenRandomEl = document.getElementById("autoGenRandom");
+  const fxLightEl = document.getElementById("fxLight");
+  const fxWaterEl = document.getElementById("fxWater");
+  const fxWaterHintEl = document.getElementById("fxWaterHint");
+  const fxParticlesEl = document.getElementById("fxParticles");
+  const fxParticleKindEl = document.getElementById("fxParticleKind");
+  const fxCameraEl = document.getElementById("fxCamera");
+  const fxShuffleBtn = document.getElementById("fxShuffleBtn");
+  const autoGenRandomOptionsEl = document.getElementById("autoGenRandomOptions");
+  const autoGenCountEl = document.getElementById("autoGenCount");
+  const autoGenMaxAnimalsEl = document.getElementById("autoGenMaxAnimals");
+  const autoGenCameraDriftEl = document.getElementById("autoGenCameraDrift");
+  const autoGenBgLabelEl = document.getElementById("autoGenBgLabel");
+  const autoGenAnimalLabelEl = document.getElementById("autoGenAnimalLabel");
   const configStatusEl = document.getElementById("configStatus");
   const animalListEl = document.getElementById("animalList");
   const ornamentListEl = document.getElementById("ornamentList");
@@ -88,7 +107,7 @@
 
   const TIMELINE_RULER_H = 16;
   const TIMELINE_LANE_H = 20;
-  const ANIMAL_COLORS = { blue: "#4aa3ff", green: "#3ecf6a", red: "#ff5a5a" };
+  const ANIMAL_COLORS = { yellow: "#f2c94c", green: "#3ecf6a", red: "#ff5a5a" };
   const ANIMAL_COLOR_FALLBACK = ["#c98bff", "#ffb648", "#4ad9c9", "#ff8bcb"];
 
   function colorForAnimal(id) {
@@ -108,6 +127,7 @@
   let ornamentDefs = [];
   let templateNames = [];
   let currentScene = null;
+  let currentSceneZones = { bands: [], patches: [] }; // this scene's habitat regions — see scripts/lib/zones.js
   let assetCacheBust = Date.now();
   let spriteCache = new Map(); // animalId -> { lizardImage, walkFrames, rotationOffsetRad, strideLengthPx }
   let ornamentSpriteCache = new Map(); // ornamentId -> HTMLImageElement
@@ -118,6 +138,7 @@
   let editingAnimalId = null;
   let path = []; // editingAnimalId's path (same array reference as animalData's copy)
   let isPlaying = false;
+  let sceneEffects = null; // background motion saved with the layout (see applySceneEffects)
   let isExporting = false; // true while a video export is in flight (see setExportUIState)
   const MULTI_EXPORT_MAX = 4;
   let multiExportSelectedIds = new Set(); // scene ids checked in the batch-export checklist
@@ -146,6 +167,38 @@
     return ornamentDefs.find((o) => o.id === id);
   }
 
+  function habitatFor(animalId) {
+    const def = animalDefFor(animalId);
+    return (def && def.habitat) || "ground";
+  }
+
+  // Fetches the habitat region map written by prepare-assets.js for a scene
+  // (assets/<sceneId>/zones.json). Missing/unreadable is treated as an
+  // all-ground scene (no bands/patches) rather than an error, so a scene
+  // built before this feature existed still behaves exactly as before.
+  async function fetchSceneZones(sceneId) {
+    try {
+      const res = await fetch(`assets/${sceneId}/zones.json?v=${assetCacheBust}`);
+      if (res.ok) return await res.json();
+    } catch (err) {
+      // fall through to the all-ground default below
+    }
+    return { bands: [], patches: [] };
+  }
+
+  function isHabitatAvailableInScene(habitat, zones) {
+    return window.SceneZones.hasZone(zones, habitat, window.AnimEngine.CANVAS_WIDTH, window.AnimEngine.CANVAS_HEIGHT);
+  }
+
+  function isPointAllowedForAnimal(animalId, x, y) {
+    return window.SceneZones.allowsHabitatAt(currentSceneZones, habitatFor(animalId), x, y);
+  }
+
+  function habitatBlockedMessage(animalId) {
+    const def = animalDefFor(animalId);
+    return `${(def && (def.label || def.id)) || animalId} needs a "${habitatFor(animalId)}" area — can't place it there.`;
+  }
+
   function normalizeOptions(id, opts) {
     const def = animalDefFor(id) || {};
     const o = opts || {};
@@ -164,7 +217,9 @@
       strideLengthPx: o.strideLengthPx ?? def.strideLengthPx ?? 140,
       pathSpeedMultiplier: o.pathSpeedMultiplier ?? 1,
       sizeScale: o.sizeScale ?? 1,
-      shadow: !!o.shadow,
+      // On by default for newly placed animals; saved layouts keep their choice.
+      shadow: o.shadow !== undefined ? !!o.shadow : true,
+      airborne: habitatFor(id) === "air",
     };
   }
 
@@ -179,6 +234,7 @@
       pathSpeedMultiplier: Number(pathSpeed.value) || 1,
       sizeScale: Number(sizeScale.value) || 1,
       shadow: optShadow.checked,
+      airborne: habitatFor(editingAnimalId) === "air",
     };
   }
 
@@ -223,6 +279,8 @@
       ornamentShadowToggleEl,
       exportBtn,
       autoGenerateBtn,
+      outputDirInput,
+      outputDirBrowseBtn,
     ].forEach((el) => (el.disabled = exporting));
     setControlsEnabled(!exporting && !!editingAnimalId);
     renderAnimalList();
@@ -256,9 +314,10 @@
   }
 
   function renderEditorFrame(tMs) {
+    window.AnimEngine.setCameraActive(isExportMode || isPlaying);
     window.AnimEngine.renderFrame(tMs);
     if (isExportMode) return;
-    drawOverlay();
+    if (!(isPlaying && sceneEffects?.camera)) drawOverlay();
     renderTimeline();
   }
 
@@ -732,6 +791,10 @@
     if (hit >= 0) {
       draggingIndex = hit;
     } else {
+      if (!isPointAllowedForAnimal(editingAnimalId, pos.x, pos.y)) {
+        statusEl.textContent = habitatBlockedMessage(editingAnimalId);
+        return;
+      }
       path.push({ x: pos.x, y: pos.y, durationToNextMs: 1000 });
       draggingIndex = path.length - 1;
       afterPathStructureChange();
@@ -782,6 +845,10 @@
 
     if (draggingIndex < 0) return;
     const pos = clampOffScreen(canvasCoordsFromEvent(evt));
+    if (!isPointAllowedForAnimal(editingAnimalId, pos.x, pos.y)) {
+      statusEl.textContent = habitatBlockedMessage(editingAnimalId);
+      return; // leave the waypoint at its last valid position
+    }
     path[draggingIndex].x = pos.x;
     path[draggingIndex].y = pos.y;
     syncEngine();
@@ -862,6 +929,10 @@
     const animalId = evt.dataTransfer.getData("application/x-path-animator-animal");
     if (animalId && animalDefFor(animalId)) {
       const pos = clampOffScreen(canvasCoordsFromEvent(evt));
+      if (!isPointAllowedForAnimal(animalId, pos.x, pos.y)) {
+        statusEl.textContent = habitatBlockedMessage(animalId);
+        return;
+      }
       const startAtMs = Math.max(0, Number(scrub.value) || 0);
 
       if (!activeAnimalIds.has(animalId)) {
@@ -998,6 +1069,7 @@
         rotation: o.rotation || 0,
         shadow: !!o.shadow,
       })),
+      effects: sceneEffects,
     };
   }
 
@@ -1197,6 +1269,14 @@
   async function ensureActorSprite(id) {
     if (spriteCache.has(id)) return spriteCache.get(id);
     const def = animalDefFor(id);
+    if (def && def.model3d) {
+      const { loadAnimal3D } = await import('./animal-3d.js');
+      const model3d = await loadAnimal3D(def.model3d, def.modelColor, def);
+      const lizardImage = await loadImage(model3d.canvas.toDataURL());
+      const entry = { lizardImage, model3d, walkFrames: [], rotationOffsetRad: 0, staticRotationOffsetRad: 0, strideLengthPx: def.strideLengthPx || 140 };
+      spriteCache.set(id, entry);
+      return entry;
+    }
     const base = `assets/_animals/${id}`;
     const motionGrid = def && def.motionGrid;
     const frameCount = motionGrid ? (motionGrid.cols || 4) * (motionGrid.rows || 2) : 0;
@@ -1204,9 +1284,10 @@
       { length: frameCount },
       (_, i) => `${base}/walk_frames/frame_${String(i).padStart(2, "0")}.png?v=${assetCacheBust}`
     );
-    const [lizardImage, walkFrames] = await Promise.all([
+    const [lizardImage, walkFrames, rig] = await Promise.all([
       loadImage(`${base}/animal.png?v=${assetCacheBust}`),
       Promise.all(walkFramePaths.map((p) => loadImage(p))).catch(() => []),
+      def && def.rig ? ensureActorRig(id, def, base) : Promise.resolve(null),
     ]);
     const rotationOffsetRad = ((def && def.rotationOffsetDeg) || 0) * (Math.PI / 180);
     const entry = {
@@ -1219,9 +1300,62 @@
       // it shares that frame's own (non-horizontal) neutral orientation.
       staticRotationOffsetRad: def && def.source ? 0 : rotationOffsetRad,
       strideLengthPx: (def && def.strideLengthPx) || 140,
+      rig,
     };
     spriteCache.set(id, entry);
     return entry;
+  }
+
+  // Loads a layered cutout rig's geometry (assets/_animals/<id>/rig/rig.json
+  // + its layer PNGs, built by prepare-assets.js's buildRig) and merges in
+  // this animal's *live* motion tuning straight from scenes.json (restAngle/
+  // swingAmplitude/swingPhaseOffset/drawOrder, config/scenes.json's
+  // animal.rig.limbs) rather than from anything baked into rig.json — so
+  // retuning a swing amplitude is a JSON edit + reload, not an asset rebuild.
+  // Returns null (falling back to walk-cycle frames) if the rig assets
+  // haven't been built yet for this animal.
+  async function ensureActorRig(id, def, base) {
+    const rigDef = def.rig;
+    try {
+      const manifest = await fetch(`${base}/rig/rig.json?v=${assetCacheBust}`).then((res) => {
+        if (!res.ok) throw new Error(`rig manifest HTTP ${res.status}`);
+        return res.json();
+      });
+      const tuningByName = new Map((rigDef.limbs || []).map((l) => [l.name, l]));
+      const [bodyImage, ...limbImages] = await Promise.all([
+        loadImage(`${base}/rig/${manifest.body.file}?v=${assetCacheBust}`),
+        ...manifest.limbs.map((l) => loadImage(`${base}/rig/${l.file}?v=${assetCacheBust}`)),
+      ]);
+      const limbs = manifest.limbs.map((l, i) => {
+        const tuning = tuningByName.get(l.name) || {};
+        return {
+          name: l.name,
+          image: limbImages[i],
+          anchorOffset: l.anchorOffset,
+          pivotLocal: l.pivotLocal,
+          restAngleRad: ((tuning.restAngleDeg || 0) * Math.PI) / 180,
+          swingAmplitudeRad: ((tuning.swingAmplitudeDeg || 0) * Math.PI) / 180,
+          swingPhaseOffset: tuning.swingPhaseOffset || 0,
+          drawOrder: tuning.drawOrder || "front",
+        };
+      });
+      return {
+        bodyImage,
+        bodyDrawOffset: manifest.body.drawOffset,
+        strideLengthPx: (rigDef.gait && rigDef.gait.strideLengthPx) || 140,
+        // Rig layers are cut from the static "source" photo (neutrally
+        // horizontal — same convention as staticRotationOffsetRad above),
+        // which is commonly a different neutral orientation than the
+        // separately-authored walk-cycle motion-grid sheet, so this isn't
+        // necessarily the same as rotationOffsetDeg. Override per-animal via
+        // rig.rotationOffsetDeg if a rig's own source art needs it.
+        rotationOffsetRad: ((rigDef.rotationOffsetDeg || 0) * Math.PI) / 180,
+        limbs,
+      };
+    } catch (err) {
+      console.error(`Animal "${id}": failed to load rig assets, falling back to walk-cycle frames.`, err);
+      return null;
+    }
   }
 
   // Ornament artwork depends only on the ornament def, not the scene, so
@@ -1349,6 +1483,8 @@
       staticRotationOffsetRad: sprite.staticRotationOffsetRad,
       strideLengthPx: sprite.strideLengthPx,
     });
+    window.AnimEngine.setActorRig(id, sprite.rig);
+    window.AnimEngine.setActor3D(id, sprite.model3d);
     ensureActorAudio(id);
     const entry = animalData.get(id);
     window.AnimEngine.setActorPath(id, entry.path);
@@ -1399,7 +1535,10 @@
       }
 
       const speed = window.AnimEngine.getActorSpeedPxPerSec(id, localT);
-      const rate = Math.min(
+      // Wing/fin sounds keep time with a time-driven clip, not with speed.
+      const def = animalDefFor(id);
+      const fixedRate = def?.walkSound?.fixedRate ?? def?.modelAnimation === "fly";
+      const rate = fixedRate ? 1 : Math.min(
         WALK_SOUND_RATE_MAX,
         Math.max(WALK_SOUND_RATE_MIN, speed / BASE_WALK_SOUND_SPEED_PX_PER_SEC)
       );
@@ -1440,7 +1579,8 @@
   async function toggleAnimalActive(id, active) {
     if (active) {
       await activateAnimal(id);
-      if (!editingAnimalId) selectEditingAnimal(id);
+      selectEditingAnimal(id);
+      statusEl.textContent = `${animalDefFor(id).label || id} selected. Click the background to place it, then add another point and press Play.`;
     } else {
       deactivateAnimal(id);
       if (editingAnimalId === id) {
@@ -1459,19 +1599,33 @@
       const row = document.createElement("div");
       row.className = "animal-row" + (def.id === editingAnimalId ? " editing" : "");
 
+      const habitat = def.habitat || "ground";
+      const available = isHabitatAvailableInScene(habitat, currentSceneZones) || activeAnimalIds.has(def.id);
+
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = activeAnimalIds.has(def.id);
-      checkbox.disabled = isExporting;
+      checkbox.disabled = isExporting || !available;
       checkbox.addEventListener("click", (evt) => evt.stopPropagation());
-      checkbox.addEventListener("change", () => toggleAnimalActive(def.id, checkbox.checked));
+      checkbox.addEventListener("change", async () => {
+        checkbox.disabled = true;
+        statusEl.textContent = checkbox.checked ? 'Loading animal…' : '';
+        try { await toggleAnimalActive(def.id, checkbox.checked); }
+        catch (error) {
+          deactivateAnimal(def.id);
+          renderAnimalList();
+          statusEl.textContent = 'Could not load animal: ' + error.message;
+        }
+      });
       row.appendChild(checkbox);
 
       const name = document.createElement("span");
       name.className = "name";
       name.textContent = def.label || def.id;
-      name.draggable = !isExporting;
-      name.title = "Drag onto the video to place this animal at the current timeline time";
+      name.draggable = !isExporting && available;
+      name.title = available
+        ? "Drag onto the video to place this animal at the current timeline time"
+        : `${def.label || def.id} needs a "${habitat}" area, which this scene doesn't have.`;
       name.addEventListener("dragstart", (evt) => {
         evt.stopPropagation();
         evt.dataTransfer.setData("application/x-path-animator-animal", def.id);
@@ -1505,8 +1659,18 @@
       startLabel.appendChild(document.createTextNode("s"));
       row.appendChild(startLabel);
 
-      row.addEventListener("click", () => {
-        if (!isExporting && activeAnimalIds.has(def.id)) selectEditingAnimal(def.id);
+      row.addEventListener("click", async (event) => {
+        if (isExporting || !available || event.target.closest('input, label')) return;
+        if (activeAnimalIds.has(def.id)) selectEditingAnimal(def.id);
+        else {
+          statusEl.textContent = 'Loading animal…';
+          try { await toggleAnimalActive(def.id, true); }
+          catch (error) {
+            deactivateAnimal(def.id);
+            renderAnimalList();
+            statusEl.textContent = 'Could not load animal: ' + error.message;
+          }
+        }
       });
 
       animalListEl.appendChild(row);
@@ -1517,9 +1681,19 @@
   // template — see buildLayoutData) to the current scene: resets animals and
   // placed ornaments, then re-registers them as engine actors.
   async function applyLayoutData(saved) {
+    // Older 3D-only layouts used a separate ID. Yellow now uses that model.
+    if (saved && saved.activeAnimals?.includes('lizard-3d')) {
+      saved = {
+        ...saved,
+        activeAnimals: [...new Set(saved.activeAnimals.map(id => id === 'lizard-3d' ? 'yellow' : id))],
+        animals: { ...saved.animals, yellow: saved.animals?.yellow || saved.animals?.['lizard-3d'] },
+      };
+    }
     animalData = new Map();
     activeAnimalIds = new Set();
     window.AnimEngine.clearActors();
+    sceneEffects = saved?.effects || null;
+    applySceneEffects();
 
     placedOrnaments = new Map();
     window.AnimEngine.clearOrnaments();
@@ -1560,7 +1734,10 @@
   async function loadSavedPathsForScene() {
     let saved = null;
     try {
-      const res = await fetch(`/api/path/${currentScene.id}`);
+      // An export of a generated layout (Generate Video's random mix) loads
+      // that layout instead of the scene's own saved one.
+      const layoutId = isExportMode ? urlParams.get("layout") : null;
+      const res = await fetch(layoutId ? `/api/auto-layout/${encodeURIComponent(layoutId)}` : `/api/path/${currentScene.id}`);
       if (res.ok) saved = await res.json();
     } catch (err) {
       saved = null;
@@ -1588,14 +1765,150 @@
     // <img src> re-fetch could otherwise show stale cached image bytes.
     const bgImage = await loadImage(`assets/${scene.id}/background.jpg?v=${assetCacheBust}`);
     window.AnimEngine.setContext(ctx, bgImage);
+    window.AnimEngine.setBackgroundSway(scene.sway || null); // plants move only on scenes configured to
+    currentSceneZones = await fetchSceneZones(scene.id);
+    applySceneEffects(); // water areas differ per scene
+
+    window.AnimEngine.clearScrollLayers();
+    for (const band of currentSceneZones.bands || []) {
+      if (!band.cloud) continue;
+      const cloudImage = await loadImage(`assets/${scene.id}/${band.cloud.image}?v=${assetCacheBust}`);
+      window.AnimEngine.setScrollLayer(band.zone, cloudImage, band.y0, band.y1, band.cloud.scrollPxPerSec);
+    }
 
     if (!isExportMode) localStorage.setItem(LAST_SCENE_STORAGE_KEY, scene.id);
 
     draggingIndex = -1;
     if (loadSavedLayout) await loadSavedPathsForScene();
+    renderAnimalList(); // habitat availability (currentSceneZones) and/or active set just changed
     scrub.value = "0";
     renderEditorFrame(0);
     updateTimeLabel();
+  }
+
+  // ---------------------------------------------------------------------
+  // Background motion (see engine.js setSceneEffects). sceneEffects is what
+  // gets saved with a layout; water areas are filled in from the current
+  // scene's zone map when applied, so a layout moved to another background
+  // ripples in that background's own water.
+  // ---------------------------------------------------------------------
+  function waterRects(zones) {
+    const W = window.AnimEngine.CANVAS_WIDTH;
+    return [
+      ...(zones.patches || []).filter((p) => p.zone === "water").map((p) => ({ x: p.x, y: p.y, w: p.w, h: p.h })),
+      ...(zones.bands || []).filter((b) => b.zone === "water").map((b) => ({ x: 0, y: b.y0, w: W, h: b.y1 - b.y0 })),
+    ];
+  }
+
+  function applySceneEffects() {
+    let fx = sceneEffects ? JSON.parse(JSON.stringify(sceneEffects)) : null;
+    const rects = waterRects(currentSceneZones);
+    if (fx?.water) {
+      if (rects.length) fx.water.rects = rects;
+      else delete fx.water;
+    }
+    window.AnimEngine.setSceneEffects(fx);
+    if (!fxLightEl) return;
+    fxLightEl.checked = !!sceneEffects?.light;
+    fxWaterEl.checked = !!sceneEffects?.water && rects.length > 0;
+    fxWaterEl.disabled = rects.length === 0;
+    fxWaterHintEl.textContent = rects.length === 0 ? "(this scene has no water)" : "";
+    fxParticlesEl.checked = !!sceneEffects?.particles;
+    if (sceneEffects?.particles) fxParticleKindEl.value = sceneEffects.particles.kind;
+    fxCameraEl.checked = !!sceneEffects?.camera;
+  }
+
+  // Snow scenes get snow, outdoor scenes leaves or petals, indoor ones dust.
+  function particleKindFor(sceneId, rand = Math.random) {
+    const scene = scenes.find((s) => s.id === sceneId);
+    if (/snow/i.test(sceneId)) return "snow";
+    if (scene?.category === "outdoor") return rand() < 0.6 ? "leaves" : "petals";
+    return "dust";
+  }
+
+  function randomParticles(kind, rand = Math.random) {
+    const ranges = { leaves: [8, 16, 25, 60], petals: [14, 26, 20, 45], snow: [70, 130, 10, 30], dust: [40, 80, 4, 12] };
+    const [cMin, cMax, wMin, wMax] = ranges[kind];
+    const angle = rand() * Math.PI * 2;
+    const wind = wMin + rand() * (wMax - wMin);
+    return {
+      kind,
+      count: Math.round(cMin + rand() * (cMax - cMin)),
+      wind: { x: Math.cos(angle) * wind, y: Math.sin(angle) * wind },
+    };
+  }
+
+  function randomLight(sceneId, rand = Math.random) {
+    const outdoor = scenes.find((s) => s.id === sceneId)?.category === "outdoor";
+    return {
+      strength: outdoor ? 0.3 + rand() * 0.3 : 0.16 + rand() * 0.18,
+      scale: 1.1 + rand() * 0.9,
+      speed: 2 + rand() * 8,
+      angle: rand() * Math.PI * 2,
+    };
+  }
+
+  function randomCamera(rand = Math.random) {
+    const a = 1 + rand() * 0.03;
+    const b = 1.05 + rand() * 0.07;
+    const pushIn = rand() < 0.7;
+    return { zoomFrom: pushIn ? a : b, zoomTo: pushIn ? b : a, panX: rand() * 2 - 1, panY: rand() * 2 - 1 };
+  }
+
+  // A random mix of effects suited to the scene; always at least one.
+  // Camera drift only when allowed: on a floor it reads as the ground moving.
+  function randomSceneEffects(sceneId, zones, rand = Math.random, { camera = true } = {}) {
+    const outdoor = scenes.find((s) => s.id === sceneId)?.category === "outdoor";
+    const fx = { seed: Math.floor(rand() * 1e9) };
+    if (rand() < (outdoor ? 0.8 : 0.5)) fx.light = randomLight(sceneId, rand);
+    if (waterRects(zones).length) fx.water = { strength: 0.4 + rand() * 0.4 };
+    if (rand() < 0.65) fx.particles = randomParticles(particleKindFor(sceneId, rand), rand);
+    if (camera && rand() < 0.7) fx.camera = randomCamera(rand);
+    if (!(fx.light || fx.water || fx.particles || fx.camera)) fx.light = randomLight(sceneId, rand);
+    return fx;
+  }
+
+  function onEffectsChanged() {
+    applySceneEffects();
+    renderEditorFrame(Number(scrub.value));
+  }
+
+  function toggleEffect(key, on, make) {
+    const fx = { seed: Math.floor(Math.random() * 1e9), ...(sceneEffects || {}) };
+    if (on) fx[key] = fx[key] || make();
+    else delete fx[key];
+    sceneEffects = fx.light || fx.water || fx.particles || fx.camera ? fx : null;
+    onEffectsChanged();
+  }
+
+  if (fxLightEl) {
+    fxLightEl.addEventListener("change", () => toggleEffect("light", fxLightEl.checked, () => randomLight(currentScene?.id)));
+    fxWaterEl.addEventListener("change", () => toggleEffect("water", fxWaterEl.checked, () => ({ strength: 0.6 })));
+    fxParticlesEl.addEventListener("change", () =>
+      toggleEffect("particles", fxParticlesEl.checked, () => randomParticles(fxParticleKindEl.value))
+    );
+    fxParticleKindEl.addEventListener("change", () => {
+      if (!fxParticlesEl.checked) return;
+      sceneEffects = { ...sceneEffects, particles: randomParticles(fxParticleKindEl.value) };
+      onEffectsChanged();
+    });
+    fxCameraEl.addEventListener("change", () => toggleEffect("camera", fxCameraEl.checked, () => randomCamera()));
+    // New random look: re-roll the seed and the settings of whatever is on
+    // (or a whole random mix if nothing is on yet).
+    fxShuffleBtn.addEventListener("click", () => {
+      if (!currentScene) return;
+      if (!sceneEffects) {
+        sceneEffects = randomSceneEffects(currentScene.id, currentSceneZones);
+      } else {
+        const fx = { seed: Math.floor(Math.random() * 1e9) };
+        if (sceneEffects.light) fx.light = randomLight(currentScene.id);
+        if (sceneEffects.water) fx.water = { strength: 0.4 + Math.random() * 0.4 };
+        if (sceneEffects.particles) fx.particles = randomParticles(sceneEffects.particles.kind);
+        if (sceneEffects.camera) fx.camera = randomCamera();
+        sceneEffects = fx;
+      }
+      onEffectsChanged();
+    });
   }
 
   async function fetchConfig() {
@@ -1708,6 +2021,7 @@
     const previousSceneId = currentScene ? currentScene.id : null;
     try {
       assetCacheBust = Date.now();
+      spriteCache.forEach(entry => entry.model3d?.dispose());
       spriteCache = new Map();
       ornamentSpriteCache = new Map();
       pauseAllAnimalAudio();
@@ -1772,77 +2086,117 @@
     return { x: randRange(pad, w - pad), y: randRange(pad, h - pad) };
   }
 
-  // Entry (off-screen) -> dwell (a clearly-on-screen point, visited twice in a
-  // row so the animal actually pauses there rather than just passing through
-  // it for a single instant) -> exit (off-screen). Durations are computed
-  // from distance at a random-but-constant speed, except the dwell itself,
-  // which uses a fixed range independent of distance — that's the segment
-  // that guarantees the animal is visible for a real stretch of time, not a
-  // blink. Entry/exit sides are randomized on every call, so calling this
-  // again — even for the same animal — produces a visibly different path
-  // (used to guarantee every background gets its own route).
-  function generateAutoWalkPath() {
+  // Ground's dwell point additionally avoids landing inside another zone
+  // (e.g. a sky band or a water patch) that happens to overlap the padded
+  // interior rectangle — rejection-sampled against the real zone map rather
+  // than just the rectangle, since "ground" has no rect of its own (it's
+  // whatever isn't claimed by another zone). Falls back to the plain
+  // interior point if the scene is unusually zone-dense.
+  function randomGroundDwellPoint(zones, w, h, pad) {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const p = randomInteriorPoint(w, h, pad);
+      if (window.SceneZones.zoneAt(zones, p.x, p.y) === "ground") return p;
+    }
+    return randomInteriorPoint(w, h, pad);
+  }
+
+  // Entry -> dwell (a clearly-on-screen point, visited twice in a row so the
+  // animal actually pauses there rather than just passing through it for a
+  // single instant) -> exit. Durations are computed from distance at a
+  // random-but-constant speed, except the dwell itself, which uses a fixed
+  // range independent of distance — that's the segment that guarantees the
+  // animal is visible for a real stretch of time, not a blink.
+  //
+  // "ground" animals enter/exit from off-screen edges of the whole canvas,
+  // same as before this habitat system existed. Animals confined to a
+  // specific zone (e.g. a goldfish's water patch, a bird's sky band) instead
+  // stay entirely within that zone's rect for the whole path — there's no
+  // "off-screen" for a fish the way there is for something that can walk in
+  // from outside the frame. Either way, calling this again — even for the
+  // same animal — produces a visibly different path (used to guarantee every
+  // background gets its own route).
+  function generateAutoWalkPath(habitat, zones, wanderStops = 0) {
     const w = window.AnimEngine.CANVAS_WIDTH;
     const h = window.AnimEngine.CANVAS_HEIGHT;
-    const entrySide = pickRandomSide();
-    const exitSide = Math.random() < 0.55 ? entrySide : pickRandomSide(entrySide);
     const pad = Math.round(Math.min(w, h) * AUTO_GEN_INTERIOR_PAD_FRACTION);
 
-    const entry = randomEdgePoint(entrySide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
-    const dwell = randomInteriorPoint(w, h, pad);
-    const exit = randomEdgePoint(exitSide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
+    let entry, dwell, exit, pickStop;
+    if (habitat === "ground") {
+      const entrySide = pickRandomSide();
+      const exitSide = Math.random() < 0.55 ? entrySide : pickRandomSide(entrySide);
+      entry = randomEdgePoint(entrySide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
+      dwell = randomGroundDwellPoint(zones, w, h, pad);
+      exit = randomEdgePoint(exitSide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
+      pickStop = () => randomGroundDwellPoint(zones, w, h, pad);
+    } else {
+      pickStop = () => window.SceneZones.sampleZonePoint(zones, habitat, w, h);
+      entry = pickStop();
+      dwell = pickStop();
+      exit = pickStop();
+    }
+
+    // Extra wander stops, split randomly before and after the pause.
+    const stops = Array.from({ length: wanderStops }, pickStop);
+    const before = Math.floor(Math.random() * (wanderStops + 1));
+    const points = [entry, ...stops.slice(0, before), dwell, dwell, ...stops.slice(before), exit];
 
     const speed = randRange(AUTO_GEN_SPEED_MIN, AUTO_GEN_SPEED_MAX);
-    const distIn = Math.hypot(dwell.x - entry.x, dwell.y - entry.y);
-    const distOut = Math.hypot(exit.x - dwell.x, exit.y - dwell.y);
-    const durIn = Math.max(AUTO_GEN_MIN_SEGMENT_MS, Math.round((distIn / speed) * 1000));
-    const durOut = Math.max(AUTO_GEN_MIN_SEGMENT_MS, Math.round((distOut / speed) * 1000));
     const dwellMs = Math.round(randRange(AUTO_GEN_DWELL_MIN_MS, AUTO_GEN_DWELL_MAX_MS));
+    const dwellIndex = before + 1; // segment from dwell to its repeat is the pause
+    const durations = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      const dist = Math.hypot(points[i + 1].x - points[i].x, points[i + 1].y - points[i].y);
+      durations.push(i === dwellIndex ? dwellMs : Math.max(AUTO_GEN_MIN_SEGMENT_MS, Math.round((dist / speed) * 1000)));
+    }
+    return { points, durations, dwellIndex };
+  }
 
-    return { entry, dwell, exit, durIn, dwellMs, durOut };
+  // A walk shape whose natural length fills most of budgetMs: adds wander
+  // stops (up to 3) until it does, so in a long video the animal keeps
+  // moving around the scene instead of crossing it once.
+  function generateAutoWalkForBudget(habitat, zones, budgetMs) {
+    let shape = generateAutoWalkPath(habitat, zones, 0);
+    for (let stops = 1; stops <= 3 && sum(shape.durations) < budgetMs * 0.8; stops++) {
+      shape = generateAutoWalkPath(habitat, zones, stops);
+    }
+    return shape;
+  }
+
+  function sum(values) {
+    return values.reduce((a, b) => a + b, 0);
   }
 
   // Fits a generateAutoWalkPath() shape into budgetMs, prioritizing the dwell
-  // segment — the only part of the path that's actually on screen — over the
-  // (mostly off-screen) entry/exit legs. A short video or a tight per-animal
-  // budget compresses the legs first, down to their own minimum floor, and
-  // only eats into the dwell itself once the legs can't shrink any further;
-  // this is what actually fixes animals being generated with a walk-through
-  // so brief it's easy to never see on screen at all.
-  function fitAutoWalkToBudget({ entry, dwell, exit, durIn, dwellMs, durOut }, budgetMs) {
+  // segment — the part where the animal is sure to be on screen — over the
+  // moving legs. A short video or a tight per-animal budget compresses the
+  // legs first, down to their own minimum floor, and only eats into the
+  // dwell itself once the legs can't shrink any further.
+  function fitAutoWalkToBudget({ points, durations, dwellIndex }, budgetMs) {
     const legFloor = AUTO_GEN_MIN_SEGMENT_MS;
-    const naturalTotal = durIn + dwellMs + durOut;
+    const naturalTotal = sum(durations);
     if (naturalTotal <= budgetMs) {
-      return { path: buildDwellPath(entry, dwell, exit, durIn, dwellMs, durOut), totalDurationMs: naturalTotal };
+      return { path: buildWalkPath(points, durations), totalDurationMs: naturalTotal };
     }
 
-    const legsBudget = Math.max(legFloor * 2, budgetMs - dwellMs);
-    const legsTotal = durIn + durOut;
-    const legsFactor = legsBudget / legsTotal;
-    let fitDurIn = Math.max(legFloor, Math.round(durIn * legsFactor));
-    let fitDurOut = Math.max(legFloor, Math.round(durOut * legsFactor));
-    let fitDwellMs = dwellMs;
+    const dwellMs = durations[dwellIndex];
+    const legCount = durations.length - 1;
+    const legsTotal = naturalTotal - dwellMs;
+    const legsBudget = Math.max(legFloor * legCount, budgetMs - dwellMs);
+    const factor = legsBudget / legsTotal;
+    const fitted = durations.map((d, i) => (i === dwellIndex ? d : Math.max(legFloor, Math.round(d * factor))));
 
-    // Even both legs at their floor plus the full dwell might still exceed a
-    // very tight budget (many animals crammed into a very short video) — as
-    // a last resort, shrink the dwell too, but never below a small floor so
-    // there's still *something* to see rather than nothing.
-    const remainingForDwell = budgetMs - fitDurIn - fitDurOut;
-    if (remainingForDwell < fitDwellMs) {
-      fitDwellMs = Math.max(400, remainingForDwell);
+    // Even every leg at its floor plus the full dwell might still exceed a
+    // very tight budget — as a last resort shrink the dwell too, but never
+    // below a small floor so there's still something to see.
+    const remainingForDwell = budgetMs - (sum(fitted) - fitted[dwellIndex]);
+    if (remainingForDwell < fitted[dwellIndex]) {
+      fitted[dwellIndex] = Math.max(400, remainingForDwell);
     }
-
-    const path = buildDwellPath(entry, dwell, exit, fitDurIn, fitDwellMs, fitDurOut);
-    return { path, totalDurationMs: fitDurIn + fitDwellMs + fitDurOut };
+    return { path: buildWalkPath(points, fitted), totalDurationMs: sum(fitted) };
   }
 
-  function buildDwellPath(entry, dwell, exit, durIn, dwellMs, durOut) {
-    return [
-      { x: entry.x, y: entry.y, durationToNextMs: durIn },
-      { x: dwell.x, y: dwell.y, durationToNextMs: dwellMs },
-      { x: dwell.x, y: dwell.y, durationToNextMs: durOut },
-      { x: exit.x, y: exit.y, durationToNextMs: 0 },
-    ];
+  function buildWalkPath(points, durations) {
+    return points.map((p, i) => ({ x: p.x, y: p.y, durationToNextMs: i < durations.length ? durations[i] : 0 }));
   }
 
   // Builds a full saved-layout object (same shape as buildLayoutData/what
@@ -1859,9 +2213,16 @@
   // intended start avoids that, while still guaranteeing startAtMs + its
   // path duration never exceeds totalMs — so every animal has always walked
   // back off-screen by the end.
-  function buildAutoLayoutForScene(sceneId, animalIds, totalMs) {
-    const n = animalIds.length;
-    const shuffled = [...animalIds].sort(() => Math.random() - 0.5);
+  // `zones` is this scene's own habitat region map (fetched by the caller
+  // via fetchSceneZones, since a batch run can target several different
+  // backgrounds — each needs its own zones, not whatever's currently
+  // loaded). Animals whose habitat has nowhere to go in this scene (e.g. a
+  // goldfish selected for a scene with no water patch) are silently dropped
+  // rather than generated somewhere wrong.
+  function buildAutoLayoutForScene(sceneId, animalIds, totalMs, zones) {
+    const eligibleIds = animalIds.filter((id) => isHabitatAvailableInScene(habitatFor(id), zones));
+    const n = eligibleIds.length;
+    const shuffled = [...eligibleIds].sort(() => Math.random() - 0.5);
     const animals = {};
 
     shuffled.forEach((id, i) => {
@@ -1871,7 +2232,7 @@
       const buffer = totalMs * 0.03;
       const budget = Math.max(totalMs * 0.25, totalMs - desiredStart - buffer);
 
-      const shape = generateAutoWalkPath();
+      const shape = generateAutoWalkForBudget(habitatFor(id), zones, budget);
       const { path, totalDurationMs } = fitAutoWalkToBudget(shape, budget);
 
       const maxStart = Math.max(0, totalMs - totalDurationMs);
@@ -1914,12 +2275,14 @@
 
   function updateAutoGenBgHint() {
     const count = autoGenBgSelectEl.selectedOptions.length;
-    autoGenBgCountHintEl.textContent = `${count}/${AUTO_GEN_MAX_BACKGROUNDS} selected — each becomes its own video.`;
+    autoGenBgCountHintEl.textContent = autoGenRandomEl.checked
+      ? `${count} background(s) in the mix — each video picks one at random.`
+      : `${count}/${AUTO_GEN_MAX_BACKGROUNDS} selected — each becomes its own video.`;
   }
 
   autoGenBgSelectEl.addEventListener("change", () => {
     const selected = [...autoGenBgSelectEl.selectedOptions];
-    if (selected.length > AUTO_GEN_MAX_BACKGROUNDS) {
+    if (!autoGenRandomEl.checked && selected.length > AUTO_GEN_MAX_BACKGROUNDS) {
       const newlySelected = selected.filter((opt) => !autoGenSelectedBgIds.has(opt.value));
       let overflow = selected.length - AUTO_GEN_MAX_BACKGROUNDS;
       // Deselect the most recently added picks first (falling back to the
@@ -1935,20 +2298,29 @@
     updateAutoGenBgHint();
   });
 
+  function sceneLabel(sceneId) {
+    const scene = scenes.find((s) => s.id === sceneId);
+    return scene ? scene.label || scene.id : sceneId;
+  }
+
   function renderAutoGenProgressList(sceneIds) {
+    renderAutoGenProgressRows(sceneIds.map((sceneId) => ({ key: sceneId, label: sceneLabel(sceneId) })));
+  }
+
+  // rows: [{ key, label }] — key addresses the row in setAutoGenRowStatus.
+  function renderAutoGenProgressRows(rows) {
     autoGenProgressListEl.innerHTML = "";
-    sceneIds.forEach((sceneId) => {
-      const scene = scenes.find((s) => s.id === sceneId);
+    rows.forEach(({ key, label: text }) => {
       const row = document.createElement("div");
       row.className = "scene-progress-row";
 
       const label = document.createElement("span");
-      label.textContent = scene ? scene.label || scene.id : sceneId;
+      label.textContent = text;
       row.appendChild(label);
 
       const status = document.createElement("span");
       status.className = "scene-progress-status";
-      status.id = `autoGenStatus-${sceneId}`;
+      status.id = `autoGenStatus-${key}`;
       status.textContent = "Queued…";
       row.appendChild(status);
 
@@ -1989,6 +2361,7 @@
     );
     renderAutoGenBgList();
     autoGenGoBtn.textContent = window.electronAPI ? "Generate & Export" : "Generate & Save Paths";
+    applyAutoGenMode();
     autoGenModalStatusEl.textContent = "";
     autoGenProgressListEl.innerHTML = "";
     autoGenOverlayEl.hidden = false;
@@ -1997,6 +2370,209 @@
   autoGenCancelBtn.addEventListener("click", () => {
     autoGenOverlayEl.hidden = true;
   });
+
+  // Random mix turns the two lists into pools to draw from (all selected by
+  // default) and lifts the 4-background cap, since videos render 4 at a time.
+  function applyAutoGenMode() {
+    const random = autoGenRandomEl.checked;
+    autoGenRandomOptionsEl.hidden = !random;
+    autoGenAnimalLabelEl.textContent = random
+      ? "Animals that may appear (ctrl/cmd-click to change)"
+      : "Animals (ctrl/cmd-click to select multiple)";
+    autoGenBgLabelEl.textContent = random
+      ? "Backgrounds that may be used (ctrl/cmd-click to change)"
+      : `Backgrounds (ctrl/cmd-click to select multiple, up to ${AUTO_GEN_MAX_BACKGROUNDS})`;
+    if (random) {
+      for (const opt of autoGenAnimalSelectEl.options) opt.selected = true;
+      for (const opt of autoGenBgSelectEl.options) opt.selected = true;
+      autoGenSelectedBgIds = new Set([...autoGenBgSelectEl.selectedOptions].map((o) => o.value));
+    }
+    updateAutoGenBgHint();
+  }
+
+  autoGenRandomEl.addEventListener("change", () => {
+    if (autoGenRandomEl.checked) autoGenSecondsEl.value = 15;
+    applyAutoGenMode();
+  });
+
+  function shuffled(list) {
+    const a = [...list];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Every k-animal subset (k = 1..maxAnimals) of `ids`, as sorted arrays.
+  function animalCombos(ids, maxAnimals) {
+    const out = [];
+    const sorted = [...ids].sort();
+    (function walk(start, picked) {
+      if (picked.length > 0) out.push(picked);
+      if (picked.length === maxAnimals) return;
+      for (let i = start; i < sorted.length; i++) walk(i + 1, [...picked, sorted[i]]);
+    })(0, []);
+    return out;
+  }
+
+  // Plans `count` videos for the random mix. Each gets a random background
+  // from the pool and 1..maxAnimals random animals that can live there,
+  // never reusing a background+animals combination already used in this
+  // run or an earlier one (history kept by the server). Once every
+  // combination in the pool has been used, the history starts over.
+  // Paths are generated fresh for every video, so even a reused
+  // combination never looks the same.
+  async function planRandomMix(count, animalPool, bgPool, maxAnimals) {
+    const zonesByBg = new Map(await Promise.all(bgPool.map(async (id) => [id, await fetchSceneZones(id)])));
+    let history = [];
+    try {
+      history = (await (await fetch("/api/auto-history")).json()).used || [];
+    } catch (err) {
+      history = [];
+    }
+    const used = new Set(history);
+
+    const combosByBg = new Map();
+    for (const sceneId of bgPool) {
+      const eligible = animalPool.filter((id) => isHabitatAvailableInScene(habitatFor(id), zonesByBg.get(sceneId)));
+      combosByBg.set(sceneId, animalCombos(eligible, maxAnimals));
+    }
+    const keyOf = (sceneId, animals) => `${sceneId}|${animals.join("+")}`;
+    const allKeys = [...combosByBg].flatMap(([sceneId, combos]) => combos.map((c) => keyOf(sceneId, c)));
+    if (allKeys.length === 0) return { plan: [], history };
+
+    const plan = [];
+    let lastBg = null;
+    for (let v = 0; v < count; v++) {
+      if (allKeys.every((k) => used.has(k))) {
+        // Pool used up: forget earlier runs' use of it, keeping this run's
+        // own picks unless this run alone has used everything.
+        allKeys.forEach((k) => used.delete(k));
+        if (plan.length < allKeys.length) plan.forEach((job) => used.add(job.key));
+      }
+      // Pick the background first (so backgrounds with many animal options
+      // don't dominate), avoiding the previous video's background if possible.
+      const bgOrder = shuffled(bgPool).sort((a, b) => (a === lastBg) - (b === lastBg));
+      let job = null;
+      for (const sceneId of bgOrder) {
+        const fresh = combosByBg.get(sceneId).filter((c) => !used.has(keyOf(sceneId, c)));
+        if (fresh.length === 0) continue;
+        // Choose the animal count evenly rather than by how many
+        // combinations each count has (pairs vastly outnumber singles).
+        const sizes = [...new Set(fresh.map((c) => c.length))];
+        const size = sizes[Math.floor(Math.random() * sizes.length)];
+        const ofSize = fresh.filter((c) => c.length === size);
+        const animals = ofSize[Math.floor(Math.random() * ofSize.length)];
+        job = { sceneId, animals, key: keyOf(sceneId, animals), zones: zonesByBg.get(sceneId) };
+        break;
+      }
+      if (!job) break;
+      used.add(job.key);
+      plan.push(job);
+      lastBg = job.sceneId;
+    }
+    // Earlier history entries that survived any restart above.
+    return { plan, history: history.filter((k) => used.has(k)) };
+  }
+
+  async function runRandomMix(animalPool, bgPool, seconds) {
+    if (!window.electronAPI) {
+      autoGenModalStatusEl.textContent = "Random mix renders videos, so it needs the desktop app or the packaged .exe.";
+      return;
+    }
+    const count = Math.max(1, Math.min(50, Math.round(Number(autoGenCountEl.value) || 1)));
+    const maxAnimals = Math.max(1, Math.min(4, Math.round(Number(autoGenMaxAnimalsEl.value) || 1)));
+    const totalMs = seconds * 1000;
+    const { plan, history } = await planRandomMix(count, animalPool, bgPool, maxAnimals);
+    if (plan.length === 0) {
+      autoGenModalStatusEl.textContent = "None of the chosen animals can live on the chosen backgrounds (fish need water, birds need sky).";
+      return;
+    }
+    const confirmed = await confirmDialog(
+      `This makes ${plan.length} video(s), ${seconds}s each, with random backgrounds, animals and paths. ` +
+        `Your saved scene layouts are not changed. Continue?`
+    );
+    if (!confirmed) return;
+
+    autoGenOverlayEl.hidden = true;
+    setExportUIState(true);
+    const runId = Date.now().toString(36);
+    const animalName = (id) => animalDefFor(id)?.label || id;
+    const jobs = plan.map((job, i) => ({
+      ...job,
+      rowKey: `rnd-${runId}-${i + 1}`,
+      label: `${i + 1}. ${sceneLabel(job.sceneId)} — ${job.animals.map(animalName).join(", ")}`,
+    }));
+    renderAutoGenProgressRows(jobs.map((j) => ({ key: j.rowKey, label: j.label })));
+
+    const succeeded = [];
+    async function renderOne(job, i) {
+      setAutoGenRowStatus(job.rowKey, "Generating path…", "info");
+      const layout = buildAutoLayoutForScene(job.sceneId, job.animals, totalMs, job.zones);
+      layout.effects = randomSceneEffects(job.sceneId, job.zones, Math.random, { camera: autoGenCameraDriftEl.checked });
+      const saveRes = await fetch(`/api/auto-layout/${job.rowKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(layout),
+      });
+      if (!saveRes.ok) throw new Error(`Save failed (HTTP ${saveRes.status})`);
+      setAutoGenRowStatus(job.rowKey, "Starting export…", "info");
+      exportProgressRoutes.set(job.rowKey, (frame, total) => {
+        setAutoGenRowStatus(job.rowKey, `Rendering frame ${frame}/${total}…`, "info");
+      });
+      try {
+        const result = await exportVideo(job.sceneId, {
+          gif: false,
+          layoutId: job.rowKey,
+          progressKey: job.rowKey,
+          name: `${job.sceneId}-${job.animals.join("-")}`,
+          sequence: i + 1,
+        });
+        setAutoGenRowStatus(job.rowKey, `Done: ${result.outputFile}`, "done");
+        succeeded.push(job.key);
+      } finally {
+        exportProgressRoutes.delete(job.rowKey);
+      }
+    }
+
+    // Render up to MULTI_EXPORT_MAX videos at a time.
+    const ok = new Array(jobs.length).fill(false);
+    let next = 0;
+    async function worker() {
+      while (next < jobs.length) {
+        const i = next++;
+        try {
+          await renderOne(jobs[i], i);
+          ok[i] = true;
+        } catch (err) {
+          setAutoGenRowStatus(jobs[i].rowKey, "Failed: " + (err?.message || String(err)), "error");
+        }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(MULTI_EXPORT_MAX, jobs.length) }, worker));
+
+    // Only combinations that actually became videos count as used.
+    try {
+      await fetch("/api/auto-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ used: [...history, ...succeeded] }),
+      });
+    } catch (err) {
+      console.warn("Could not save the random-mix history:", err);
+    }
+
+    const failCount = ok.filter((v) => !v).length;
+    const summaryEl = document.createElement("p");
+    summaryEl.className = "status";
+    summaryEl.textContent =
+      failCount === 0
+        ? `All ${jobs.length} video(s) generated.`
+        : `${jobs.length - failCount}/${jobs.length} succeeded, ${failCount} failed.`;
+    autoGenProgressListEl.appendChild(summaryEl);
+    setExportUIState(false);
+  }
 
   autoGenGoBtn.addEventListener("click", async () => {
     const selectedAnimalIds = [...autoGenAnimalSelectEl.selectedOptions].map((o) => o.value);
@@ -2011,6 +2587,10 @@
     }
 
     const seconds = Math.max(3, Math.min(120, Number(autoGenSecondsEl.value) || 8));
+    if (autoGenRandomEl.checked) {
+      await runRandomMix(selectedAnimalIds, sceneIds, seconds);
+      return;
+    }
     const totalMs = seconds * 1000;
     const canExport = !!window.electronAPI;
 
@@ -2039,7 +2619,8 @@
 
     async function generateAndSaveOne(sceneId, i) {
       setAutoGenRowStatus(sceneId, "Generating path…", "info");
-      const layout = buildAutoLayoutForScene(sceneId, selectedAnimalIds, totalMs);
+      const zones = await fetchSceneZones(sceneId);
+      const layout = buildAutoLayoutForScene(sceneId, selectedAnimalIds, totalMs, zones);
 
       setAutoGenRowStatus(sceneId, "Saving…", "info");
       const saveRes = await fetch(`/api/path/${sceneId}`, {
@@ -2059,7 +2640,7 @@
         setAutoGenRowStatus(sceneId, `Rendering frame ${frame}/${total}…`, "info");
       });
       try {
-        const result = await window.electronAPI.exportScene(sceneId, { gif: false, sequence: sequenceFor(i) });
+        const result = await exportVideo(sceneId, { gif: false, sequence: sequenceFor(i) });
         setAutoGenRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
         return result;
       } finally {
@@ -2112,12 +2693,39 @@
     window.__ready = true;
   }
 
+  // Every export (single, Batch, Generate & Export) goes to the folder in the
+  // "Output folder" box, remembered per machine; blank = the Videos folder.
+  const OUTPUT_DIR_STORAGE_KEY = "pathAnimator.outputDir";
+
+  function saveOutputDir() {
+    try { localStorage.setItem(OUTPUT_DIR_STORAGE_KEY, outputDirInput.value.trim()); } catch (err) { /* not persisted */ }
+  }
+
+  async function initOutputDir() {
+    let saved = "";
+    try { saved = localStorage.getItem(OUTPUT_DIR_STORAGE_KEY) || ""; } catch (err) { /* use default */ }
+    outputDirInput.value = saved || await window.electronAPI.defaultOutputDir();
+    outputDirInput.addEventListener("change", saveOutputDir);
+    outputDirBrowseBtn.addEventListener("click", async () => {
+      const dir = await window.electronAPI.chooseOutputDir(outputDirInput.value.trim());
+      if (!dir) return;
+      outputDirInput.value = dir;
+      saveOutputDir();
+    });
+  }
+
+  function exportVideo(sceneId, opts) {
+    return window.electronAPI.exportScene(sceneId, { ...opts, outputDir: outputDirInput.value.trim() });
+  }
+
   // Electron-only: window.electronAPI only exists when running inside the
   // packaged/dev Electron app (exposed by preload.js) — absent in the plain
   // browser dev workflow (npm start), so this block simply never runs there
   // and the button stays hidden, leaving that workflow untouched.
   if (window.electronAPI) {
     exportBtn.hidden = false;
+    outputDirRowEl.hidden = false;
+    initOutputDir();
     openConfigBtn.hidden = false;
     openConfigBtn.addEventListener("click", () => window.electronAPI.openConfigFile());
     newWindowBtn.hidden = false;
@@ -2128,8 +2736,8 @@
     // Routed by sceneId (see exportProgressRoutes) instead of filtering to
     // currentScene.id, so both the single-export flow and any number of
     // concurrent batch-export scenes can each track their own progress.
-    window.electronAPI.onExportProgress(({ sceneId, frame, total }) => {
-      const route = exportProgressRoutes.get(sceneId);
+    window.electronAPI.onExportProgress(({ sceneId, key, frame, total }) => {
+      const route = exportProgressRoutes.get(key || sceneId);
       if (route) route(frame, total);
     });
 
@@ -2141,7 +2749,7 @@
         exportProgressEl.textContent = `Rendering frame ${frame}/${total}…`;
       });
       try {
-        const result = await window.electronAPI.exportScene(sceneId, { gif: false });
+        const result = await exportVideo(sceneId, { gif: false });
         exportProgressEl.innerHTML = `Done: ${result.outputFile} <button id="revealBtn">Show in folder</button>`;
         document.getElementById("revealBtn").addEventListener("click", () => {
           window.electronAPI.showItemInFolder(result.outputFile);
@@ -2193,7 +2801,7 @@
           setMultiExportRowStatus(sceneId, `Rendering frame ${frame}/${total}…`, "info");
         });
         try {
-          const result = await window.electronAPI.exportScene(sceneId, { gif: false, sequence: sequenceFor(i) });
+          const result = await exportVideo(sceneId, { gif: false, sequence: sequenceFor(i) });
           setMultiExportRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
           return result;
         } finally {

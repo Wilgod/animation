@@ -1,0 +1,40 @@
+{
+  "sceneId": "gecko-blue-tiles",
+  "activeAnimals": [
+    "yellow"
+  ],
+  "animals": {
+    "yellow": {
+      "path": [
+        {
+          "x": -220,
+          "y": 392.0523927275791,
+          "durationToNextMs": 3202
+        },
+        {
+          "x": 246.42795168450718,
+          "y": 236.08907061347455,
+          "durationToNextMs": 3288
+        },
+        {
+          "x": -220,
+          "y": 429.5061286831628,
+          "durationToNextMs": 0
+        }
+      ],
+      "options": {
+        "rotationFollowsPath": true,
+        "flip": true,
+        "useWalkCycle": true,
+        "bobbing": false,
+        "bobbingAmplitude": 6,
+        "strideLengthPx": 140,
+        "pathSpeedMultiplier": 1,
+        "sizeScale": 1,
+        "shadow": false
+      },
+      "startAtMs": 668
+    }
+  },
+  "placedOrnaments": []
+}

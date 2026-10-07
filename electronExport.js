@@ -12,11 +12,40 @@ const ffmpeg = require("fluent-ffmpeg");
 const ffmpegPath = require("ffmpeg-static").replace("app.asar", "app.asar.unpacked");
 ffmpeg.setFfmpegPath(ffmpegPath);
 
-const FPS = 30;
+const FPS = 60;
 const GIF_FPS = 15;
 const GIF_WIDTH = 800;
 const CANVAS_WIDTH = 3840;
 const CANVAS_HEIGHT = 2160;
+
+// Frame capture is the memory-heavy phase: every hidden 4K capture window
+// holds its own full-size canvases + WebGL buffers, and each captured frame
+// is a 33-75 MB native bitmap in this (main) process. Running 4 of those at
+// once (Batch Export / Generate Video) exhausted memory and Electron aborted
+// with 0xE0000008. Cap how many captures run at a time across the whole app;
+// extra exports just queue, and ffmpeg encoding still overlaps freely.
+const MAX_CONCURRENT_CAPTURES = 2;
+let activeCaptures = 0;
+const captureQueue = [];
+async function withCaptureSlot(fn) {
+  if (activeCaptures >= MAX_CONCURRENT_CAPTURES) {
+    await new Promise((resolve) => captureQueue.push(resolve));
+  }
+  activeCaptures++;
+  try {
+    return await fn();
+  } finally {
+    activeCaptures--;
+    captureQueue.shift()?.();
+  }
+}
+
+// NativeImage bitmaps live outside the V8 heap, so V8 doesn't feel their
+// size and lets hundreds of frames pile up before collecting. Force a GC
+// every so often during capture to release them promptly.
+require("v8").setFlagsFromString("--expose-gc");
+const forceGc = require("vm").runInNewContext("gc");
+const GC_EVERY_N_FRAMES = 20;
 
 // Runs *inside* the headless BrowserWindow (serialized via toString() below,
 // never executed in Node). Renders every active animal's walk sound into one
@@ -98,6 +127,9 @@ async function __exportSceneAudio() {
       id,
       src,
       volume: def.walkSound.volume ?? 1,
+      // Wing/fin sounds keep time with a time-driven clip, not with speed
+      // (or a continuous texture, e.g. a snail's slime, with walkSound.fixedRate)
+      fixedRate: def.walkSound.fixedRate ?? def.modelAnimation === "fly",
       startAtMs: window.AnimEngine.getActorStartAtMs(id),
       totalDurMs,
     });
@@ -120,17 +152,22 @@ async function __exportSceneAudio() {
     // so a plain gain node handles both quieter (<1) and louder (>1) —
     // matching the live-preview volume from app.js's applyAudioVolume.
     const gainNode = offlineCtx.createGain();
-    gainNode.gain.value = job.volume;
     source.connect(gainNode).connect(offlineCtx.destination);
 
     const startSec = job.startAtMs / 1000;
     const durSec = job.totalDurMs / 1000;
+    // Short fades where the sound starts and stops, so it never clicks.
+    const fadeSec = Math.min(0.03, durSec / 4);
+    gainNode.gain.setValueAtTime(0, startSec);
+    gainNode.gain.linearRampToValueAtTime(job.volume, startSec + fadeSec);
+    gainNode.gain.setValueAtTime(job.volume, startSec + durSec - fadeSec);
+    gainNode.gain.linearRampToValueAtTime(0, startSec + durSec);
 
     const times = [];
     const rates = [];
     for (let t = 0; t <= job.totalDurMs; t += RATE_STEP_MS) {
       const speed = window.AnimEngine.getActorSpeedPxPerSec(job.id, t);
-      const rate = Math.min(
+      const rate = job.fixedRate ? 1 : Math.min(
         tuning.WALK_SOUND_RATE_MAX,
         Math.max(tuning.WALK_SOUND_RATE_MIN, speed / tuning.BASE_WALK_SOUND_SPEED_PX_PER_SEC)
       );
@@ -152,6 +189,21 @@ async function __exportSceneAudio() {
   }
 
   const rendered = await offlineCtx.startRendering();
+  // Several animals' sounds add up. If the mix would clip, lower the whole
+  // soundtrack evenly (keeps its dynamics) to leave headroom for AAC encoding.
+  let peak = 0;
+  for (let c = 0; c < rendered.numberOfChannels; c++) {
+    const data = rendered.getChannelData(c);
+    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs(data[i]));
+  }
+  const HEADROOM_PEAK = 0.7; // -3 dBFS: AAC overshoots sharp clicks by ~2 dB
+  if (peak > HEADROOM_PEAK) {
+    const scale = HEADROOM_PEAK / peak;
+    for (let c = 0; c < rendered.numberOfChannels; c++) {
+      const data = rendered.getChannelData(c);
+      for (let i = 0; i < data.length; i++) data[i] *= scale;
+    }
+  }
   return audioBufferToWavBase64(rendered);
 }
 
@@ -159,24 +211,51 @@ async function renderSceneAudio(win) {
   return win.webContents.executeJavaScript(`(${__exportSceneAudio.toString()})()`);
 }
 
-async function captureFrames({ port, sceneId, framesDir, onProgress }) {
+// win.setContentSize() on an offscreen BrowserWindow is unreliable on its
+// *first* call after creation on this machine (a HiDPI, scaleFactor:2
+// display) — it silently applies at half the requested size, as if using a
+// stale scale factor, and only settles to the correct size on a repeated
+// call with the same target. Retrying (rather than a single call) is what
+// actually fixes it; a plain delay between calls does not.
+function setContentSizeReliably(win, width, height) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    win.setContentSize(width, height);
+    const [actualW, actualH] = win.getContentSize();
+    if (actualW === width && actualH === height) return;
+  }
+}
+
+async function captureFrames({ port, sceneId, layoutId, framesDir, onProgress }) {
+  // Created small and offscreen, then grown via setContentSize() below —
+  // Windows caps a *newly created* window (even a hidden/offscreen one) to
+  // roughly the monitor's resolution when a size is requested directly in
+  // the constructor, but that cap doesn't apply to an offscreen window's
+  // setContentSize() calls made after creation. On a screen smaller than
+  // the 4K export canvas, asking for the full size up front silently left
+  // the page too small for its own content, so a real scrollbar appeared
+  // and got baked into every captured frame.
   const win = new BrowserWindow({
-    // Starting guess — resized below, once the page has actually loaded, to
-    // whatever its content really needs. The page has its own layout
-    // padding around the canvas (even in export mode) plus hint text/a
-    // timeline strip below it, so a fixed guess here previously fell short:
-    // the window overflowed, a scrollbar ate into the viewport, and the
-    // canvas's captured bounding rect ended up clipped/misaligned as a
-    // result — the exported video wasn't the full 3840x2160 canvas.
-    width: CANVAS_WIDTH + 200,
-    height: CANVAS_HEIGHT + 200,
+    width: 400,
+    height: 300,
     useContentSize: true,
     show: false,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, offscreen: true },
   });
 
   try {
-    await win.loadURL(`http://127.0.0.1:${port}/index.html?export=1&scene=${encodeURIComponent(sceneId)}`);
+    // Starting guess — grown further below, once the page has actually
+    // loaded, to whatever its content really needs. The page has its own
+    // layout padding around the canvas (even in export mode) plus hint
+    // text/a timeline strip below it, so a fixed guess previously fell
+    // short: the window overflowed, a scrollbar ate into the viewport, and
+    // the canvas's captured bounding rect ended up clipped/misaligned as a
+    // result — the exported video wasn't the full 3840x2160 canvas.
+    setContentSizeReliably(win, CANVAS_WIDTH + 200, CANVAS_HEIGHT + 200);
+
+    // layoutId: render a generated layout (see /api/auto-layout) instead of
+    // the scene's own saved one.
+    const layoutParam = layoutId ? `&layout=${encodeURIComponent(layoutId)}` : "";
+    await win.loadURL(`http://127.0.0.1:${port}/index.html?export=1&scene=${encodeURIComponent(sceneId)}${layoutParam}`);
     await win.webContents.executeJavaScript(
       `new Promise((resolve) => { const check = () => window.__ready ? resolve() : setTimeout(check, 30); check(); })`
     );
@@ -197,7 +276,7 @@ async function captureFrames({ port, sceneId, framesDir, onProgress }) {
       `({ width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight })`
     );
     const [currentW, currentH] = win.getContentSize();
-    win.setContentSize(Math.max(currentW, needed.width), Math.max(currentH, needed.height));
+    setContentSizeReliably(win, Math.max(currentW, needed.width), Math.max(currentH, needed.height));
 
     // Capture the canvas element's own bounding rect (not an assumed (0,0)
     // origin) — mirrors Puppeteer's element-scoped screenshot behavior and
@@ -229,6 +308,7 @@ async function captureFrames({ port, sceneId, framesDir, onProgress }) {
       const framePath = path.join(framesDir, `frame_${String(i).padStart(5, "0")}.jpg`);
       fs.writeFileSync(framePath, resized.toJPEG(92));
       onProgress?.(i + 1, frameCount);
+      if (i % GC_EVERY_N_FRAMES === GC_EVERY_N_FRAMES - 1) forceGc();
     }
 
     // Rendered here (not after win.destroy()) since it needs the same
@@ -300,21 +380,24 @@ function timestampSuffix() {
 // distinct filenames even if two exports in the same batch land in the same
 // second (same-scene reruns without a sequence would otherwise risk
 // overwriting each other).
-async function exportScene({ port, sceneId, outputDir, gif = false, onProgress, sequence }) {
+async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = false, onProgress, sequence }) {
   const framesDir = fs.mkdtempSync(path.join(os.tmpdir(), "pathanim-frames-"));
   fs.mkdirSync(outputDir, { recursive: true });
 
   try {
-    const { frameCount, audioPath } = await captureFrames({ port, sceneId, framesDir, onProgress });
+    const { frameCount, audioPath } = await withCaptureSlot(() =>
+      captureFrames({ port, sceneId, layoutId, framesDir, onProgress })
+    );
 
     const stamp = timestampSuffix();
     const seqSuffix = sequence != null ? `-${sequence}` : "";
-    const outputFile = path.join(outputDir, `${sceneId}-${stamp}${seqSuffix}.mp4`);
+    const base = name || sceneId;
+    const outputFile = path.join(outputDir, `${base}-${stamp}${seqSuffix}.mp4`);
     await encodeVideo(framesDir, outputFile, audioPath);
 
     let outputGif = null;
     if (gif) {
-      outputGif = path.join(outputDir, `${sceneId}-${stamp}${seqSuffix}.gif`);
+      outputGif = path.join(outputDir, `${base}-${stamp}${seqSuffix}.gif`);
       await encodeGif(framesDir, outputGif);
     }
 

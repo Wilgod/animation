@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs");
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 
 const { start } = require("./server");
 const { exportScene } = require("./electronExport");
@@ -62,7 +62,7 @@ async function createEditorWindow(port) {
   const win = new BrowserWindow({
     width: 1440,
     height: 960,
-    show: !isSmokeTest,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -74,9 +74,19 @@ async function createEditorWindow(port) {
   editorWindows.add(win);
   win.on("closed", () => editorWindows.delete(win));
 
+  // The editor's stage + sidebar layout needs more room than the 1440x960
+  // default to avoid scrollbars, so start maximized instead of guessing a
+  // fixed size that fits every monitor.
+  if (!isSmokeTest) {
+    win.once("ready-to-show", () => {
+      win.maximize();
+      win.show();
+    });
+  }
+
   if (isDev) win.webContents.openDevTools();
 
-  await win.loadURL(`http://127.0.0.1:${port}/index.html`);
+  await win.loadURL(`http://127.0.0.1:${port}/${process.argv.includes('--3d') ? 'gecko-3d.html' : 'index.html'}`);
   return win;
 }
 
@@ -178,7 +188,7 @@ async function runExportCli(port) {
     },
   });
 
-  console.log(`Captured ${frameCount} frames at 30fps. Done: ${outputFile}`);
+  console.log(`Captured ${frameCount} frames at 60fps. Done: ${outputFile}`);
   if (outputGif) console.log(`Done: ${outputGif}`);
   app.quit();
 }
@@ -196,6 +206,9 @@ app.whenReady().then(async () => {
     }
     return;
   }
+
+  // Registered before the first window loads — the editor asks for it on startup.
+  ipcMain.handle("export:defaultDir", () => app.getPath("videos"));
 
   mainWindow = await createEditorWindow(port);
 
@@ -216,14 +229,26 @@ app.whenReady().then(async () => {
     const result = await exportScene({
       port,
       sceneId,
-      outputDir: app.getPath("videos"),
+      outputDir: resolveOutputDir(opts?.outputDir),
       gif: !!opts?.gif,
       sequence: opts?.sequence,
+      layoutId: opts?.layoutId,
+      name: opts?.name,
       onProgress: (frame, total) => {
-        event.sender.send("export:progress", { sceneId, frame, total });
+        // key: lets the editor tell apart concurrent exports of the same scene
+        event.sender.send("export:progress", { sceneId, key: opts?.progressKey || sceneId, frame, total });
       },
     });
     return result;
+  });
+
+  ipcMain.handle("export:chooseDir", async (event, current) => {
+    const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
+      title: "Choose output folder",
+      defaultPath: current || app.getPath("videos"),
+      properties: ["openDirectory", "createDirectory"],
+    });
+    return result.canceled ? null : result.filePaths[0];
   });
 
   ipcMain.handle("export:reveal", (event, filePath) => {
@@ -243,6 +268,17 @@ app.whenReady().then(async () => {
     mainWindow = null;
   });
 });
+
+// The editor's "Output folder" box; blank means the user's Videos folder.
+// exportScene creates the folder if it doesn't exist yet.
+function resolveOutputDir(dir) {
+  const trimmed = typeof dir === "string" ? dir.trim() : "";
+  if (!trimmed) return app.getPath("videos");
+  if (!path.isAbsolute(trimmed)) {
+    throw new Error(`Output folder must be a full path (e.g. D:\Videos), got "${trimmed}"`);
+  }
+  return trimmed;
+}
 
 app.on("window-all-closed", () => {
   // In --export CLI mode, the hidden capture window is destroyed as soon as

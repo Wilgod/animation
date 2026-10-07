@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onExportProgress: (callback) => {
     ipcRenderer.on("export:progress", (event, data) => callback(data));
   },
+  defaultOutputDir: () => ipcRenderer.invoke("export:defaultDir"),
+  chooseOutputDir: (current) => ipcRenderer.invoke("export:chooseDir", current),
   showItemInFolder: (filePath) => ipcRenderer.invoke("export:reveal", filePath),
   openConfigFile: () => ipcRenderer.invoke("config:open"),
   openNewWindow: () => ipcRenderer.invoke("window:new"),

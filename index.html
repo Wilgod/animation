@@ -54,6 +54,24 @@
         </button>
       </div>
       <p id="configStatus" class="status"></p>
+
+      <div class="effects-panel">
+        <h2>Background motion</h2>
+        <label><input type="checkbox" id="fxLight" /> Sunlight &amp; leaf shadows</label>
+        <label><input type="checkbox" id="fxWater" /> Water ripples <span id="fxWaterHint" class="hint"></span></label>
+        <label>
+          <input type="checkbox" id="fxParticles" /> Falling
+          <select id="fxParticleKind">
+            <option value="leaves">leaves</option>
+            <option value="petals">petals</option>
+            <option value="snow">snow</option>
+            <option value="dust">dust in the light</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="fxCamera" /> Camera drift (plays during Play and export)</label>
+        <button id="fxShuffleBtn" title="New random look for the effects that are on">Shuffle look</button>
+        <p class="hint">Saved with the layout. Random videos pick their own mix.</p>
+      </div>
       <p class="hint">To add/edit scenes: edit config/scenes.json, add images to image/, run "npm run prepare-assets", then click Reload Scenes.</p>
     </div>
 
@@ -127,6 +145,12 @@
     </div>
     <p id="templateStatus" class="status"></p>
 
+    <div id="outputDirRow" class="controls-row output-dir-row" hidden>
+      <label for="outputDirInput">Output folder</label>
+      <input type="text" id="outputDirInput" spellcheck="false"
+        title="Where exported videos are saved (single, Batch and Generate &amp; Export)" />
+      <button id="outputDirBrowseBtn">Browse…</button>
+    </div>
     <div class="controls-row">
       <button id="exportBtn" hidden>Export Video</button>
     </div>
@@ -167,13 +191,33 @@
     <p class="modal-message">Generate Video</p>
     <p class="hint">Choose which animals can appear, which backgrounds to generate, and how many seconds each video should run.</p>
 
+    <label class="autogen-random">
+      <input type="checkbox" id="autoGenRandom" />
+      Random mix — each video gets a random background, random animals and a random path,
+      and never repeats a background + animals combination from earlier runs
+    </label>
+    <div id="autoGenRandomOptions" class="autogen-random-options" hidden>
+      <label class="scrub-label">
+        Videos to make
+        <input type="number" id="autoGenCount" min="1" max="50" step="1" value="5" />
+      </label>
+      <label class="scrub-label">
+        Animals per video (up to)
+        <input type="number" id="autoGenMaxAnimals" min="1" max="4" step="1" value="2" />
+      </label>
+      <label class="autogen-random">
+        <input type="checkbox" id="autoGenCameraDrift" />
+        Camera drift (slow zoom/pan, makes the floor look like it's moving)
+      </label>
+    </div>
+
     <label class="scrub-label">
-      Animals (ctrl/cmd-click to select multiple)
+      <span id="autoGenAnimalLabel">Animals (ctrl/cmd-click to select multiple)</span>
       <select id="autoGenAnimalSelect" class="multi-select" multiple size="8"></select>
     </label>
 
     <label class="scrub-label">
-      Backgrounds (ctrl/cmd-click to select multiple, up to 4)
+      <span id="autoGenBgLabel">Backgrounds (ctrl/cmd-click to select multiple, up to 4)</span>
       <select id="autoGenBgSelect" class="multi-select" multiple size="10"></select>
     </label>
     <p class="hint" id="autoGenBgCountHint"></p>
@@ -191,7 +235,9 @@
   </div>
 </div>
 
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/assets/vendor/three/"}}</script>
 <script src="engine.js"></script>
+<script src="scripts/lib/zones.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

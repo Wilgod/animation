@@ -35,13 +35,14 @@ function templateFileFor(templatesDir, name) {
 // { path: [...], options: {...} }. Now a scene can have several active
 // animals at once, each with its own path, so the shape is
 // { activeAnimals: [id...], animals: { id: { path, options } } }. Old
-// single-animal files are transparently upgraded on read (as animal "blue",
-// the only animal that used to exist) — nothing needs migrating on disk
-// until the next save.
+// single-animal files are transparently upgraded on read (as animal
+// "yellow", the only animal that used to exist — its id was originally
+// "blue", renamed for consistency with its actual color/label) — nothing
+// needs migrating on disk until the next save.
 function migratePathData(data) {
   if (data && data.animals && typeof data.animals === "object") return data;
   if (data && Array.isArray(data.path)) {
-    return { activeAnimals: ["blue"], animals: { blue: { path: data.path, options: data.options || {} } } };
+    return { activeAnimals: ["yellow"], animals: { yellow: { path: data.path, options: data.options || {} } } };
   }
   return { activeAnimals: [], animals: {} };
 }
@@ -54,7 +55,7 @@ function createApp(options = {}) {
   const pathsDir = options.pathsDir || PATHS_DIR;
   const templatesDir = options.templatesDir || path.join(path.dirname(pathsDir), "templates");
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: "2mb" })); // auto-history can hold thousands of combinations
   app.use(express.static(ROOT, { index: "index.html" }));
 
   app.get("/api/config", (req, res) => {
@@ -88,6 +89,45 @@ function createApp(options = {}) {
     if (!isValidSceneId(sceneId)) return res.status(400).json({ error: "invalid scene id" });
     fs.mkdirSync(pathsDir, { recursive: true });
     fs.writeFileSync(pathFileFor(pathsDir, sceneId), JSON.stringify(req.body, null, 2));
+    res.json({ ok: true });
+  });
+
+  // Random "Generate Video" runs keep their layouts apart from each scene's
+  // own saved layout (so your hand-made paths are never overwritten), plus a
+  // history of background+animal combinations already used, so later runs
+  // don't repeat them.
+  const autoDir = path.join(pathsDir, "_auto");
+  const autoHistoryFile = path.join(autoDir, "history.json");
+  const isValidAutoId = (id) => /^[a-z0-9-]{1,80}$/.test(id);
+
+  app.get("/api/auto-layout/:id", (req, res) => {
+    const { id } = req.params;
+    if (!isValidAutoId(id)) return res.status(400).json({ error: "invalid layout id" });
+    const file = path.join(autoDir, `${id}.json`);
+    if (!fs.existsSync(file)) return res.status(404).json({ error: "no such layout" });
+    res.json(JSON.parse(fs.readFileSync(file, "utf8")));
+  });
+
+  app.post("/api/auto-layout/:id", (req, res) => {
+    const { id } = req.params;
+    if (!isValidAutoId(id)) return res.status(400).json({ error: "invalid layout id" });
+    fs.mkdirSync(autoDir, { recursive: true });
+    fs.writeFileSync(path.join(autoDir, `${id}.json`), JSON.stringify(req.body, null, 2));
+    res.json({ ok: true });
+  });
+
+  app.get("/api/auto-history", (req, res) => {
+    try {
+      res.json(JSON.parse(fs.readFileSync(autoHistoryFile, "utf8")));
+    } catch {
+      res.json({ used: [] });
+    }
+  });
+
+  app.post("/api/auto-history", (req, res) => {
+    const used = Array.isArray(req.body?.used) ? req.body.used.filter((k) => typeof k === "string") : [];
+    fs.mkdirSync(autoDir, { recursive: true });
+    fs.writeFileSync(autoHistoryFile, JSON.stringify({ used: used.slice(-5000) }, null, 2));
     res.json({ ok: true });
   });
 
