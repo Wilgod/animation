@@ -23,8 +23,30 @@ function argValue(flag) {
   return idx >= 0 ? process.argv[idx + 1] : null;
 }
 
+// The packaged config lives inside app.asar, which Windows can't open or
+// edit. Packaged builds use an editable copy in userData instead, refreshed
+// from the bundled one on upgrade unless the user has edited their copy.
+const BUNDLED_CONFIG = path.join(__dirname, "config", "scenes.json");
+
+function configFile() {
+  if (!app.isPackaged) return BUNDLED_CONFIG;
+  const file = path.join(app.getPath("userData"), "config", "scenes.json");
+  const stamp = `${file}.bundled-sha1`;
+  const sha1 = (text) => require("crypto").createHash("sha1").update(text).digest("hex");
+  const bundled = fs.readFileSync(BUNDLED_CONFIG, "utf8");
+  const current = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
+  const lastBundled = fs.existsSync(stamp) ? fs.readFileSync(stamp, "utf8").trim() : null;
+  const userEdited = current !== null && sha1(current) !== lastBundled;
+  if (current !== bundled && !userEdited) {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, bundled);
+    fs.writeFileSync(stamp, sha1(bundled));
+  }
+  return file;
+}
+
 function resolveSceneId(requested) {
-  const config = JSON.parse(fs.readFileSync(path.join(__dirname, "config", "scenes.json"), "utf8"));
+  const config = JSON.parse(fs.readFileSync(configFile(), "utf8"));
   const scenes = config.scenes || [];
   if (scenes.length === 0) throw new Error("config/scenes.json has no scenes defined.");
   if (requested) {
@@ -48,7 +70,7 @@ function pathsDir() {
 }
 
 async function startServer() {
-  serverInstance = await start(0, { pathsDir: pathsDir() });
+  serverInstance = await start(0, { pathsDir: pathsDir(), configFile: configFile() });
   return serverInstance.address().port;
 }
 
@@ -255,7 +277,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle("config:open", () => {
-    return shell.openPath(path.join(__dirname, "config", "scenes.json"));
+    return shell.openPath(configFile());
   });
 
   if (isSmokeTest) {

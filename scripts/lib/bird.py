@@ -67,7 +67,9 @@ def build_bird(p, mode):
     for i in range(9):
         a = (i / 8 - .5) * spread
         root = Vector(sc((-.85, 0, .8)))
-        tip = root + Vector((-math.cos(a), math.sin(a), -.02)) * p['tail_len'] * S
+        # tail_fork lengthens the outer feathers (a swallow's forked tail).
+        length = p['tail_len'] * (1 + p.get('tail_fork', 0) * abs(i / 8 - .5) * 2)
+        tip = root + Vector((-math.cos(a), math.sin(a), -.02)) * length * S
         feather('Tail feather', root, tip, .1 * S, tail_mat)
         if p.get('tail_tip'):
             band_root = root + (tip - root) * .72

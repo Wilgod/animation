@@ -192,7 +192,9 @@ separately), no text, no watermark, full-bleed, high detail, sharp focus
 - **中間留出開闊空間**：主體（珊瑚、岩石、海草）盡量放在畫面邊緣，中間保留平坦的沙地或清澈水域，讓路徑有地方走。
 - **比例 16:9**，盡量高解析度（輸出影片是 3840×2160）。
 
-### 4-1 熱帶珊瑚礁淺灘
+### 4-1 熱帶珊瑚礁淺灘 Tropical Coral Reef Shallows
+**檔名：** `image/backgroud/Tropical coral reef shallows.png`（已存在）
+
 **中文：**
 ```
 俯視角度拍攝的熱帶淺海海底照片，鏡頭從正上方往下看，
@@ -210,7 +212,9 @@ crystal clear turquoise water, no fish, no animals, no divers, no horizon, no
 text, no watermark, 16:9, full-bleed, high resolution, sharp focus, photorealistic
 ```
 
-### 4-2 海草床
+### 4-2 海草床 Seagrass Meadow
+**檔名：** `image/backgroud/Seagrass meadow.png`（已存在）
+
 **中文：**
 ```
 俯視角度的淺海海草床照片，鏡頭正上方往下拍，
@@ -228,7 +232,9 @@ sand, realistic color, no fish, no animals, no horizon, no text, no watermark,
 16:9, full-bleed, high resolution, photorealistic
 ```
 
-### 4-3 岩石潮池
+### 4-3 岩石潮池 Rocky Tide Pool
+**檔名：** `image/backgroud/Rocky tide pool.png`（已存在）
+
 **中文：**
 ```
 俯視角度的海邊潮池照片，從正上方往下看，清澈海水下是深色岩石與小石子，
@@ -246,7 +252,9 @@ the bottom, no fish, no crabs, no living animals, no horizon, no text, no
 watermark, 16:9, full-bleed, high resolution, photorealistic
 ```
 
-### 4-4 沙紋海床
+### 4-4 沙紋海床 Rippled Sand Seabed
+**檔名：** `image/backgroud/Rippled sand seabed.png`（已存在）
+
 **中文：**
 ```
 俯視角度的淺海沙底照片，鏡頭正上方往下拍，
@@ -264,7 +272,9 @@ animals, no horizon, no text, no watermark, 16:9, full-bleed, high resolution,
 photorealistic
 ```
 
-### 4-5 巨藻森林
+### 4-5 巨藻森林 Kelp Forest
+**檔名：** `image/backgroud/Kelp forest.png`（已存在）
+
 **中文：**
 ```
 俯視角度的巨藻森林海底照片，從正上方往下看，
@@ -282,7 +292,9 @@ no fish, no otters, no animals, no horizon, no text, no watermark, 16:9,
 full-bleed, high resolution, photorealistic
 ```
 
-### 4-6 深海藍調海床
+### 4-6 深海藍調海床 Deep-Blue Seabed
+**檔名：** `image/backgroud/Deep-blue seabed.png`（已存在）
+
 **中文：**
 ```
 俯視角度的較深海域海底照片，鏡頭正上方往下拍，
@@ -300,7 +312,9 @@ animals, no horizon, no text, no watermark, 16:9, full-bleed, high resolution,
 photorealistic
 ```
 
-### 4-7 沉船殘骸旁的沙地
+### 4-7 沉船殘骸旁的沙地 Sand Beside a Shipwreck
+**檔名：** `image/backgroud/Sand beside a shipwreck.png`（已存在）
+
 **中文：**
 ```
 俯視角度的海底照片，從正上方往下看，
@@ -318,7 +332,9 @@ no divers, no horizon, no text, no watermark, 16:9, full-bleed, high resolution,
 photorealistic
 ```
 
-### 4-8 卵石淺灘（清澈海水）
+### 4-8 卵石淺灘（清澈海水） Pebble Shallows in Clear Water
+**檔名：** `image/backgroud/Pebble shallows in clear water.png`（已存在）
+
 **中文：**
 ```
 俯視角度透過清澈海水看到的卵石海底，鏡頭正上方往下拍，
@@ -336,7 +352,9 @@ animals, no horizon, no shoreline, no text, no watermark, 16:9, full-bleed, high
 resolution, photorealistic
 ```
 
-### 4-9 海葵與軟珊瑚花園
+### 4-9 海葵與軟珊瑚花園 Anemone and Soft Coral Garden
+**檔名：** `image/backgroud/Anemone and soft coral garden.png`（已存在）
+
 **中文：**
 ```
 俯視角度的海底花園照片，從正上方往下看，
@@ -354,7 +372,9 @@ vivid but realistic color, no fish, no clownfish, no animals, no horizon, no tex
 no watermark, 16:9, full-bleed, high resolution, photorealistic
 ```
 
-### 4-10 黃昏暖光的淺海
+### 4-10 黃昏暖光的淺海 Shallow Sea in Warm Sunset Light
+**檔名：** `image/backgroud/Shallow sea in warm sunset light.png`（已存在）
+
 **中文：**
 ```
 俯視角度的淺海海底照片，鏡頭正上方往下拍，傍晚夕陽時分，
@@ -373,3 +393,210 @@ photorealistic
 ```
 
 **生成之後：** 存進 `image/backgroud/`，檔名用英文 Title Case，例如 `Tropical Coral Reef Shallows.png`、`Seagrass Meadow.png`。放好後跟我說，我會幫你加進 `config/scenes.json`（整個畫面設為水域 zone，讓魚可以到處游），再跑 `npm run prepare-assets`。
+
+---
+
+## 提示詞 5：天空完整背景（10 款，靜態圖）
+
+用途：直接生成一整張天空背景（不是 8:1 的天空 band），存進 `image/backgroud/`，給蜻蜓、燕子、蝙蝠等飛行動物在上面飛。整個畫面設為天空（air）zone，所以只有會飛的動物能放上去，Generate Video 會自動排除水中跟地面動物。
+
+**共通原則（每一款都適用）：**
+- **整個畫面都是天空**：沒有地面、沒有地平線、沒有建築，像是鏡頭往上看天空（第 5-10 款例外，邊緣有一圈樹葉）。
+- **畫面中不要有鳥或任何動物、飛機**：動物由程式疊上去，背景裡如果已經有鳥會跟真的角色搶戲。
+- **中間留出開闊空間**：雲朵、月亮、彩虹盡量不要擠在正中間，讓飛行路徑清楚。
+- **比例 16:9**，盡量高解析度（輸出影片是 3840×2160）。
+
+### 5-1 晴朗藍天白雲 Clear Blue Sky
+**檔名：** `image/backgroud/Clear Blue Sky.png`
+
+適合：所有飛行動物
+**中文：**
+```
+一張晴朗天空的攝影照片，16:9 橫向構圖，畫面完全被天空填滿，
+飽和的天藍色漸層，散落幾朵蓬鬆的白色積雲，自然明亮的陽光，
+沒有地面、沒有地平線、沒有建築、沒有鳥或其他物體，
+沒有文字、浮水印，四邊填滿不留白，高解析度、對焦清晰。
+```
+**English：**
+```
+photo of a clear daytime sky, 16:9 landscape, sky fills the entire frame, saturated
+sky-blue gradient with a few fluffy white cumulus clouds, bright natural sunlight,
+no ground, no horizon, no buildings, no birds or objects, no text, no watermark,
+full-bleed, high resolution, sharp focus
+```
+
+### 5-2 金色夕陽 Golden Sunset Sky
+**檔名：** `image/backgroud/Golden Sunset Sky.png`
+
+適合：海鷗、燕子、蜻蜓
+**中文：**
+```
+一張夕陽天空的攝影照片，16:9 橫向構圖，畫面完全被天空填滿，
+橘金色到粉紫色的柔和漸層，雲朵邊緣被夕陽染成金色，溫暖的光線，
+太陽本身不入鏡，沒有地面、沒有地平線、沒有鳥或其他物體，
+沒有文字、浮水印，四邊填滿不留白，高解析度。
+```
+**English：**
+```
+photo of a sunset sky, 16:9 landscape, sky fills the entire frame, soft gradient from
+orange-gold to pink-violet, cloud edges lit golden by the setting sun, warm light,
+sun itself out of frame, no ground, no horizon, no birds or objects, no text,
+no watermark, full-bleed, high resolution
+```
+
+### 5-3 粉彩黎明 Pastel Dawn Sky
+**檔名：** `image/backgroud/Pastel Dawn Sky.png`
+
+適合：蜂鳥、蝴蝶、飛蛾
+**中文：**
+```
+一張清晨黎明天空的攝影照片，16:9 橫向構圖，畫面完全被天空填滿，
+淡粉紅、淡桃色與淡藍色的柔和粉彩漸層，幾縷薄雲，寧靜柔和的晨光，
+沒有地面、沒有地平線、沒有鳥或其他物體，
+沒有文字、浮水印，四邊填滿不留白，高解析度。
+```
+**English：**
+```
+photo of an early dawn sky, 16:9 landscape, sky fills the entire frame, soft pastel
+gradient of pale pink, peach and light blue, a few thin wisps of cloud, calm gentle
+morning light, no ground, no horizon, no birds or objects, no text, no watermark,
+full-bleed, high resolution
+```
+
+### 5-4 星空夜晚 Starry Night Sky
+**檔名：** `image/backgroud/Starry Night Sky.png`
+
+適合：蝙蝠、貓頭鷹、螢火蟲（螢火蟲的光在夜空特別明顯）
+**中文：**
+```
+一張夜晚星空的攝影照片，16:9 橫向構圖，畫面完全被夜空填滿，
+深藍到靛藍的夜空，佈滿細小清晰的星星，右上角一輪明亮的滿月與淡淡月暈，
+沒有地面、沒有地平線、沒有樹木剪影、沒有鳥或其他物體，
+沒有文字、浮水印，四邊填滿不留白，高解析度、低噪點。
+```
+**English：**
+```
+photo of a starry night sky, 16:9 landscape, night sky fills the entire frame, deep
+navy to indigo, many small crisp stars, a bright full moon with a faint halo in the
+upper right, no ground, no horizon, no tree silhouettes, no birds or objects,
+no text, no watermark, full-bleed, high resolution, low noise
+```
+
+### 5-5 雨後彩虹 Rainbow After Rain
+**檔名：** `image/backgroud/Rainbow After Rain.png`
+
+適合：所有飛行動物，彩色的動物特別搭
+**中文：**
+```
+一張雨後天空的攝影照片，16:9 橫向構圖，畫面完全被天空填滿，
+清新的藍天與正在散開的灰白雲層，一道完整清晰的彩虹橫跨畫面，空氣乾淨透亮，
+沒有地面、沒有地平線、沒有鳥或其他物體，
+沒有文字、浮水印，四邊填滿不留白，高解析度。
+```
+**English：**
+```
+photo of a sky right after rain, 16:9 landscape, sky fills the entire frame, fresh
+blue sky with clearing grey-white clouds, one complete vivid rainbow arcing across
+the frame, crisp clean air, no ground, no horizon, no birds or objects, no text,
+no watermark, full-bleed, high resolution
+```
+
+### 5-6 暴風雨前 Dramatic Storm Clouds
+**檔名：** `image/backgroud/Dramatic Storm Clouds.png`
+
+適合：海鷗、燕子、蝙蝠
+**中文：**
+```
+一張暴風雨前天空的攝影照片，16:9 橫向構圖，畫面完全被天空填滿，
+層次豐富的深灰與藍灰色積雨雲，雲層間透出幾道光束，氣氛壯觀戲劇化，
+沒有閃電、沒有地面、沒有地平線、沒有鳥或其他物體，
+沒有文字、浮水印，四邊填滿不留白，高解析度。
+```
+**English：**
+```
+photo of a dramatic pre-storm sky, 16:9 landscape, sky fills the entire frame, layered
+dark grey and blue-grey cumulonimbus clouds, a few light rays breaking through gaps,
+dramatic moody atmosphere, no lightning, no ground, no horizon, no birds or objects,
+no text, no watermark, full-bleed, high resolution
+```
+
+### 5-7 高空卷雲 High Cirrus Sky
+**檔名：** `image/backgroud/High Cirrus Sky.png`
+
+適合：蜻蜓、燕子、蜂鳥
+**中文：**
+```
+一張高空卷雲天空的攝影照片，16:9 橫向構圖，畫面完全被天空填滿，
+清澈的深藍天空，大量細長如羽毛般的白色卷雲斜向延伸，簡潔通透，
+沒有地面、沒有地平線、沒有鳥或其他物體、沒有飛機凝結尾，
+沒有文字、浮水印，四邊填滿不留白，高解析度、對焦清晰。
+```
+**English：**
+```
+photo of a sky with high cirrus clouds, 16:9 landscape, sky fills the entire frame,
+clear deep-blue sky with many long feathery white cirrus wisps streaking diagonally,
+clean and airy, no ground, no horizon, no birds or objects, no contrails, no text,
+no watermark, full-bleed, high resolution, sharp focus
+```
+
+### 5-8 棉花糖雲海 Cotton Candy Cloudscape
+**檔名：** `image/backgroud/Cotton Candy Cloudscape.png`
+
+適合：蝴蝶、瓢蟲、蜂鳥（可愛童話風）
+**中文：**
+```
+一張夢幻雲海天空的攝影照片，16:9 橫向構圖，畫面完全被天空與雲填滿，
+大片柔軟蓬鬆、像棉花糖一樣的雲朵，帶有淡粉紅與淡紫色的光暈，夢幻溫柔的氣氛，
+沒有地面、沒有地平線、沒有鳥或其他物體，
+沒有文字、浮水印，四邊填滿不留白，高解析度。
+```
+**English：**
+```
+photo of a dreamy cloudscape, 16:9 landscape, sky and clouds fill the entire frame,
+large soft billowy cotton-candy clouds with pale pink and lavender glow, dreamy gentle
+mood, no ground, no horizon, no birds or objects, no text, no watermark, full-bleed,
+high resolution
+```
+
+### 5-9 黃昏藍調 Blue Hour Twilight
+**檔名：** `image/backgroud/Blue Hour Twilight.png`
+
+適合：飛蛾、蝙蝠、貓頭鷹、螢火蟲
+**中文：**
+```
+一張黃昏藍調時刻天空的攝影照片，16:9 橫向構圖，畫面完全被天空填滿，
+從深寶藍到淡紫藍的漸層，下方邊緣帶一點殘餘的暖橘光，最早出現的幾顆星星，
+沒有地面、沒有地平線、沒有鳥或其他物體，
+沒有文字、浮水印，四邊填滿不留白，高解析度、低噪點。
+```
+**English：**
+```
+photo of a blue-hour twilight sky, 16:9 landscape, sky fills the entire frame, gradient
+from deep sapphire to soft violet-blue, a hint of lingering warm orange glow along the
+bottom edge, the first few stars appearing, no ground, no horizon, no birds or objects,
+no text, no watermark, full-bleed, high resolution, low noise
+```
+
+### 5-10 透過樹葉仰望天空 Sky Through Leafy Canopy
+**檔名：** `image/backgroud/Sky Through Leafy Canopy.png`
+
+適合：麻雀、蜜蜂、蝴蝶、螢火蟲（森林感）
+**中文：**
+```
+一張從樹下往上仰望天空的攝影照片，16:9 橫向構圖，
+畫面四周邊緣有一圈淡淡的綠色樹葉剪影，中間大部分是明亮的藍天與白雲，
+陽光從葉縫灑落，樹葉只在邊緣、不擋住中間，沒有地面、沒有鳥或其他物體，
+沒有文字、浮水印，四邊填滿不留白，高解析度。
+```
+**English：**
+```
+photo looking straight up at the sky from under trees, 16:9 landscape, a soft frame of
+green leaf silhouettes around the outer edges only, the large center open bright blue
+sky with white clouds, sunlight filtering through the leaves, leaves kept to the edges
+and never covering the center, no ground, no birds or objects, no text, no watermark,
+full-bleed, high resolution
+```
+
+**生成之後：** 存進 `image/backgroud/`，檔名用英文 Title Case，例如 `Clear Blue Sky.png`、`Starry Night Sky.png`。放好後跟我說，我會幫你加進 `config/scenes.json`（整個畫面設為天空 air zone，只讓飛行動物上場），再跑 `npm run prepare-assets`。
+
+**想只換花園場景上方的天空 band？** 把生成的圖裁成寬:高 約 8:1 的扁長條，照「提示詞 1a」的方式替換天空 band 即可。

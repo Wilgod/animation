@@ -201,7 +201,11 @@
     return `${(def && (def.label || def.id)) || animalId} needs a "${habitatFor(animalId)}" area — can't place it there.`;
   }
 
-  function normalizeOptions(id, opts) {
+  function isSkyScene(sceneId) {
+    return scenes.find((s) => s.id === sceneId)?.category === "sky";
+  }
+
+  function normalizeOptions(id, opts, sceneId = currentScene?.id) {
     const def = animalDefFor(id) || {};
     const o = opts || {};
     return {
@@ -221,8 +225,9 @@
       // config "defaultSize" (e.g. 0.7 for insects) applies to newly placed
       // animals; saved layouts keep their own size.
       sizeScale: o.sizeScale ?? def.defaultSize ?? 1,
-      // On by default for newly placed animals; saved layouts keep their choice.
-      shadow: o.shadow !== undefined ? !!o.shadow : true,
+      // On by default for newly placed animals (off over open sky, where
+      // there's no ground to catch it); saved layouts keep their choice.
+      shadow: o.shadow !== undefined ? !!o.shadow : !isSkyScene(sceneId),
       airborne: habitatFor(id) === "air",
     };
   }
@@ -1864,6 +1869,12 @@
   function randomSceneEffects(sceneId, zones, rand = Math.random, { camera = true } = {}) {
     const outdoor = scenes.find((s) => s.id === sceneId)?.category === "outdoor";
     const fx = { seed: Math.floor(rand() * 1e9) };
+    // Open sky has no canopy to cast dappled light, nor dust/leaves drifting
+    // across it; camera drift alone keeps it moving.
+    if (isSkyScene(sceneId)) {
+      if (camera) fx.camera = randomCamera(rand);
+      return fx;
+    }
     if (rand() < (outdoor ? 0.8 : 0.5)) fx.light = randomLight(sceneId, rand);
     if (waterRects(zones).length) fx.water = { strength: 0.4 + rand() * 0.4 };
     if (rand() < 0.65) fx.particles = randomParticles(particleKindFor(sceneId, rand), rand);
@@ -1927,6 +1938,7 @@
     { key: "outdoor", label: "Outdoor" },
     { key: "indoor", label: "Indoor" },
     { key: "underwater", label: "Underwater" },
+    { key: "sky", label: "Sky" },
     { key: "floor", label: "Floor / Other" },
   ];
 
@@ -2242,7 +2254,7 @@
 
       const maxStart = Math.max(0, totalMs - totalDurationMs);
       const startAtMs = Math.round(Math.min(maxStart, desiredStart));
-      animals[id] = { path, options: normalizeOptions(id, {}), startAtMs };
+      animals[id] = { path, options: normalizeOptions(id, {}, sceneId), startAtMs };
     });
 
     return { sceneId, activeAnimals: shuffled, animals, placedOrnaments: [] };
@@ -2274,9 +2286,14 @@
   }
 
   function sceneMatchesCategory(scene, category) {
-    if (category === "all") return true;
+    // Color variants include sea animals (fish) as well as land ones; the
+    // planner pairs each group only with backgrounds it can live on.
+    if (category === "all" || category === "variants") return true;
     const underwater = scene.category === "underwater";
-    return category === "sea" ? underwater : !underwater;
+    const sky = scene.category === "sky";
+    if (category === "sea") return underwater;
+    if (category === "air") return !underwater; // land scenes have air too
+    return !underwater && !sky;
   }
 
   // Picking a category re-selects the animal and background lists to match

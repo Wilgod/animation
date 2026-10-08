@@ -54,16 +54,17 @@ function migratePathData(data) {
 function createApp(options = {}) {
   const pathsDir = options.pathsDir || PATHS_DIR;
   const templatesDir = options.templatesDir || path.join(path.dirname(pathsDir), "templates");
+  const configFile = options.configFile || CONFIG_FILE;
   const app = express();
   app.use(express.json({ limit: "2mb" })); // auto-history can hold thousands of combinations
   app.use(express.static(ROOT, { index: "index.html" }));
 
   app.get("/api/config", (req, res) => {
-    if (!fs.existsSync(CONFIG_FILE)) {
+    if (!fs.existsSync(configFile)) {
       return res.status(404).json({ error: "config/scenes.json not found" });
     }
     try {
-      res.json(loadScenesConfig(CONFIG_FILE));
+      res.json(loadScenesConfig(configFile));
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

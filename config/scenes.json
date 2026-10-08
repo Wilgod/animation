@@ -8,7 +8,7 @@
   "animals": [
     {
       "id": "turtle",
-      "label": "3D 烏龜",
+      "label": "3D 綠烏龜",
       "habitat": "ground",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/turtle.glb",
@@ -16,11 +16,53 @@
       "strideLengthPx": 34
     },
     {
+      "id": "turtle-blue",
+      "label": "3D 藍烏龜",
+      "habitat": "ground",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/turtle.glb",
+      "modelHue": 180,
+      "modelView": "angled",
+      "strideLengthPx": 34
+    },
+    {
+      "id": "turtle-purple",
+      "label": "3D 紫烏龜",
+      "habitat": "ground",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/turtle.glb",
+      "modelHue": 120,
+      "modelView": "angled",
+      "strideLengthPx": 34
+    },
+    {
       "id": "snail",
-      "label": "3D 蝸牛",
+      "label": "3D 棕蝸牛",
       "habitat": "ground",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/snail.glb",
+      "modelView": "angled",
+      "strideLengthPx": 24,
+      "walkSound": { "source": "audio/snail-walk.wav", "fixedRate": true }
+    },
+    {
+      "id": "snail-pink",
+      "label": "3D 粉紅蝸牛",
+      "habitat": "ground",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/snail.glb",
+      "modelHue": 60,
+      "modelView": "angled",
+      "strideLengthPx": 24,
+      "walkSound": { "source": "audio/snail-walk.wav", "fixedRate": true }
+    },
+    {
+      "id": "snail-blue",
+      "label": "3D 藍蝸牛",
+      "habitat": "ground",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/snail.glb",
+      "modelHue": 180,
       "modelView": "angled",
       "strideLengthPx": 24,
       "walkSound": { "source": "audio/snail-walk.wav", "fixedRate": true }
@@ -57,34 +99,94 @@
     {
       "id": "spider",
       "defaultSize": 0.7,
-      "label": "3D 蜘蛛",
+      "label": "3D 棕蜘蛛",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/spider.glb",
       "strideLengthPx": 58,
       "walkSound": { "source": "audio/spider-walk.wav" }
     },
     {
+      "id": "spider-blue",
+      "defaultSize": 0.7,
+      "label": "3D 藍蜘蛛",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/spider.glb",
+      "modelHue": 120,
+      "strideLengthPx": 58,
+      "walkSound": { "source": "audio/spider-walk.wav" }
+    },
+    {
+      "id": "spider-green",
+      "defaultSize": 0.7,
+      "label": "3D 綠蜘蛛",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/spider.glb",
+      "modelHue": 240,
+      "strideLengthPx": 58,
+      "walkSound": { "source": "audio/spider-walk.wav" }
+    },
+    {
       "id": "mantis",
       "defaultSize": 0.7,
-      "label": "3D 螳螂",
+      "label": "3D 綠螳螂",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/mantis.glb",
       "strideLengthPx": 46,
       "walkSound": { "source": "audio/mantis-walk.wav" }
     },
     {
+      "id": "mantis-yellow",
+      "defaultSize": 0.7,
+      "label": "3D 黃螳螂",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/mantis.glb",
+      "modelHue": 60,
+      "strideLengthPx": 46,
+      "walkSound": { "source": "audio/mantis-walk.wav" }
+    },
+    {
+      "id": "mantis-purple",
+      "defaultSize": 0.7,
+      "label": "3D 紫螳螂",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/mantis.glb",
+      "modelHue": 180,
+      "strideLengthPx": 46,
+      "walkSound": { "source": "audio/mantis-walk.wav" }
+    },
+    {
       "id": "ladybug",
       "defaultSize": 0.7,
-      "label": "3D 瓢蟲",
+      "label": "3D 紅瓢蟲",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/ladybug.glb",
       "strideLengthPx": 69,
       "walkSound": { "source": "audio/ladybug-walk.wav" }
     },
     {
+      "id": "ladybug-blue",
+      "defaultSize": 0.7,
+      "label": "3D 藍瓢蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/ladybug.glb",
+      "modelHue": 120,
+      "strideLengthPx": 69,
+      "walkSound": { "source": "audio/ladybug-walk.wav" }
+    },
+    {
+      "id": "ladybug-green",
+      "defaultSize": 0.7,
+      "label": "3D 綠瓢蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/ladybug.glb",
+      "modelHue": 240,
+      "strideLengthPx": 69,
+      "walkSound": { "source": "audio/ladybug-walk.wav" }
+    },
+    {
       "id": "butterfly",
       "defaultSize": 0.7,
-      "label": "3D 蝴蝶",
+      "label": "3D 橙蝴蝶",
       "habitat": "air",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/butterfly.glb",
@@ -93,8 +195,32 @@
       "walkSound": { "source": "audio/butterfly-fly.wav" }
     },
     {
+      "id": "butterfly-blue",
+      "defaultSize": 0.7,
+      "label": "3D 藍蝴蝶",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/butterfly.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/butterfly-fly.wav" }
+    },
+    {
+      "id": "butterfly-purple",
+      "defaultSize": 0.7,
+      "label": "3D 紫蝴蝶",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/butterfly.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/butterfly-fly.wav" }
+    },
+    {
       "id": "sparrow",
-      "label": "3D 麻雀",
+      "label": "3D 棕麻雀",
       "habitat": "air",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/sparrow.glb",
@@ -103,17 +229,59 @@
       "walkSound": { "source": "audio/sparrow-fly.wav" }
     },
     {
+      "id": "sparrow-blue",
+      "label": "3D 藍麻雀",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sparrow.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/sparrow-fly.wav" }
+    },
+    {
+      "id": "sparrow-green",
+      "label": "3D 綠麻雀",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sparrow.glb",
+      "modelHue": 240,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/sparrow-fly.wav" }
+    },
+    {
       "id": "squirrel",
-      "label": "3D 松鼠",
+      "label": "3D 棕松鼠",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/squirrel.glb",
       "strideLengthPx": 61,
       "walkSound": { "source": "audio/squirrel-walk.wav" }
     },
     {
+      "id": "squirrel-grey",
+      "label": "3D 灰松鼠",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/squirrel.glb",
+      "modelColor": "#8c8c8c",
+      "modelColorMaterials": "coat|hair",
+      "strideLengthPx": 61,
+      "walkSound": { "source": "audio/squirrel-walk.wav" }
+    },
+    {
+      "id": "squirrel-red",
+      "label": "3D 紅松鼠",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/squirrel.glb",
+      "modelColor": "#b5502e",
+      "modelColorMaterials": "coat|hair",
+      "strideLengthPx": 61,
+      "walkSound": { "source": "audio/squirrel-walk.wav" }
+    },
+    {
       "id": "bee",
       "defaultSize": 0.7,
-      "label": "3D 蜜蜂",
+      "label": "3D 黃蜜蜂",
       "habitat": "air",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/honeybee.glb",
@@ -122,16 +290,60 @@
       "walkSound": { "source": "audio/bee-fly.wav" }
     },
     {
+      "id": "bee-blue",
+      "defaultSize": 0.7,
+      "label": "3D 藍蜜蜂",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/honeybee.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/bee-fly.wav" }
+    },
+    {
+      "id": "bee-green",
+      "defaultSize": 0.7,
+      "label": "3D 綠蜜蜂",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/honeybee.glb",
+      "modelHue": 240,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/bee-fly.wav" }
+    },
+    {
       "id": "pigeon",
-      "label": "3D 鴿子",
+      "label": "3D 灰鴿子",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/pigeon.glb",
       "strideLengthPx": 50,
       "walkSound": { "source": "audio/pigeon-walk.wav" }
     },
     {
+      "id": "pigeon-brown",
+      "label": "3D 棕鴿子",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/pigeon.glb",
+      "modelColor": "#8f7458",
+      "modelColorMaterials": "plumage|breast|coverts|feather|tail|head|neck|wing",
+      "strideLengthPx": 50,
+      "walkSound": { "source": "audio/pigeon-walk.wav" }
+    },
+    {
+      "id": "pigeon-blue",
+      "label": "3D 藍鴿子",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/pigeon.glb",
+      "modelColor": "#7088b0",
+      "modelColorMaterials": "plumage|breast|coverts|feather|tail|head|neck|wing",
+      "strideLengthPx": 50,
+      "walkSound": { "source": "audio/pigeon-walk.wav" }
+    },
+    {
       "id": "pigeon-flying",
-      "label": "3D 飛行鴿子",
+      "label": "3D 灰飛行鴿子",
       "habitat": "air",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/pigeon-flying.glb",
@@ -140,8 +352,32 @@
       "walkSound": { "source": "audio/pigeon-fly.wav" }
     },
     {
+      "id": "pigeon-flying-brown",
+      "label": "3D 棕飛行鴿子",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/pigeon-flying.glb",
+      "modelColor": "#8f7458",
+      "modelColorMaterials": "plumage|breast|coverts|feather|tail|head|neck|wing",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/pigeon-fly.wav" }
+    },
+    {
+      "id": "pigeon-flying-blue",
+      "label": "3D 藍飛行鴿子",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/pigeon-flying.glb",
+      "modelColor": "#7088b0",
+      "modelColorMaterials": "plumage|breast|coverts|feather|tail|head|neck|wing",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/pigeon-fly.wav" }
+    },
+    {
       "id": "crab",
-      "label": "3D 螃蟹",
+      "label": "3D 黃螃蟹",
       "rotationFollowsPath": false,
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/crab.glb",
@@ -149,10 +385,48 @@
       "walkSound": { "source": "audio/crab-walk.wav" }
     },
     {
+      "id": "crab-red",
+      "label": "3D 紅螃蟹",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/crab.glb",
+      "modelColor": "#c8463a",
+      "strideLengthPx": 100,
+      "walkSound": { "source": "audio/crab-walk.wav" }
+    },
+    {
+      "id": "crab-blue",
+      "label": "3D 藍螃蟹",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/crab.glb",
+      "modelHue": 180,
+      "strideLengthPx": 100,
+      "walkSound": { "source": "audio/crab-walk.wav" }
+    },
+    {
       "id": "frog",
-      "label": "3D 青蛙",
+      "label": "3D 綠青蛙",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/frog.glb",
+      "strideLengthPx": 96,
+      "walkSound": { "source": "audio/frog-hop.wav" }
+    },
+    {
+      "id": "frog-blue",
+      "label": "3D 藍青蛙",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/frog.glb",
+      "modelHue": 210,
+      "strideLengthPx": 96,
+      "walkSound": { "source": "audio/frog-hop.wav" }
+    },
+    {
+      "id": "frog-purple",
+      "label": "3D 紫青蛙",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/frog.glb",
+      "modelHue": 130,
       "strideLengthPx": 96,
       "walkSound": { "source": "audio/frog-hop.wav" }
     },
@@ -169,7 +443,7 @@
     },
     {
       "id": "goldfish",
-      "label": "3D 金魚",
+      "label": "3D 橙金魚",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/goldfish.glb",
@@ -177,8 +451,28 @@
       "walkSound": { "source": "audio/goldfish-swim.wav" }
     },
     {
+      "id": "goldfish-blue",
+      "label": "3D 藍金魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/goldfish.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/goldfish-swim.wav" }
+    },
+    {
+      "id": "goldfish-pink",
+      "label": "3D 粉紅金魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/goldfish.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/goldfish-swim.wav" }
+    },
+    {
       "id": "stingray",
-      "label": "3D 魟魚",
+      "label": "3D 棕魟魚",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/stingray.glb",
@@ -186,8 +480,28 @@
       "walkSound": { "source": "audio/stingray-swim.wav" }
     },
     {
+      "id": "stingray-blue",
+      "label": "3D 藍魟魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/stingray.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/stingray-swim.wav" }
+    },
+    {
+      "id": "stingray-green",
+      "label": "3D 綠魟魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/stingray.glb",
+      "modelHue": 240,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/stingray-swim.wav" }
+    },
+    {
       "id": "seastar",
-      "label": "3D 海星",
+      "label": "3D 橙海星",
       "habitat": "water",
       "rotationFollowsPath": false,
       "rotationOffsetDeg": 0,
@@ -196,8 +510,30 @@
       "walkSound": { "source": "audio/seastar-crawl.wav", "fixedRate": true }
     },
     {
+      "id": "seastar-purple",
+      "label": "3D 紫海星",
+      "habitat": "water",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/seastar.glb",
+      "modelHue": 60,
+      "strideLengthPx": 60,
+      "walkSound": { "source": "audio/seastar-crawl.wav", "fixedRate": true }
+    },
+    {
+      "id": "seastar-blue",
+      "label": "3D 藍海星",
+      "habitat": "water",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/seastar.glb",
+      "modelHue": 180,
+      "strideLengthPx": 60,
+      "walkSound": { "source": "audio/seastar-crawl.wav", "fixedRate": true }
+    },
+    {
       "id": "jellyfish",
-      "label": "3D 水母",
+      "label": "3D 粉紅水母",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/jellyfish.glb",
@@ -205,8 +541,28 @@
       "walkSound": { "source": "audio/jellyfish-swim.wav" }
     },
     {
+      "id": "jellyfish-green",
+      "label": "3D 綠水母",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/jellyfish.glb",
+      "modelHue": 240,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/jellyfish-swim.wav" }
+    },
+    {
+      "id": "jellyfish-blue",
+      "label": "3D 藍水母",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/jellyfish.glb",
+      "modelHue": 120,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/jellyfish-swim.wav" }
+    },
+    {
       "id": "sea-urchin",
-      "label": "3D 海膽",
+      "label": "3D 紫海膽",
       "habitat": "water",
       "rotationFollowsPath": false,
       "rotationOffsetDeg": 0,
@@ -215,8 +571,30 @@
       "walkSound": { "source": "audio/sea-urchin-crawl.wav", "fixedRate": true }
     },
     {
+      "id": "sea-urchin-green",
+      "label": "3D 綠海膽",
+      "habitat": "water",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sea-urchin.glb",
+      "modelHue": 180,
+      "strideLengthPx": 40,
+      "walkSound": { "source": "audio/sea-urchin-crawl.wav", "fixedRate": true }
+    },
+    {
+      "id": "sea-urchin-red",
+      "label": "3D 紅海膽",
+      "habitat": "water",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sea-urchin.glb",
+      "modelColor": "#c8463a",
+      "strideLengthPx": 40,
+      "walkSound": { "source": "audio/sea-urchin-crawl.wav", "fixedRate": true }
+    },
+    {
       "id": "clownfish",
-      "label": "3D 小丑魚",
+      "label": "3D 橙小丑魚",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/clownfish.glb",
@@ -224,8 +602,28 @@
       "walkSound": { "source": "audio/clownfish-swim.wav" }
     },
     {
+      "id": "clownfish-blue",
+      "label": "3D 藍小丑魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/clownfish.glb",
+      "modelHue": 120,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/clownfish-swim.wav" }
+    },
+    {
+      "id": "clownfish-pink",
+      "label": "3D 粉紅小丑魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/clownfish.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/clownfish-swim.wav" }
+    },
+    {
       "id": "sea-turtle",
-      "label": "3D 海龜",
+      "label": "3D 棕海龜",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/sea-turtle.glb",
@@ -233,8 +631,28 @@
       "walkSound": { "source": "audio/sea-turtle-swim.wav" }
     },
     {
+      "id": "sea-turtle-blue",
+      "label": "3D 藍海龜",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sea-turtle.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/sea-turtle-swim.wav" }
+    },
+    {
+      "id": "sea-turtle-green",
+      "label": "3D 綠海龜",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sea-turtle.glb",
+      "modelHue": 240,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/sea-turtle-swim.wav" }
+    },
+    {
       "id": "seahorse",
-      "label": "3D 海馬",
+      "label": "3D 黃海馬",
       "habitat": "water",
       "rotationFollowsPath": false,
       "rotationOffsetDeg": 0,
@@ -244,8 +662,32 @@
       "walkSound": { "source": "audio/seahorse-swim.wav" }
     },
     {
+      "id": "seahorse-pink",
+      "label": "3D 粉紅海馬",
+      "habitat": "water",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/seahorse.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/seahorse-swim.wav" }
+    },
+    {
+      "id": "seahorse-blue",
+      "label": "3D 藍海馬",
+      "habitat": "water",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/seahorse.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/seahorse-swim.wav" }
+    },
+    {
       "id": "hermit-crab",
-      "label": "3D 寄居蟹",
+      "label": "3D 紅寄居蟹",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/hermit-crab.glb",
@@ -253,8 +695,28 @@
       "walkSound": { "source": "audio/hermit-crab-walk.wav" }
     },
     {
+      "id": "hermit-crab-blue",
+      "label": "3D 藍寄居蟹",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/hermit-crab.glb",
+      "modelHue": 180,
+      "strideLengthPx": 45,
+      "walkSound": { "source": "audio/hermit-crab-walk.wav" }
+    },
+    {
+      "id": "hermit-crab-purple",
+      "label": "3D 紫寄居蟹",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/hermit-crab.glb",
+      "modelHue": 60,
+      "strideLengthPx": 45,
+      "walkSound": { "source": "audio/hermit-crab-walk.wav" }
+    },
+    {
       "id": "octopus",
-      "label": "3D 章魚",
+      "label": "3D 紅章魚",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/octopus.glb",
@@ -262,8 +724,28 @@
       "walkSound": { "source": "audio/octopus-swim.wav" }
     },
     {
+      "id": "octopus-blue",
+      "label": "3D 藍章魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/octopus.glb",
+      "modelHue": 120,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/octopus-swim.wav" }
+    },
+    {
+      "id": "octopus-purple",
+      "label": "3D 紫章魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/octopus.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/octopus-swim.wav" }
+    },
+    {
       "id": "shark",
-      "label": "3D 礁鯊",
+      "label": "3D 灰礁鯊",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/shark.glb",
@@ -271,8 +753,19 @@
       "walkSound": { "source": "audio/shark-swim.wav" }
     },
     {
+      "id": "shark-blue",
+      "label": "3D 藍礁鯊",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/shark.glb",
+      "modelColor": "#4f75b0",
+      "modelColorMaterials": "skin|fin",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/shark-swim.wav" }
+    },
+    {
       "id": "moray-eel",
-      "label": "3D 海鱔",
+      "label": "3D 綠海鱔",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/moray-eel.glb",
@@ -280,8 +773,28 @@
       "walkSound": { "source": "audio/moray-eel-swim.wav" }
     },
     {
+      "id": "moray-eel-blue",
+      "label": "3D 藍海鱔",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/moray-eel.glb",
+      "modelHue": 200,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/moray-eel-swim.wav" }
+    },
+    {
+      "id": "moray-eel-purple",
+      "label": "3D 紫海鱔",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/moray-eel.glb",
+      "modelHue": 120,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/moray-eel-swim.wav" }
+    },
+    {
       "id": "sea-snake",
-      "label": "3D 海蛇",
+      "label": "3D 藍海蛇",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/sea-snake.glb",
@@ -289,8 +802,28 @@
       "walkSound": { "source": "audio/sea-snake-swim.wav" }
     },
     {
+      "id": "sea-snake-green",
+      "label": "3D 綠海蛇",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sea-snake.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/sea-snake-swim.wav" }
+    },
+    {
+      "id": "sea-snake-pink",
+      "label": "3D 粉紅海蛇",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sea-snake.glb",
+      "modelHue": 240,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/sea-snake-swim.wav" }
+    },
+    {
       "id": "fish-school",
-      "label": "3D 小魚群",
+      "label": "3D 藍小魚群",
       "habitat": "water",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/fish-school.glb",
@@ -298,12 +831,393 @@
       "walkSound": { "source": "audio/fish-school-swim.wav" }
     },
     {
+      "id": "fish-school-green",
+      "label": "3D 綠小魚群",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/fish-school.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/fish-school-swim.wav" }
+    },
+    {
+      "id": "fish-school-purple",
+      "label": "3D 紫小魚群",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/fish-school.glb",
+      "modelHue": 300,
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/fish-school-swim.wav" }
+    },
+    {
       "id": "fieldmouse",
-      "label": "3D 田鼠",
+      "label": "3D 棕田鼠",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/fieldmouse.glb",
       "strideLengthPx": 30,
       "walkSound": { "source": "audio/fieldmouse-walk.wav" }
+    },
+    {
+      "id": "fieldmouse-grey",
+      "label": "3D 灰田鼠",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/fieldmouse.glb",
+      "modelColor": "#8c8c8c",
+      "modelColorMaterials": "coat|guard hair",
+      "strideLengthPx": 30,
+      "walkSound": { "source": "audio/fieldmouse-walk.wav" }
+    },
+    {
+      "id": "dragonfly",
+      "defaultSize": 0.7,
+      "label": "3D 藍蜻蜓",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/dragonfly.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/dragonfly-fly.wav" }
+    },
+    {
+      "id": "dragonfly-green",
+      "defaultSize": 0.7,
+      "label": "3D 綠蜻蜓",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/dragonfly.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/dragonfly-fly.wav" }
+    },
+    {
+      "id": "dragonfly-red",
+      "defaultSize": 0.7,
+      "label": "3D 紅蜻蜓",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/dragonfly.glb",
+      "modelHue": 240,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/dragonfly-fly.wav" }
+    },
+    {
+      "id": "moth",
+      "defaultSize": 0.7,
+      "label": "3D 棕飛蛾",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/moth.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/moth-fly.wav" }
+    },
+    {
+      "id": "moth-green",
+      "defaultSize": 0.7,
+      "label": "3D 綠飛蛾",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/moth.glb",
+      "modelHue": 240,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/moth-fly.wav" }
+    },
+    {
+      "id": "moth-pink",
+      "defaultSize": 0.7,
+      "label": "3D 粉紅飛蛾",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/moth.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/moth-fly.wav" }
+    },
+    {
+      "id": "firefly",
+      "defaultSize": 0.5,
+      "label": "3D 橙螢火蟲",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/firefly.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/firefly-fly.wav" }
+    },
+    {
+      "id": "firefly-pink",
+      "defaultSize": 0.5,
+      "label": "3D 粉紅螢火蟲",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/firefly.glb",
+      "modelHue": 60,
+      "modelColorMaterials": "pronotum|red",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/firefly-fly.wav" }
+    },
+    {
+      "id": "firefly-blue",
+      "defaultSize": 0.5,
+      "label": "3D 藍螢火蟲",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/firefly.glb",
+      "modelHue": 180,
+      "modelColorMaterials": "pronotum|red",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/firefly-fly.wav" }
+    },
+    {
+      "id": "housefly",
+      "defaultSize": 0.5,
+      "label": "3D 灰蒼蠅",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/housefly.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/housefly-fly.wav" }
+    },
+    {
+      "id": "housefly-green",
+      "defaultSize": 0.5,
+      "label": "3D 綠蒼蠅",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/housefly.glb",
+      "modelColor": "#3a9a5a",
+      "modelColorMaterials": "thorax|abdomen",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/housefly-fly.wav" }
+    },
+    {
+      "id": "housefly-blue",
+      "defaultSize": 0.5,
+      "label": "3D 藍蒼蠅",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/housefly.glb",
+      "modelColor": "#3a5aa8",
+      "modelColorMaterials": "thorax|abdomen",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/housefly-fly.wav" }
+    },
+    {
+      "id": "ladybug-flying",
+      "defaultSize": 0.6,
+      "label": "3D 紅飛行瓢蟲",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/ladybug-flying.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/ladybug-flying-fly.wav" }
+    },
+    {
+      "id": "ladybug-flying-blue",
+      "defaultSize": 0.6,
+      "label": "3D 藍飛行瓢蟲",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/ladybug-flying.glb",
+      "modelHue": 120,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/ladybug-flying-fly.wav" }
+    },
+    {
+      "id": "ladybug-flying-green",
+      "defaultSize": 0.6,
+      "label": "3D 綠飛行瓢蟲",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/ladybug-flying.glb",
+      "modelHue": 240,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/ladybug-flying-fly.wav" }
+    },
+    {
+      "id": "hummingbird",
+      "defaultSize": 0.6,
+      "label": "3D 綠蜂鳥",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/hummingbird.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/hummingbird-fly.wav" }
+    },
+    {
+      "id": "hummingbird-purple",
+      "defaultSize": 0.6,
+      "label": "3D 紫蜂鳥",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/hummingbird.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/hummingbird-fly.wav" }
+    },
+    {
+      "id": "hummingbird-blue",
+      "defaultSize": 0.6,
+      "label": "3D 藍蜂鳥",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/hummingbird.glb",
+      "modelHue": 300,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/hummingbird-fly.wav" }
+    },
+    {
+      "id": "swallow",
+      "label": "3D 藍燕子",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/swallow.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/swallow-fly.wav" }
+    },
+    {
+      "id": "swallow-green",
+      "label": "3D 綠燕子",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/swallow.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/swallow-fly.wav" }
+    },
+    {
+      "id": "swallow-purple",
+      "label": "3D 紫燕子",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/swallow.glb",
+      "modelHue": 300,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/swallow-fly.wav" }
+    },
+    {
+      "id": "seagull",
+      "defaultSize": 1.2,
+      "label": "3D 灰海鷗",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/seagull.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/seagull-fly.wav" }
+    },
+    {
+      "id": "seagull-brown",
+      "defaultSize": 1.2,
+      "label": "3D 棕海鷗",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/seagull.glb",
+      "modelColor": "#8f7458",
+      "modelColorMaterials": "back|coverts|flight feather 1",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/seagull-fly.wav" }
+    },
+    {
+      "id": "seagull-blue",
+      "defaultSize": 1.2,
+      "label": "3D 藍海鷗",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/seagull.glb",
+      "modelColor": "#7088b0",
+      "modelColorMaterials": "back|coverts|flight feather 1",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/seagull-fly.wav" }
+    },
+    {
+      "id": "owl",
+      "defaultSize": 1.1,
+      "label": "3D 棕貓頭鷹",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/owl.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/owl-fly.wav" }
+    },
+    {
+      "id": "owl-grey",
+      "defaultSize": 1.1,
+      "label": "3D 灰貓頭鷹",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/owl.glb",
+      "modelColor": "#8c8c8c",
+      "modelColorMaterials": "back|coverts|flight feather|tail|crown|head",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/owl-fly.wav" }
+    },
+    {
+      "id": "owl-blue",
+      "defaultSize": 1.1,
+      "label": "3D 藍貓頭鷹",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/owl.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/owl-fly.wav" }
+    },
+    {
+      "id": "bat",
+      "label": "3D 棕蝙蝠",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/bat.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/bat-fly.wav" }
+    },
+    {
+      "id": "bat-purple",
+      "label": "3D 紫蝙蝠",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/bat.glb",
+      "modelHue": 60,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/bat-fly.wav" }
+    },
+    {
+      "id": "bat-blue",
+      "label": "3D 藍蝙蝠",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/bat.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/bat-fly.wav" }
     }
   ],
 
@@ -536,6 +1450,76 @@
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
       "background": { "source": "image/backgroud/Shallow sea in warm sunset light.png" }
+    },
+    {
+      "id": "clear-blue-sky",
+      "label": "晴朗藍天白雲",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Clear Blue Sky.png" }
+    },
+    {
+      "id": "golden-sunset-sky",
+      "label": "金色夕陽",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Golden Sunset Sky.png" }
+    },
+    {
+      "id": "pastel-dawn-sky",
+      "label": "粉彩黎明",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Pastel Dawn Sky.png" }
+    },
+    {
+      "id": "starry-night-sky",
+      "label": "星空夜晚",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Starry Night Sky.png" }
+    },
+    {
+      "id": "rainbow-after-rain",
+      "label": "雨後彩虹",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Rainbow After Rain.png" }
+    },
+    {
+      "id": "dramatic-storm-clouds",
+      "label": "暴風雨前",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Dramatic Storm Clouds.png" }
+    },
+    {
+      "id": "high-cirrus-sky",
+      "label": "高空卷雲",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/High Cirrus Sky.png" }
+    },
+    {
+      "id": "cotton-candy-cloudscape",
+      "label": "棉花糖雲海",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Cotton Candy Cloudscape.png" }
+    },
+    {
+      "id": "blue-hour-twilight",
+      "label": "黃昏藍調",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Blue Hour Twilight.png" }
+    },
+    {
+      "id": "sky-through-leafy-canopy",
+      "label": "透過樹葉仰望天空",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Sky Through Leafy Canopy.png" }
     }
   ]
 }

@@ -35,32 +35,58 @@ function frameBounds(root) {
   return box;
 }
 
+// Color variants of one shared model (scenes.json):
+// - modelColor: recolor the texture's luminance with this color rather than
+//   multiplying its hue. Keeps normal/roughness maps, texture detail, and dark
+//   markings. Suits single-material or grey models (lizard, pigeon, shark).
+// - modelHue: rotate hue by N degrees in YIQ space, which keeps luminance and
+//   leaves black/white/grey untouched. Suits multi-material models.
+// modelColorMaterials (regex) limits which materials are recolored; eyes are
+// always left alone so a variant keeps its natural gaze.
+const EYE_MATERIAL = /eye|iris|pupil/i;
+
+function recolorModel(root, color, options) {
+  const hue = options.modelHue;
+  if (!color && !hue) return;
+  const only = options.modelColorMaterials ? new RegExp(options.modelColorMaterials, 'i') : null;
+  const tint = color ? new THREE.Color(color) : null;
+  const angle = (hue || 0) * Math.PI / 180;
+  root.traverse(object => {
+    if (!object.isMesh) return;
+    for (const material of [].concat(object.material)) {
+      if (EYE_MATERIAL.test(material.name) || (only && !only.test(material.name))) continue;
+      material.onBeforeCompile = shader => {
+        if (tint) {
+          shader.uniforms.variantTint = { value: tint };
+          shader.fragmentShader = 'uniform vec3 variantTint;\n' + shader.fragmentShader;
+          shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `
+            #include <map_fragment>
+            float luminance = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+            float tintLuminance = dot(variantTint, vec3(0.2126, 0.7152, 0.0722));
+            diffuseColor.rgb = luminance * variantTint / max(tintLuminance, 0.001);
+          `);
+        } else {
+          shader.uniforms.variantHue = { value: new THREE.Vector2(Math.cos(angle), Math.sin(angle)) };
+          shader.fragmentShader = 'uniform vec2 variantHue;\n' + shader.fragmentShader;
+          shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `
+            #include <map_fragment>
+            vec3 yiq = mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.114, -0.322, 0.312) * diffuseColor.rgb;
+            yiq.yz = vec2(yiq.y * variantHue.x - yiq.z * variantHue.y, yiq.y * variantHue.y + yiq.z * variantHue.x);
+            diffuseColor.rgb = clamp(mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703) * yiq, 0.0, 1.0);
+          `);
+        }
+      };
+      material.customProgramCacheKey = () => tint ? 'color-variant-tint-v2' : 'color-variant-hue-v2';
+    }
+  });
+}
+
 // Render the actual GLB into a transparent surface, composited by the shared
 // timeline engine. Explicit animation time keeps scrubbing/export deterministic.
 export async function loadAnimal3D(url, color = null, options = {}) {
   const gltf = await new GLTFLoader().loadAsync(url);
   preserveModelColors(gltf.scene);
-  if (color) {
-    // Recolor the texture's luminance rather than multiplying its yellow hue.
-    // Keep normal/roughness maps, skinning, texture detail, and dark markings.
-    const tint = new THREE.Color(color);
-    gltf.scene.traverse(object => {
-      if (!object.isMesh) return;
-      for (const material of [].concat(object.material)) {
-        material.onBeforeCompile = shader => {
-          shader.uniforms.lizardTint = { value: tint };
-          shader.fragmentShader = 'uniform vec3 lizardTint;\n' + shader.fragmentShader;
-          shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `
-            #include <map_fragment>
-            float luminance = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-            float tintLuminance = dot(lizardTint, vec3(0.2126, 0.7152, 0.0722));
-            diffuseColor.rgb = luminance * lizardTint / max(tintLuminance, 0.001);
-          `);
-        };
-        material.customProgramCacheKey = () => 'lizard-color-variant-v1';
-      }
-    });
-  }
+  recolorModel(gltf.scene, color, options);
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(768, 768);
   renderer.setClearColor(0x000000, 0);

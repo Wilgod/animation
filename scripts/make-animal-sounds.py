@@ -382,6 +382,106 @@ def pigeon_flying():
     return L
 
 
+def buzz_bed(L, f0, lo, hi, harmonics=17, drift=3.0):
+    """Seamless wing buzz like bee(): a harmonic-rich tone at f0 (Hz, a whole
+    number of cycles per loop) with slow periodic pitch drift, band-shaped."""
+    t = L.time()
+    vib = drift * np.sin(2 * np.pi * t / L.seconds * 2)
+    phase = 2 * np.pi * f0 * t + 2 * np.pi * np.cumsum(vib) / SR
+    phase -= (phase[-1] + 2 * np.pi * f0 / SR - 2 * np.pi * f0 * L.seconds) * t / L.seconds
+    x = sum(np.sin(k * phase) / k ** 1.15 for k in range(1, harmonics + 1))
+    spec = np.fft.rfft(x) * band_env(np.fft.rfftfreq(L.n, 1 / SR), lo, hi, 1.2)
+    x = np.fft.irfft(spec, L.n)
+    return x / np.abs(x).max()
+
+
+def dragonfly():
+    period = 12 / 60
+    L, cycles = flap_loop(period, 4.0, 101)
+    L.bed(colored(L.n, 60, 600, L.rng) * (1 + .6 * periodic_lfo(L, cycles)), .5)  # papery wing rattle
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .09, 300, 2500), c * period, L.rng.uniform(.4, .6))
+    return L
+
+
+def moth():
+    period = 22 / 60
+    L, cycles = flap_loop(period, 4.0, 103)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .2, 100, 900), c * period, L.rng.uniform(.6, 1))
+        L.add(insect_tick(L.rng, .6), c * period + .17, .15)  # dusty wingtip flick
+    return L
+
+
+def firefly():
+    L = Loop(4.0, 107)
+    L.bed(buzz_bed(L, 95.0, 80, 1200, drift=2.0), 1)
+    L.bed(colored(L.n, 200, 2000, L.rng), .12)
+    return L
+
+
+def housefly():
+    L = Loop(4.0, 109)
+    x = buzz_bed(L, 190.0, 160, 4500, harmonics=22, drift=8.0)
+    L.bed(x * (1 + .35 * periodic_lfo(L, 2)), 1)  # swells as it circles
+    L.bed(colored(L.n, 400, 5000, L.rng), .06)
+    return L
+
+
+def ladybug_flying():
+    L = Loop(4.0, 113)
+    L.bed(buzz_bed(L, 85.0, 70, 1500, drift=2.5), 1)
+    L.bed(colored(L.n, 150, 1800, L.rng), .1)
+    return L
+
+
+def hummingbird():
+    L = Loop(4.0, 127)
+    L.bed(buzz_bed(L, 55.0, 40, 900, harmonics=10, drift=1.5) * (1 + .2 * periodic_lfo(L, 2)), 1)
+    for t0 in (.7, .78, 2.6):  # tiny 'tsip' calls
+        L.add(bird_chirp(L.rng, 7800, 6200, .04), t0, .35)
+    return L
+
+
+def swallow():
+    period = 18 / 60
+    L, cycles = flap_loop(period, 4.0, 131)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .14, 500, 4000), c * period, L.rng.uniform(.5, .8))
+    for i, t0 in enumerate((1.1, 1.18, 1.26, 1.34, 3.0, 3.08)):  # liquid twitter
+        L.add(bird_chirp(L.rng, 5200 + 600 * (i % 2), 4200, .05), t0, .45)
+    return L
+
+
+def seagull():
+    period = 40 / 60
+    L, cycles = flap_loop(period, 4.0, 137)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .45, 150, 1400), c * period, L.rng.uniform(.6, .9))
+    for t0, dur, f0, f1 in ((1.3, .28, 1500, 1050), (1.65, .22, 1400, 1000), (1.95, .2, 1350, 950)):  # 'kee-ow'
+        L.add(sweep(dur, f0, f1, (1, .6, .35, .15), .4), t0, .55)
+    return L
+
+
+def owl():
+    period = 32 / 60
+    L, cycles = flap_loop(period, 4.0, 139)
+    for c in range(cycles):  # soft fringed feathers: a hushed, low swish
+        L.add(wing_whoosh(L.rng, .4, 60, 400), c * period, L.rng.uniform(.6, .9))
+    return L
+
+
+def bat():
+    period = 20 / 60
+    L, cycles = flap_loop(period, 4.0, 149)
+    for c in range(cycles):  # leathery flap with a membrane snap
+        L.add(wing_whoosh(L.rng, .18, 120, 1600), c * period, L.rng.uniform(.7, 1))
+        L.add(burst(.02, 1500, 6000, .001, .004, L.rng), c * period + .15, .25)
+    for t0 in np.arange(.2, L.seconds, .55):  # faint high squeaks
+        L.add(sweep(.03, 9000, 7000, (1, .1), .5), t0 + L.rng.uniform(0, .1), .12)
+    return L
+
+
 def goldfish():
     period = 36 / 60
     L, cycles = flap_loop(period, 4.8, 89)
@@ -591,6 +691,16 @@ SOUNDS = {
     'cicada':        ('cicada-fly.wav',         cicada,               ('rms', -28)),
     'sparrow':       ('sparrow-fly.wav',        sparrow,              ('rms', -29)),
     'pigeon-flying': ('pigeon-fly.wav',         pigeon_flying,        ('rms', -28)),
+    'dragonfly':     ('dragonfly-fly.wav',      dragonfly,            ('rms', -33)),
+    'moth':          ('moth-fly.wav',           moth,                 ('rms', -37)),
+    'firefly':       ('firefly-fly.wav',        firefly,              ('rms', -34)),
+    'housefly':      ('housefly-fly.wav',       housefly,             ('rms', -29)),
+    'ladybug-flying': ('ladybug-flying-fly.wav', ladybug_flying,      ('rms', -34)),
+    'hummingbird':   ('hummingbird-fly.wav',    hummingbird,          ('rms', -30)),
+    'swallow':       ('swallow-fly.wav',        swallow,              ('rms', -30)),
+    'seagull':       ('seagull-fly.wav',        seagull,              ('rms', -28)),
+    'owl':           ('owl-fly.wav',            owl,                  ('rms', -36)),
+    'bat':           ('bat-fly.wav',            bat,                  ('rms', -31)),
     'goldfish':      ('goldfish-swim.wav',      goldfish,             ('rms', -33)),
     'snail':         ('snail-walk.wav',         snail,                ('rms', -30)),
     'stingray':      ('stingray-swim.wav',      stingray,             ('rms', -34)),

@@ -4,7 +4,7 @@
 // on an all-ground scene (air is allowed everywhere there) and checks it moves
 // along a path. Water animals skip the editor step: no scene has water yet.
 const { app, BrowserWindow } = require('electron');
-const IDS = ['spider', 'mantis', 'ladybug', 'sparrow', 'squirrel', 'pigeon', 'pigeon-flying', 'frog', 'cicada', 'goldfish', 'stingray', 'seastar', 'jellyfish', 'sea-urchin', 'clownfish', 'sea-turtle', 'seahorse', 'hermit-crab', 'octopus', 'shark', 'moray-eel', 'sea-snake', 'fish-school', 'fieldmouse'];
+const IDS = ['spider', 'mantis', 'ladybug', 'sparrow', 'squirrel', 'pigeon', 'pigeon-flying', 'frog', 'cicada', 'goldfish', 'stingray', 'seastar', 'jellyfish', 'sea-urchin', 'clownfish', 'sea-turtle', 'seahorse', 'hermit-crab', 'octopus', 'shark', 'moray-eel', 'sea-snake', 'fish-school', 'fieldmouse', 'dragonfly', 'moth', 'firefly', 'housefly', 'ladybug-flying', 'hummingbird', 'swallow', 'seagull', 'owl', 'bat'];
 app.whenReady().then(async () => {
   const win = new BrowserWindow({ show: false, width: 1600, height: 1100, webPreferences: { offscreen: true, backgroundThrottling: false } });
   const errors = []; win.webContents.on('console-message', (_, l, m) => { if (l >= 3) errors.push(m); });
