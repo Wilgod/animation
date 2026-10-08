@@ -22,8 +22,12 @@ const CANVAS_HEIGHT = 2160;
 // holds its own full-size canvases + WebGL buffers, and each captured frame
 // is a 33-75 MB native bitmap in this (main) process. Running 4 of those at
 // once (Batch Export / Generate Video) exhausted memory and Electron aborted
-// with 0xE0000008. Cap how many captures run at a time across the whole app;
-// extra exports just queue, and ffmpeg encoding still overlaps freely.
+// with 0xE0000008. Cap how many exports run at a time across the whole app;
+// extra exports just queue. The slot is held through ffmpeg encoding too:
+// 4K60 libx264 already saturates every CPU core, so letting the next capture
+// start while earlier videos were still encoding made all of them crawl and
+// delayed every finished MP4 instead of delivering each one as soon as it
+// was ready.
 const MAX_CONCURRENT_CAPTURES = 2;
 let activeCaptures = 0;
 const captureQueue = [];
@@ -327,7 +331,7 @@ async function captureFrames({ port, sceneId, layoutId, framesDir, onProgress })
   }
 }
 
-function encodeVideo(framesDir, outputFile, audioPath) {
+function encodeVideo(framesDir, outputFile, audioPath, frameCount, onProgress) {
   return new Promise((resolve, reject) => {
     const cmd = ffmpeg().input(path.join(framesDir, "frame_%05d.jpg")).inputFPS(FPS);
     const outputOptions = ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-r", String(FPS)];
@@ -337,6 +341,9 @@ function encodeVideo(framesDir, outputFile, audioPath) {
     }
     cmd
       .outputOptions(outputOptions)
+      .on("progress", (p) => {
+        if (p.frames) onProgress?.(Math.min(p.frames, frameCount), frameCount, "encode");
+      })
       .on("error", reject)
       .on("end", resolve)
       .save(outputFile);
@@ -368,40 +375,59 @@ function timestampSuffix() {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 }
 
+// Strip characters Windows forbids in filenames (labels are Chinese text,
+// but may contain things like "/" or ":").
+function safeFileName(text) {
+  return String(text).replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\s+/g, " ").trim();
+}
+
+// Paths handed out to in-flight exports. timestampSuffix() only has 1-second
+// resolution, so two exports with the same name in the same second (e.g. a
+// batch) would otherwise collide; instead of numbering every file, only a
+// clash gets a " (2)", " (3)"… suffix.
+const reservedOutputs = new Set();
+function reserveOutputPath(outputDir, base, ext) {
+  for (let n = 1; ; n++) {
+    const file = path.join(outputDir, n === 1 ? `${base}${ext}` : `${base} (${n})${ext}`);
+    if (!reservedOutputs.has(file) && !fs.existsSync(file)) {
+      reservedOutputs.add(file);
+      return file;
+    }
+  }
+}
+
 // port: local server port already running (caller's responsibility to start it)
 // sceneId: which scene to render
 // outputDir: where the final video/gif should be written
 // gif: also produce a palette-optimized GIF alongside the MP4
-// onProgress(frame, total): optional per-frame progress callback
-// sequence: optional 1-based position within a multi-background batch (Batch
-// Export / Generate Video's "N" selected backgrounds) — appended to the
-// filename alongside the timestamp so a batch's videos are visibly grouped
-// and, since timestampSuffix() only has 1-second resolution, still guaranteed
-// distinct filenames even if two exports in the same batch land in the same
-// second (same-scene reruns without a sequence would otherwise risk
-// overwriting each other).
-async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = false, onProgress, sequence }) {
+// onProgress(frame, total, phase): optional progress callback; phase is
+// "capture" while rendering frames, then "encode" while ffmpeg builds the MP4
+async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = false, onProgress }) {
   const framesDir = fs.mkdtempSync(path.join(os.tmpdir(), "pathanim-frames-"));
   fs.mkdirSync(outputDir, { recursive: true });
 
   try {
-    const { frameCount, audioPath } = await withCaptureSlot(() =>
-      captureFrames({ port, sceneId, layoutId, framesDir, onProgress })
-    );
+    return await withCaptureSlot(async () => {
+      const { frameCount, audioPath } = await captureFrames({
+        port,
+        sceneId,
+        layoutId,
+        framesDir,
+        onProgress: (frame, total) => onProgress?.(frame, total, "capture"),
+      });
 
-    const stamp = timestampSuffix();
-    const seqSuffix = sequence != null ? `-${sequence}` : "";
-    const base = name || sceneId;
-    const outputFile = path.join(outputDir, `${base}-${stamp}${seqSuffix}.mp4`);
-    await encodeVideo(framesDir, outputFile, audioPath);
+      const base = `${safeFileName(name || sceneId)}-${timestampSuffix()}`;
+      const outputFile = reserveOutputPath(outputDir, base, ".mp4");
+      await encodeVideo(framesDir, outputFile, audioPath, frameCount, onProgress);
 
-    let outputGif = null;
-    if (gif) {
-      outputGif = path.join(outputDir, `${base}-${stamp}${seqSuffix}.gif`);
-      await encodeGif(framesDir, outputGif);
-    }
+      let outputGif = null;
+      if (gif) {
+        outputGif = outputFile.replace(/\.mp4$/, ".gif");
+        await encodeGif(framesDir, outputGif);
+      }
 
-    return { outputFile, outputGif, frameCount };
+      return { outputFile, outputGif, frameCount };
+    });
   } finally {
     fs.rmSync(framesDir, { recursive: true, force: true });
   }

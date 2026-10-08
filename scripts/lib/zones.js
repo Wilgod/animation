@@ -11,6 +11,20 @@
   if (typeof window !== "undefined") window.SceneZones = api;
 })(function () {
   const MAX_SAMPLE_ATTEMPTS = 30;
+  const LOGICAL_HEIGHT = 900; // must match engine.js's CANVAS_HEIGHT
+
+  // True when the bands tile the whole canvas top to bottom, leaving nothing
+  // for the implicit "ground" default — e.g. an underwater scene that is one
+  // full-height water band.
+  function bandsCoverCanvas(zones) {
+    const bands = [...((zones && zones.bands) || [])].sort((a, b) => a.y0 - b.y0);
+    let reached = 0;
+    for (const b of bands) {
+      if (b.y0 > reached) return false;
+      reached = Math.max(reached, b.y1);
+    }
+    return reached >= LOGICAL_HEIGHT;
+  }
 
   function pointInRect(x, y, r) {
     return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
@@ -32,9 +46,10 @@
   }
 
   // Top-down scenes have no sky band, so flyers ("air") may cross the whole
-  // frame unless the scene explicitly marks where the air is.
+  // frame unless the scene explicitly marks where the air is — or its bands
+  // already claim the whole frame (an underwater scene has no air at all).
   function airEverywhere(zones, habitatZone) {
-    if (habitatZone !== "air") return false;
+    if (habitatZone !== "air" || bandsCoverCanvas(zones)) return false;
     const tagged = [...((zones && zones.patches) || []), ...((zones && zones.bands) || [])];
     return !tagged.some((z) => z.zone === "air");
   }
@@ -57,16 +72,15 @@
     for (const b of (zones && zones.bands) || []) {
       if (b.zone === habitatZone) rects.push({ x: 0, y: b.y0, w: canvasWidth, h: b.y1 - b.y0 });
     }
-    if (habitatZone === "ground" || airEverywhere(zones, habitatZone)) rects.push({ x: 0, y: 0, w: canvasWidth, h: canvasHeight });
+    if ((habitatZone === "ground" && !bandsCoverCanvas(zones)) || airEverywhere(zones, habitatZone)) rects.push({ x: 0, y: 0, w: canvasWidth, h: canvasHeight });
     return rects;
   }
 
   // Whether a habitat has anywhere to go at all in this scene. "ground" is
-  // the implicit default so it's always available; "air" is available
-  // everywhere when the scene has no air band (see airEverywhere); other
-  // zones need an explicit matching band/patch.
+  // the implicit default, available unless the bands cover the whole canvas;
+  // "air" is available everywhere when the scene has no air band (see
+  // airEverywhere); other zones need an explicit matching band/patch.
   function hasZone(zones, habitatZone, canvasWidth, canvasHeight) {
-    if (habitatZone === "ground") return true;
     return candidateRects(zones, habitatZone, canvasWidth, canvasHeight).length > 0;
   }
 

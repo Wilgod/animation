@@ -393,6 +393,187 @@ def goldfish():
     return L
 
 
+def stingray():
+    period = 72 / 60
+    L, cycles = flap_loop(period, 4.8, 97)
+    L.bed(colored(L.n, 30, 350, L.rng), .3)  # deep underwater hush
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .8, 70, 450), c * period, .5)  # slow wing ripple
+    for _ in range(5):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.2, .45))
+    return L
+
+
+def seastar():
+    # Hundreds of tube feet make no distinct steps: a quiet underwater hush
+    # with slow, soft sand shuffles as the arms creep. Fixed rate, like the
+    # snail, so a very slow crawl doesn't stretch it to silence.
+    rng = np.random.default_rng(101)
+    L = Loop(4.0, 101)
+    L.bed(colored(L.n, 30, 350, L.rng), .3)
+    L.bed(colored(L.n, 900, 4500, L.rng) * (.55 + .45 * periodic_lfo(L, 5)), .12)  # sand grains
+    for i in range(5):
+        L.add(burst(.35, 500, 3000, .12, .12, rng), i * .8 + rng.uniform(-.1, .1), rng.uniform(.35, .55))
+    for _ in range(4):
+        L.add(bubble(rng), rng.uniform(0, L.seconds), rng.uniform(.15, .35))
+    return L
+
+
+def jellyfish():
+    # One soft, low water push per bell pulse (90 frames at 60 fps) over a
+    # deep hush, with a few slow bubbles.
+    period = 90 / 60
+    L, cycles = flap_loop(period, 4.5, 103)
+    L.bed(colored(L.n, 25, 300, L.rng), .3)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .5, 50, 320), c * period, .55)
+    for _ in range(4):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.15, .35))
+    return L
+
+
+def sea_urchin():
+    # Spines brushing over grit: a quiet hush with faint, dry clicks of spine
+    # tips on stone, at a fixed rate like the sea star.
+    rng = np.random.default_rng(107)
+    L = Loop(4.0, 107)
+    L.bed(colored(L.n, 30, 350, L.rng), .3)
+    L.bed(colored(L.n, 1200, 6000, L.rng) * (.5 + .5 * periodic_lfo(L, 4)), .08)
+    for _ in range(26):
+        L.add(burst(.012, 2500, 9000, .0005, .003, rng), rng.uniform(0, L.seconds), rng.uniform(.25, .6))
+    for _ in range(3):
+        L.add(bubble(rng), rng.uniform(0, L.seconds), rng.uniform(.15, .3))
+    return L
+
+
+def clownfish():
+    # Quicker, lighter tail flicks than the goldfish (30-frame beat), with a
+    # few small bubbles.
+    period = 30 / 60
+    L, cycles = flap_loop(period, 4.5, 109)
+    L.bed(colored(L.n, 40, 500, L.rng), .25)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .25, 160, 1100), c * period, .4)
+    for _ in range(10):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.2, .5))
+    return L
+
+
+def sea_turtle():
+    # A big, slow water push on each flipper downstroke (96 frames at 60 fps)
+    # and a softer recovery swish, over a deep hush.
+    period = 96 / 60
+    L, cycles = flap_loop(period, 4.8, 113)
+    L.bed(colored(L.n, 25, 320, L.rng), .3)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .7, 55, 380), c * period, .6)
+        L.add(wing_whoosh(L.rng, .45, 120, 700), c * period + period * .55, .25)
+    for _ in range(5):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.15, .4))
+    return L
+
+
+def seahorse():
+    # Nearly silent drifting: a soft hush, a faint fin flutter, and the
+    # seahorse's characteristic little head clicks, with a few bubbles.
+    period = 120 / 60
+    L, cycles = flap_loop(period, 4.0, 127)
+    L.bed(colored(L.n, 30, 350, L.rng), .3)
+    L.bed(colored(L.n, 300, 1500, L.rng) * (.6 + .4 * periodic_lfo(L, 2 * cycles)), .05)
+    for c in range(cycles):
+        L.add(burst(.01, 1500, 6000, .0005, .002, L.rng), c * period + L.rng.uniform(.2, 1.6), .5)  # click
+    for _ in range(4):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.15, .35))
+    return L
+
+
+def hermit_crab():
+    # Leg taps in time with the four walking legs (stride 45 px), plus the
+    # borrowed shell scraping and clacking on the bottom with each rock.
+    stride = 45
+    cycle, cycles = walk_loop(stride)
+    L = Loop(cycle * cycles, 131)
+    L.bed(colored(L.n, 30, 350, L.rng), .25)
+    for t in touchdowns(cycle, cycles, (0, .5, .5, 0), L.rng):
+        L.add(insect_tick(L.rng, .8), t, L.rng.uniform(.4, .65))
+    for c in range(cycles):
+        L.add(shell_tap(L.rng), c * cycle + cycle * .3, .35)
+        L.add(burst(.18, 600, 3500, .03, .06, L.rng), c * cycle + cycle * .55, .25)  # shell drag
+    return L
+
+
+def octopus():
+    # A strong water jet as the mantle squeezes (start of each 108-frame
+    # cycle), then a soft refill swirl while the arms spread, with bubbles.
+    period = 108 / 60
+    L, cycles = flap_loop(period, 3.6, 137)
+    L.bed(colored(L.n, 25, 320, L.rng), .3)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .45, 80, 900), c * period, .7)           # jet
+        L.add(wing_whoosh(L.rng, .9, 50, 300), c * period + period * .5, .3)  # refill
+        for _ in range(3):
+            L.add(bubble(L.rng), c * period + L.rng.uniform(.05, .35), L.rng.uniform(.25, .5))
+    return L
+
+
+def shark():
+    # Deep, smooth tail sweeps (72-frame beat): a low push each way, with
+    # almost no bubbles; sharks glide quietly.
+    period = 72 / 60
+    L, cycles = flap_loop(period, 4.8, 149)
+    L.bed(colored(L.n, 20, 260, L.rng), .35)
+    for c in range(cycles):
+        for half in (0, .5):
+            L.add(wing_whoosh(L.rng, .55, 45, 400), (c + half) * period, .5)
+    for _ in range(2):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.1, .25))
+    return L
+
+
+
+def moray_eel():
+    # Soft, continuous water swish from the body wave (90-frame cycle), a
+    # gentle push each half-wave and the odd bubble.
+    period = 90 / 60
+    L, cycles = flap_loop(period, 4.5, 211)
+    L.bed(colored(L.n, 30, 380, L.rng), .45)
+    for c in range(cycles):
+        for half in (0, .5):
+            L.add(wing_whoosh(L.rng, .6, 60, 520), (c + half) * period, .35)
+    for _ in range(3):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.15, .3))
+    return L
+
+
+def sea_snake():
+    # Lighter, quicker-sounding swish than the moray, with the paddle tail's
+    # flick at the end of each half-wave.
+    period = 90 / 60
+    L, cycles = flap_loop(period, 4.5, 223)
+    L.bed(colored(L.n, 40, 450, L.rng), .35)
+    for c in range(cycles):
+        for half in (0, .5):
+            L.add(wing_whoosh(L.rng, .45, 90, 700), (c + half) * period, .3)
+            L.add(wing_whoosh(L.rng, .15, 200, 1400), (c + half + .3) * period, .15)
+    for _ in range(2):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.1, .25))
+    return L
+
+
+def fish_school():
+    # Many small, quick tail flicks overlapping (each fish beats 5-7 times
+    # per 2 s), a light water rush from the whole school and lots of tiny
+    # bubbles.
+    period = 120 / 60
+    L, cycles = flap_loop(period, 4.0, 307)
+    L.bed(colored(L.n, 60, 900, L.rng), .35)
+    for c in range(cycles):
+        for _ in range(40):
+            L.add(wing_whoosh(L.rng, .12, 300, 2200), c * period + L.rng.uniform(0, period), L.rng.uniform(.08, .2))
+    for _ in range(14):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.15, .35))
+    return L
+
 # Output file, generator, and loudness target (RMS dBFS before the limiter's
 # ~+3 dB): quiet for small insects, louder for birds, frog and buzzing wings.
 SOUNDS = {
@@ -412,6 +593,19 @@ SOUNDS = {
     'pigeon-flying': ('pigeon-fly.wav',         pigeon_flying,        ('rms', -28)),
     'goldfish':      ('goldfish-swim.wav',      goldfish,             ('rms', -33)),
     'snail':         ('snail-walk.wav',         snail,                ('rms', -30)),
+    'stingray':      ('stingray-swim.wav',      stingray,             ('rms', -34)),
+    'seastar':       ('seastar-crawl.wav',      seastar,              ('rms', -36)),
+    'jellyfish':     ('jellyfish-swim.wav',     jellyfish,            ('rms', -35)),
+    'sea-urchin':    ('sea-urchin-crawl.wav',   sea_urchin,           ('rms', -37)),
+    'clownfish':     ('clownfish-swim.wav',     clownfish,            ('rms', -33)),
+    'sea-turtle':    ('sea-turtle-swim.wav',    sea_turtle,           ('rms', -32)),
+    'seahorse':      ('seahorse-swim.wav',      seahorse,             ('rms', -37)),
+    'hermit-crab':   ('hermit-crab-walk.wav',   hermit_crab,          ('rms', -33)),
+    'octopus':       ('octopus-swim.wav',       octopus,              ('rms', -32)),
+    'shark':         ('shark-swim.wav',         shark,                ('rms', -31)),
+    'moray-eel':     ('moray-eel-swim.wav',     moray_eel,            ('rms', -33)),
+    'sea-snake':     ('sea-snake-swim.wav',     sea_snake,            ('rms', -34)),
+    'fish-school':   ('fish-school-swim.wav',   fish_school,          ('rms', -33)),
 }
 
 

@@ -78,6 +78,8 @@
   const autoGenCameraDriftEl = document.getElementById("autoGenCameraDrift");
   const autoGenBgLabelEl = document.getElementById("autoGenBgLabel");
   const autoGenAnimalLabelEl = document.getElementById("autoGenAnimalLabel");
+  const autoGenCategoryEl = document.getElementById("autoGenCategory");
+  const autoGenCategoryHintEl = document.getElementById("autoGenCategoryHint");
   const configStatusEl = document.getElementById("configStatus");
   const animalListEl = document.getElementById("animalList");
   const ornamentListEl = document.getElementById("ornamentList");
@@ -216,7 +218,9 @@
       bobbingAmplitude: o.bobbingAmplitude ?? 6,
       strideLengthPx: o.strideLengthPx ?? def.strideLengthPx ?? 140,
       pathSpeedMultiplier: o.pathSpeedMultiplier ?? 1,
-      sizeScale: o.sizeScale ?? 1,
+      // config "defaultSize" (e.g. 0.7 for insects) applies to newly placed
+      // animals; saved layouts keep their own size.
+      sizeScale: o.sizeScale ?? def.defaultSize ?? 1,
       // On by default for newly placed animals; saved layouts keep their choice.
       shadow: o.shadow !== undefined ? !!o.shadow : true,
       airborne: habitatFor(id) === "air",
@@ -1922,6 +1926,7 @@
   const SCENE_CATEGORY_ORDER = [
     { key: "outdoor", label: "Outdoor" },
     { key: "indoor", label: "Indoor" },
+    { key: "underwater", label: "Underwater" },
     { key: "floor", label: "Floor / Other" },
   ];
 
@@ -2243,6 +2248,66 @@
     return { sceneId, activeAnimals: shuffled, animals, placedOrnaments: [] };
   }
 
+  // Generate Video categories. "sea"/"ground"/"air" keep every video to
+  // animals of that habitat; "variants" makes each video a group of the
+  // same species in different colors (animals sharing one model).
+  function variantKeyFor(def) {
+    return def.model3d || def.source || def.id;
+  }
+
+  function variantGroups(ids) {
+    const groups = new Map();
+    for (const id of ids) {
+      const key = variantKeyFor(animalDefFor(id) || { id });
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(id);
+    }
+    return [...groups.values()].filter((g) => g.length >= 2);
+  }
+
+  function animalMatchesCategory(def, category) {
+    if (category === "sea") return habitatFor(def.id) === "water";
+    if (category === "ground") return habitatFor(def.id) === "ground";
+    if (category === "air") return habitatFor(def.id) === "air";
+    if (category === "variants") return variantGroups(animalDefs.map((d) => d.id)).some((g) => g.includes(def.id));
+    return true;
+  }
+
+  function sceneMatchesCategory(scene, category) {
+    if (category === "all") return true;
+    const underwater = scene.category === "underwater";
+    return category === "sea" ? underwater : !underwater;
+  }
+
+  // Picking a category re-selects the animal and background lists to match
+  // (they can still be adjusted by hand afterwards).
+  function applyAutoGenCategory() {
+    const category = autoGenCategoryEl.value;
+    const random = autoGenRandomEl.checked;
+    if (category === "all" && !random) {
+      autoGenCategoryHintEl.textContent = "";
+      return;
+    }
+    for (const opt of autoGenAnimalSelectEl.options) {
+      opt.selected = animalMatchesCategory(animalDefFor(opt.value) || { id: opt.value }, category);
+    }
+    if (random) {
+      for (const opt of autoGenBgSelectEl.options) {
+        opt.selected = sceneMatchesCategory(scenes.find((sc) => sc.id === opt.value) || {}, category);
+      }
+      autoGenSelectedBgIds = new Set([...autoGenBgSelectEl.selectedOptions].map((o) => o.value));
+    }
+    autoGenCategoryHintEl.textContent =
+      category === "variants"
+        ? "Each video shows 2+ of the same animal in different colors."
+        : category === "all"
+          ? ""
+          : random
+            ? "Every video uses only animals from this category."
+            : "";
+    updateAutoGenBgHint();
+  }
+
   function renderAutoGenAnimalList() {
     autoGenAnimalSelectEl.innerHTML = "";
     animalDefs.forEach((def) => {
@@ -2387,8 +2452,11 @@
       for (const opt of autoGenBgSelectEl.options) opt.selected = true;
       autoGenSelectedBgIds = new Set([...autoGenBgSelectEl.selectedOptions].map((o) => o.value));
     }
+    applyAutoGenCategory();
     updateAutoGenBgHint();
   }
+
+  autoGenCategoryEl.addEventListener("change", applyAutoGenCategory);
 
   autoGenRandomEl.addEventListener("change", () => {
     if (autoGenRandomEl.checked) autoGenSecondsEl.value = 15;
@@ -2405,6 +2473,13 @@
   }
 
   // Every k-animal subset (k = 1..maxAnimals) of `ids`, as sorted arrays.
+  // "variants" only: every 2..maxAnimals subset within one same-model group.
+  function variantCombos(ids, maxAnimals) {
+    return variantGroups(ids).flatMap((group) =>
+      animalCombos(group, Math.max(2, maxAnimals)).filter((c) => c.length >= 2)
+    );
+  }
+
   function animalCombos(ids, maxAnimals) {
     const out = [];
     const sorted = [...ids].sort();
@@ -2423,7 +2498,7 @@
   // combination in the pool has been used, the history starts over.
   // Paths are generated fresh for every video, so even a reused
   // combination never looks the same.
-  async function planRandomMix(count, animalPool, bgPool, maxAnimals) {
+  async function planRandomMix(count, animalPool, bgPool, maxAnimals, category = "all") {
     const zonesByBg = new Map(await Promise.all(bgPool.map(async (id) => [id, await fetchSceneZones(id)])));
     let history = [];
     try {
@@ -2436,7 +2511,7 @@
     const combosByBg = new Map();
     for (const sceneId of bgPool) {
       const eligible = animalPool.filter((id) => isHabitatAvailableInScene(habitatFor(id), zonesByBg.get(sceneId)));
-      combosByBg.set(sceneId, animalCombos(eligible, maxAnimals));
+      combosByBg.set(sceneId, category === "variants" ? variantCombos(eligible, maxAnimals) : animalCombos(eligible, maxAnimals));
     }
     const keyOf = (sceneId, animals) => `${sceneId}|${animals.join("+")}`;
     const allKeys = [...combosByBg].flatMap(([sceneId, combos]) => combos.map((c) => keyOf(sceneId, c)));
@@ -2484,9 +2559,16 @@
     const count = Math.max(1, Math.min(50, Math.round(Number(autoGenCountEl.value) || 1)));
     const maxAnimals = Math.max(1, Math.min(4, Math.round(Number(autoGenMaxAnimalsEl.value) || 1)));
     const totalMs = seconds * 1000;
-    const { plan, history } = await planRandomMix(count, animalPool, bgPool, maxAnimals);
+    const category = autoGenCategoryEl.value;
+    if (category !== "all") {
+      animalPool = animalPool.filter((id) => animalMatchesCategory(animalDefFor(id) || { id }, category));
+    }
+    const { plan, history } = await planRandomMix(count, animalPool, bgPool, maxAnimals, category);
     if (plan.length === 0) {
-      autoGenModalStatusEl.textContent = "None of the chosen animals can live on the chosen backgrounds (fish need water, birds need sky).";
+      autoGenModalStatusEl.textContent =
+        category === "variants"
+          ? "Pick at least two color variants of the same animal, on a background they can live on."
+          : "None of the chosen animals can live on the chosen backgrounds (fish need water, birds need sky).";
       return;
     }
     const confirmed = await confirmDialog(
@@ -2498,11 +2580,12 @@
     autoGenOverlayEl.hidden = true;
     setExportUIState(true);
     const runId = Date.now().toString(36);
-    const animalName = (id) => animalDefFor(id)?.label || id;
+    // Chinese display label without the "3D " prefix, for filenames/rows.
+    const animalName = (id) => (animalDefFor(id)?.label || id).replace(/^3D\s*/i, "");
     const jobs = plan.map((job, i) => ({
       ...job,
       rowKey: `rnd-${runId}-${i + 1}`,
-      label: `${i + 1}. ${sceneLabel(job.sceneId)} — ${job.animals.map(animalName).join(", ")}`,
+      label: `${sceneLabel(job.sceneId)} — ${job.animals.map(animalName).join(", ")}`,
     }));
     renderAutoGenProgressRows(jobs.map((j) => ({ key: j.rowKey, label: j.label })));
 
@@ -2518,16 +2601,15 @@
       });
       if (!saveRes.ok) throw new Error(`Save failed (HTTP ${saveRes.status})`);
       setAutoGenRowStatus(job.rowKey, "Starting export…", "info");
-      exportProgressRoutes.set(job.rowKey, (frame, total) => {
-        setAutoGenRowStatus(job.rowKey, `Rendering frame ${frame}/${total}…`, "info");
+      exportProgressRoutes.set(job.rowKey, (frame, total, phase) => {
+        setAutoGenRowStatus(job.rowKey, exportProgressText(frame, total, phase), "info");
       });
       try {
         const result = await exportVideo(job.sceneId, {
           gif: false,
           layoutId: job.rowKey,
           progressKey: job.rowKey,
-          name: `${job.sceneId}-${job.animals.join("-")}`,
-          sequence: i + 1,
+          name: `${sceneLabel(job.sceneId)}-${job.animals.map(animalName).join("-")}`,
         });
         setAutoGenRowStatus(job.rowKey, `Done: ${result.outputFile}`, "done");
         succeeded.push(job.key);
@@ -2607,16 +2689,6 @@
     setExportUIState(true);
     renderAutoGenProgressList(sceneIds);
 
-    // A 1-based position appended to the output filename (see
-    // electronExport.js's exportScene) whenever more than one background is
-    // being generated in this batch — keeps every video in a multi-
-    // background run distinctly named (and visibly grouped) even though
-    // they share the same timestamp, instead of relying on the timestamp's
-    // 1-second resolution alone.
-    function sequenceFor(i) {
-      return sceneIds.length > 1 ? i + 1 : undefined;
-    }
-
     async function generateAndSaveOne(sceneId, i) {
       setAutoGenRowStatus(sceneId, "Generating path…", "info");
       const zones = await fetchSceneZones(sceneId);
@@ -2636,11 +2708,11 @@
       }
 
       setAutoGenRowStatus(sceneId, "Starting export…", "info");
-      exportProgressRoutes.set(sceneId, (frame, total) => {
-        setAutoGenRowStatus(sceneId, `Rendering frame ${frame}/${total}…`, "info");
+      exportProgressRoutes.set(sceneId, (frame, total, phase) => {
+        setAutoGenRowStatus(sceneId, exportProgressText(frame, total, phase), "info");
       });
       try {
-        const result = await exportVideo(sceneId, { gif: false, sequence: sequenceFor(i) });
+        const result = await exportVideo(sceneId, { gif: false });
         setAutoGenRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
         return result;
       } finally {
@@ -2714,8 +2786,20 @@
     });
   }
 
+  // phase: "capture" while frames are being rendered, "encode" while ffmpeg
+  // turns them into the MP4 (see electronExport.js's exportScene).
+  function exportProgressText(frame, total, phase) {
+    return phase === "encode" ? `Encoding video ${frame}/${total}…` : `Rendering frame ${frame}/${total}…`;
+  }
+
   function exportVideo(sceneId, opts) {
-    return window.electronAPI.exportScene(sceneId, { ...opts, outputDir: outputDirInput.value.trim() });
+    // Videos are named after the scene's Chinese label unless a caller
+    // passes its own name.
+    return window.electronAPI.exportScene(sceneId, {
+      name: sceneLabel(sceneId),
+      ...opts,
+      outputDir: outputDirInput.value.trim(),
+    });
   }
 
   // Electron-only: window.electronAPI only exists when running inside the
@@ -2736,17 +2820,17 @@
     // Routed by sceneId (see exportProgressRoutes) instead of filtering to
     // currentScene.id, so both the single-export flow and any number of
     // concurrent batch-export scenes can each track their own progress.
-    window.electronAPI.onExportProgress(({ sceneId, key, frame, total }) => {
+    window.electronAPI.onExportProgress(({ sceneId, key, frame, total, phase }) => {
       const route = exportProgressRoutes.get(key || sceneId);
-      if (route) route(frame, total);
+      if (route) route(frame, total, phase);
     });
 
     exportBtn.addEventListener("click", async () => {
       setExportUIState(true);
       exportProgressEl.innerHTML = "Starting export…";
       const sceneId = currentScene.id;
-      exportProgressRoutes.set(sceneId, (frame, total) => {
-        exportProgressEl.textContent = `Rendering frame ${frame}/${total}…`;
+      exportProgressRoutes.set(sceneId, (frame, total, phase) => {
+        exportProgressEl.textContent = exportProgressText(frame, total, phase);
       });
       try {
         const result = await exportVideo(sceneId, { gif: false });
@@ -2780,12 +2864,6 @@
       // (setExportUIState(true) above), so this can't drift mid-batch.
       const layoutSnapshot = buildLayoutData();
 
-      // Same reasoning as Generate Video's sequenceFor: keeps a multi-scene
-      // batch's output filenames distinctly numbered instead of relying
-      // solely on the timestamp's 1-second resolution.
-      function sequenceFor(i) {
-        return sceneIds.length > 1 ? i + 1 : undefined;
-      }
 
       async function saveAndExportOne(sceneId, i) {
         setMultiExportRowStatus(sceneId, "Saving…", "info");
@@ -2797,11 +2875,11 @@
         if (!saveRes.ok) throw new Error(`Save failed (HTTP ${saveRes.status})`);
 
         setMultiExportRowStatus(sceneId, "Starting export…", "info");
-        exportProgressRoutes.set(sceneId, (frame, total) => {
-          setMultiExportRowStatus(sceneId, `Rendering frame ${frame}/${total}…`, "info");
+        exportProgressRoutes.set(sceneId, (frame, total, phase) => {
+          setMultiExportRowStatus(sceneId, exportProgressText(frame, total, phase), "info");
         });
         try {
-          const result = await exportVideo(sceneId, { gif: false, sequence: sequenceFor(i) });
+          const result = await exportVideo(sceneId, { gif: false });
           setMultiExportRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
           return result;
         } finally {

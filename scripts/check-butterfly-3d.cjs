@@ -18,7 +18,7 @@ app.whenReady().then(async()=>{
  bee.render(0,.4);if(wings.some((w,i)=>w.quaternion.angleTo(first[i])>.001))throw Error('Flight loop seam');
  bee.render(0,.025);const image=bee.canvas.toDataURL().split(',')[1];
  for(let i=0;i<200&&!window.__ready;i++)await new Promise(r=>setTimeout(r,50));
- const select=document.getElementById('sceneSelect');select.value='garden-with-pond-test';select.dispatchEvent(new Event('change'));
+ const select=document.getElementById('sceneSelect');select.value='garden-lawn-grass';select.dispatchEvent(new Event('change'));
  await new Promise(r=>setTimeout(r,1500));
  const row=[...document.querySelectorAll('.animal-row')].find(r=>r.querySelector('.name').textContent==='3D 蝴蝶');
  if(!row)throw Error('Bee missing in selector');

@@ -56,6 +56,7 @@
     },
     {
       "id": "spider",
+      "defaultSize": 0.7,
       "label": "3D 蜘蛛",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/spider.glb",
@@ -64,6 +65,7 @@
     },
     {
       "id": "mantis",
+      "defaultSize": 0.7,
       "label": "3D 螳螂",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/mantis.glb",
@@ -72,6 +74,7 @@
     },
     {
       "id": "ladybug",
+      "defaultSize": 0.7,
       "label": "3D 瓢蟲",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/ladybug.glb",
@@ -80,6 +83,7 @@
     },
     {
       "id": "butterfly",
+      "defaultSize": 0.7,
       "label": "3D 蝴蝶",
       "habitat": "air",
       "rotationOffsetDeg": 0,
@@ -108,6 +112,7 @@
     },
     {
       "id": "bee",
+      "defaultSize": 0.7,
       "label": "3D 蜜蜂",
       "habitat": "air",
       "rotationOffsetDeg": 0,
@@ -153,6 +158,7 @@
     },
     {
       "id": "cicada",
+      "defaultSize": 0.7,
       "label": "3D 蟬",
       "habitat": "air",
       "rotationOffsetDeg": 0,
@@ -169,6 +175,127 @@
       "model3d": "assets/models/goldfish.glb",
       "modelAnimation": "fly",
       "walkSound": { "source": "audio/goldfish-swim.wav" }
+    },
+    {
+      "id": "stingray",
+      "label": "3D 魟魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/stingray.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/stingray-swim.wav" }
+    },
+    {
+      "id": "seastar",
+      "label": "3D 海星",
+      "habitat": "water",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/seastar.glb",
+      "strideLengthPx": 60,
+      "walkSound": { "source": "audio/seastar-crawl.wav", "fixedRate": true }
+    },
+    {
+      "id": "jellyfish",
+      "label": "3D 水母",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/jellyfish.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/jellyfish-swim.wav" }
+    },
+    {
+      "id": "sea-urchin",
+      "label": "3D 海膽",
+      "habitat": "water",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sea-urchin.glb",
+      "strideLengthPx": 40,
+      "walkSound": { "source": "audio/sea-urchin-crawl.wav", "fixedRate": true }
+    },
+    {
+      "id": "clownfish",
+      "label": "3D 小丑魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/clownfish.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/clownfish-swim.wav" }
+    },
+    {
+      "id": "sea-turtle",
+      "label": "3D 海龜",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sea-turtle.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/sea-turtle-swim.wav" }
+    },
+    {
+      "id": "seahorse",
+      "label": "3D 海馬",
+      "habitat": "water",
+      "rotationFollowsPath": false,
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/seahorse.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/seahorse-swim.wav" }
+    },
+    {
+      "id": "hermit-crab",
+      "label": "3D 寄居蟹",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/hermit-crab.glb",
+      "strideLengthPx": 45,
+      "walkSound": { "source": "audio/hermit-crab-walk.wav" }
+    },
+    {
+      "id": "octopus",
+      "label": "3D 章魚",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/octopus.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/octopus-swim.wav" }
+    },
+    {
+      "id": "shark",
+      "label": "3D 礁鯊",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/shark.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/shark-swim.wav" }
+    },
+    {
+      "id": "moray-eel",
+      "label": "3D 海鱔",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/moray-eel.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/moray-eel-swim.wav" }
+    },
+    {
+      "id": "sea-snake",
+      "label": "3D 海蛇",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/sea-snake.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/sea-snake-swim.wav" }
+    },
+    {
+      "id": "fish-school",
+      "label": "3D 小魚群",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/fish-school.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/fish-school-swim.wav" }
     },
     {
       "id": "fieldmouse",
@@ -188,13 +315,6 @@
     { "id": "books", "label": "書籍", "source": "image/ornaments/Stacked Books.png" },
     { "id": "camera", "label": "相機", "source": "image/ornaments/Vintage Camera.png" },
     { "id": "lamp", "label": "檯燈", "source": "image/ornaments/Vintage Table Lamp.png" }
-  ],
-
-  "elements": [
-    { "id": "grass-base", "label": "草坪綠地面（底層）", "source": "image/backgroud/Garden Lawn Grass Ground.png" },
-    { "id": "sky-placeholder", "label": "天空佔位圖（待替換為真實天空素材）", "source": "image/backgroud/Fresh Snow Ground Surface.png" },
-    { "id": "blue-tile-patch", "label": "藍磚水池佔位圖（待替換為真實水面素材）", "source": "image/backgroud/Gecko on Blue Tiles.png" },
-    { "id": "test-cloud-tile", "label": "雲朵貼圖（綠幕去背，捲動示範用）", "source": "image/elements/cloud.png" }
   ],
 
   "scenes": [
@@ -348,21 +468,74 @@
       "background": { "source": "image/backgroud/Balcony Herb Garden Corner.png" }
     },
     {
-      "id": "garden-with-pond-test",
-      "sway": { "strength": 0.4 },
-      "label": "花園池塘（動態背景測試）",
-      "category": "outdoor",
-      "bands": [
-        {
-          "elementId": "sky-placeholder",
-          "zone": "air",
-          "y0": 0,
-          "y1": 180,
-          "cloud": { "elementId": "test-cloud-tile", "scrollPxPerSec": 15 }
-        },
-        { "elementId": "grass-base", "zone": "ground", "y0": 180, "y1": 900 }
-      ],
-      "patches": [{ "elementId": "blue-tile-patch", "zone": "water", "x": 300, "y": 600, "w": 500, "h": 220 }]
+      "id": "tropical-coral-reef-shallows",
+      "label": "熱帶珊瑚礁淺灘",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Tropical coral reef shallows.png" }
+    },
+    {
+      "id": "seagrass-meadow",
+      "label": "海草床",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Seagrass meadow.png" }
+    },
+    {
+      "id": "rocky-tide-pool",
+      "label": "岩石潮池",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Rocky tide pool.png" }
+    },
+    {
+      "id": "rippled-sand-seabed",
+      "label": "沙紋海床",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Rippled sand seabed.png" }
+    },
+    {
+      "id": "kelp-forest",
+      "label": "巨藻森林",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Kelp forest.png" }
+    },
+    {
+      "id": "deep-blue-seabed",
+      "label": "深海藍調海床",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Deep-blue seabed.png" }
+    },
+    {
+      "id": "sand-beside-shipwreck",
+      "label": "沉船殘骸旁的沙地",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Sand beside a shipwreck.png" }
+    },
+    {
+      "id": "pebble-shallows-clear-water",
+      "label": "卵石淺灘（清澈海水）",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Pebble shallows in clear water.png" }
+    },
+    {
+      "id": "anemone-soft-coral-garden",
+      "label": "海葵與軟珊瑚花園",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Anemone and soft coral garden.png" }
+    },
+    {
+      "id": "shallow-sea-sunset-light",
+      "label": "黃昏暖光的淺海",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Shallow sea in warm sunset light.png" }
     }
   ]
 }

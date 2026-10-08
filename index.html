@@ -212,6 +212,18 @@
     </div>
 
     <label class="scrub-label">
+      Category
+      <select id="autoGenCategory">
+        <option value="all">全部 (any mix)</option>
+        <option value="sea">海洋動物 (sea animals only)</option>
+        <option value="ground">地上 (ground animals only)</option>
+        <option value="air">天空 (sky animals only)</option>
+        <option value="variants">同品種不同顏色 (same species, different colors)</option>
+      </select>
+    </label>
+    <p class="hint" id="autoGenCategoryHint"></p>
+
+    <label class="scrub-label">
       <span id="autoGenAnimalLabel">Animals (ctrl/cmd-click to select multiple)</span>
       <select id="autoGenAnimalSelect" class="multi-select" multiple size="8"></select>
     </label>

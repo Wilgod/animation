@@ -10,6 +10,31 @@ export function preserveModelColors(model) {
   });
 }
 
+// three.js grows a morph-target mesh's box by every target's full
+// displacement, which would shrink soft-bodied models (an octopus's arms
+// sweep from front to back) inside their render square. Frame those meshes
+// by their rest pose; their build scripts add a framing guide for any later
+// pose that reaches farther. Skinned and rigid meshes are framed as before.
+function frameBounds(root) {
+  const box = new THREE.Box3();
+  root.traverse(object => {
+    if (!object.isMesh) return;
+    const geometry = object.geometry;
+    let local;
+    if (object.isSkinnedMesh) {
+      object.computeBoundingBox();
+      local = object.boundingBox.clone();
+    } else if (geometry.morphAttributes.position) {
+      local = new THREE.Box3().setFromBufferAttribute(geometry.attributes.position);
+    } else {
+      if (!geometry.boundingBox) geometry.computeBoundingBox();
+      local = geometry.boundingBox.clone();
+    }
+    box.union(local.applyMatrix4(object.matrixWorld));
+  });
+  return box;
+}
+
 // Render the actual GLB into a transparent surface, composited by the shared
 // timeline engine. Explicit animation time keeps scrubbing/export deterministic.
 export async function loadAnimal3D(url, color = null, options = {}) {
@@ -61,7 +86,7 @@ export async function loadAnimal3D(url, color = null, options = {}) {
     alignment.rotation.y = Math.atan2(forward.z, forward.x);
   }
   alignment.updateMatrixWorld(true);
-  const bounds = new THREE.Box3().setFromObject(alignment);
+  const bounds = frameBounds(alignment);
   const center = bounds.getCenter(new THREE.Vector3());
   alignment.position.sub(center);
   const size = bounds.getSize(new THREE.Vector3());

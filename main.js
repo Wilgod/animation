@@ -231,12 +231,11 @@ app.whenReady().then(async () => {
       sceneId,
       outputDir: resolveOutputDir(opts?.outputDir),
       gif: !!opts?.gif,
-      sequence: opts?.sequence,
       layoutId: opts?.layoutId,
       name: opts?.name,
-      onProgress: (frame, total) => {
+      onProgress: (frame, total, phase) => {
         // key: lets the editor tell apart concurrent exports of the same scene
-        event.sender.send("export:progress", { sceneId, key: opts?.progressKey || sceneId, frame, total });
+        event.sender.send("export:progress", { sceneId, key: opts?.progressKey || sceneId, frame, total, phase });
       },
     });
     return result;

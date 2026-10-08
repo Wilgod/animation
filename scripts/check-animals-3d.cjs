@@ -1,9 +1,10 @@
 // With the local server running: npx electron scripts/check-animals-3d.cjs
-// Enables every procedural 3D animal from the editor's selector on a scene
-// with ground, air and water, then checks each GLB loads, its clip animates,
-// it moves along a path, and rendering stays deterministic.
+// Checks every procedural 3D animal's GLB loads, its clip animates and
+// rendering stays deterministic, then enables it from the editor's selector
+// on an all-ground scene (air is allowed everywhere there) and checks it moves
+// along a path. Water animals skip the editor step: no scene has water yet.
 const { app, BrowserWindow } = require('electron');
-const IDS = ['spider', 'mantis', 'ladybug', 'sparrow', 'squirrel', 'pigeon', 'pigeon-flying', 'frog', 'cicada', 'goldfish', 'fieldmouse'];
+const IDS = ['spider', 'mantis', 'ladybug', 'sparrow', 'squirrel', 'pigeon', 'pigeon-flying', 'frog', 'cicada', 'goldfish', 'stingray', 'seastar', 'jellyfish', 'sea-urchin', 'clownfish', 'sea-turtle', 'seahorse', 'hermit-crab', 'octopus', 'shark', 'moray-eel', 'sea-snake', 'fish-school', 'fieldmouse'];
 app.whenReady().then(async () => {
   const win = new BrowserWindow({ show: false, width: 1600, height: 1100, webPreferences: { offscreen: true, backgroundThrottling: false } });
   const errors = []; win.webContents.on('console-message', (_, l, m) => { if (l >= 3) errors.push(m); });
@@ -13,7 +14,7 @@ app.whenReady().then(async () => {
       const sleep=ms=>new Promise(r=>setTimeout(r,ms));
       for(let i=0;i<200&&!window.__ready;i++)await sleep(100);
       if(!window.__ready)throw Error('Editor not ready');
-      const scene=document.getElementById('sceneSelect'); scene.value='garden-with-pond-test'; scene.dispatchEvent(new Event('change'));
+      const scene=document.getElementById('sceneSelect'); scene.value='garden-lawn-grass'; scene.dispatchEvent(new Event('change'));
       await sleep(3000);
       const config=await (await fetch('config/scenes.json')).json();
       const {loadAnimal3D}=await import('./animal-3d.js');
@@ -26,6 +27,7 @@ app.whenReady().then(async () => {
         model.render(.35,.35); if(poseA===model.canvas.toDataURL())throw Error(id+' clip did not animate');
         model.render(.1,.1); if(poseA!==model.canvas.toDataURL())throw Error(id+' pose not deterministic');
         model.dispose();
+        if(def.habitat==='water'){out[id]='model ok, editor skipped (no water scene)';continue;}
         const row=[...document.querySelectorAll('.animal-row')].find(r=>r.textContent.includes(def.label));
         if(!row)throw Error(id+' missing from selector');
         const box=row.querySelector('input'); if(box.disabled)throw Error(id+' unavailable in the test scene'); if(!box.checked)box.click();

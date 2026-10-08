@@ -18,7 +18,7 @@ app.whenReady().then(async()=>{
  snail.render(0);if(snail.canvas.toDataURL()!==initial)throw Error('Non-deterministic pose');
  snail.render(.125);const image=snail.canvas.toDataURL().split(',')[1];snail.dispose();
  for(let i=0;i<200&&!window.__ready;i++)await new Promise(r=>setTimeout(r,50));
- const select=document.getElementById('sceneSelect');select.value='garden-with-pond-test';select.dispatchEvent(new Event('change'));
+ const select=document.getElementById('sceneSelect');select.value='garden-lawn-grass';select.dispatchEvent(new Event('change'));
  await new Promise(r=>setTimeout(r,1500));
  const row=[...document.querySelectorAll('.animal-row')].find(r=>r.querySelector('.name').textContent===def.label);
  if(!row)throw Error('Snail missing in selector');if(row.querySelector('input').disabled)throw Error('Ground placement unavailable');row.querySelector('.name').click();
