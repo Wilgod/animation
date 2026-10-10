@@ -12,7 +12,6 @@
       "habitat": "ground",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/turtle.glb",
-      "modelView": "angled",
       "strideLengthPx": 34
     },
     {
@@ -22,7 +21,6 @@
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/turtle.glb",
       "modelHue": 180,
-      "modelView": "angled",
       "strideLengthPx": 34
     },
     {
@@ -32,7 +30,6 @@
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/turtle.glb",
       "modelHue": 120,
-      "modelView": "angled",
       "strideLengthPx": 34
     },
     {
@@ -41,7 +38,6 @@
       "habitat": "ground",
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/snail.glb",
-      "modelView": "angled",
       "strideLengthPx": 24,
       "walkSound": { "source": "audio/snail-walk.wav", "fixedRate": true }
     },
@@ -52,7 +48,6 @@
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/snail.glb",
       "modelHue": 60,
-      "modelView": "angled",
       "strideLengthPx": 24,
       "walkSound": { "source": "audio/snail-walk.wav", "fixedRate": true }
     },
@@ -63,14 +58,14 @@
       "rotationOffsetDeg": 0,
       "model3d": "assets/models/snail.glb",
       "modelHue": 180,
-      "modelView": "angled",
       "strideLengthPx": 24,
       "walkSound": { "source": "audio/snail-walk.wav", "fixedRate": true }
     },
     {
-      "id": "yellow",
+      "id": "lizard-yellow",
       "label": "3D 黃蜥蝪",
       "model3d": "model/Lizard.glb",
+      "modelColor": "#d9b23a",
       "rotationOffsetDeg": 0,
       "strideLengthPx": 140,
       "habitat": "ground",
@@ -182,6 +177,362 @@
       "modelHue": 240,
       "strideLengthPx": 69,
       "walkSound": { "source": "audio/ladybug-walk.wav" }
+    },
+    {
+      "id": "ant",
+      "defaultSize": 0.5,
+      "label": "3D 黑螞蟻",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/ant.glb",
+      "strideLengthPx": 64,
+      "walkSound": { "source": "audio/ant-walk.wav" }
+    },
+    {
+      "id": "ant-red",
+      "defaultSize": 0.5,
+      "label": "3D 紅螞蟻",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/ant-red.glb",
+      "strideLengthPx": 64,
+      "walkSound": { "source": "audio/ant-walk.wav" }
+    },
+    {
+      "id": "ant-brown",
+      "defaultSize": 0.5,
+      "label": "3D 棕螞蟻",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/ant-red.glb",
+      "modelColor": "#7a4a22",
+      "strideLengthPx": 64,
+      "walkSound": { "source": "audio/ant-walk.wav" }
+    },
+    {
+      "id": "rhino-beetle",
+      "defaultSize": 0.85,
+      "label": "3D 棕獨角仙",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/rhino-beetle.glb",
+      "strideLengthPx": 39,
+      "walkSound": { "source": "audio/rhino-beetle-walk.wav" }
+    },
+    {
+      "id": "rhino-beetle-green",
+      "defaultSize": 0.85,
+      "label": "3D 綠獨角仙",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/rhino-beetle.glb",
+      "modelColor": "#2e8a3e",
+      "modelColorMaterials": "shell",
+      "strideLengthPx": 39,
+      "walkSound": { "source": "audio/rhino-beetle-walk.wav" }
+    },
+    {
+      "id": "rhino-beetle-blue",
+      "defaultSize": 0.85,
+      "label": "3D 藍獨角仙",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/rhino-beetle.glb",
+      "modelColor": "#2f62c0",
+      "modelColorMaterials": "shell",
+      "strideLengthPx": 39,
+      "walkSound": { "source": "audio/rhino-beetle-walk.wav" }
+    },
+    {
+      "id": "grasshopper",
+      "defaultSize": 0.75,
+      "label": "3D 綠蚱蜢",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/grasshopper.glb",
+      "strideLengthPx": 45,
+      "walkSound": { "source": "audio/grasshopper-walk.wav" }
+    },
+    {
+      "id": "grasshopper-yellow",
+      "defaultSize": 0.75,
+      "label": "3D 黃蚱蜢",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/grasshopper.glb",
+      "modelHue": 60,
+      "strideLengthPx": 45,
+      "walkSound": { "source": "audio/grasshopper-walk.wav" }
+    },
+    {
+      "id": "grasshopper-brown",
+      "defaultSize": 0.75,
+      "label": "3D 棕蚱蜢",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/grasshopper.glb",
+      "modelColor": "#8a6a3a",
+      "strideLengthPx": 45,
+      "walkSound": { "source": "audio/grasshopper-walk.wav" }
+    },
+    {
+      "id": "caterpillar",
+      "defaultSize": 0.6,
+      "label": "3D 綠毛毛蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/caterpillar.glb",
+      "strideLengthPx": 18,
+      "walkSound": { "source": "audio/caterpillar-walk.wav", "fixedRate": true }
+    },
+    {
+      "id": "caterpillar-yellow",
+      "defaultSize": 0.6,
+      "label": "3D 黃毛毛蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/caterpillar.glb",
+      "modelHue": 60,
+      "strideLengthPx": 18,
+      "walkSound": { "source": "audio/caterpillar-walk.wav", "fixedRate": true }
+    },
+    {
+      "id": "caterpillar-blue",
+      "defaultSize": 0.6,
+      "label": "3D 藍毛毛蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/caterpillar.glb",
+      "modelHue": 280,
+      "strideLengthPx": 18,
+      "walkSound": { "source": "audio/caterpillar-walk.wav", "fixedRate": true }
+    },
+    {
+      "id": "stag-beetle",
+      "defaultSize": 0.85,
+      "label": "3D 黑鍬形蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/stag-beetle.glb",
+      "strideLengthPx": 42,
+      "walkSound": { "source": "audio/stag-beetle-walk.wav" }
+    },
+    {
+      "id": "stag-beetle-brown",
+      "defaultSize": 0.85,
+      "label": "3D 棕鍬形蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/stag-beetle-brown.glb",
+      "strideLengthPx": 42,
+      "walkSound": { "source": "audio/stag-beetle-walk.wav" }
+    },
+    {
+      "id": "stag-beetle-red",
+      "defaultSize": 0.85,
+      "label": "3D 紅鍬形蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/stag-beetle-brown.glb",
+      "modelColor": "#a8301a",
+      "modelColorMaterials": "shell",
+      "strideLengthPx": 42,
+      "walkSound": { "source": "audio/stag-beetle-walk.wav" }
+    },
+    {
+      "id": "cricket",
+      "defaultSize": 0.65,
+      "label": "3D 黑蟋蟀",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/cricket.glb",
+      "strideLengthPx": 37,
+      "walkSound": { "source": "audio/cricket-walk.wav" }
+    },
+    {
+      "id": "cricket-brown",
+      "defaultSize": 0.65,
+      "label": "3D 棕蟋蟀",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/cricket-brown.glb",
+      "strideLengthPx": 37,
+      "walkSound": { "source": "audio/cricket-walk.wav" }
+    },
+    {
+      "id": "cricket-green",
+      "defaultSize": 0.65,
+      "label": "3D 綠蟋蟀",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/cricket-brown.glb",
+      "modelColor": "#4a8a2a",
+      "strideLengthPx": 37,
+      "walkSound": { "source": "audio/cricket-walk.wav" }
+    },
+    {
+      "id": "stick-insect",
+      "defaultSize": 0.9,
+      "label": "3D 綠竹節蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/stick-insect.glb",
+      "strideLengthPx": 34,
+      "walkSound": { "source": "audio/stick-insect-walk.wav" }
+    },
+    {
+      "id": "stick-insect-brown",
+      "defaultSize": 0.9,
+      "label": "3D 棕竹節蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/stick-insect.glb",
+      "modelColor": "#7a5a32",
+      "strideLengthPx": 34,
+      "walkSound": { "source": "audio/stick-insect-walk.wav" }
+    },
+    {
+      "id": "stick-insect-grey",
+      "defaultSize": 0.9,
+      "label": "3D 灰竹節蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/stick-insect.glb",
+      "modelColor": "#8a8a80",
+      "strideLengthPx": 34,
+      "walkSound": { "source": "audio/stick-insect-walk.wav" }
+    },
+    {
+      "id": "scarab",
+      "defaultSize": 0.6,
+      "label": "3D 綠金龜子",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/scarab.glb",
+      "strideLengthPx": 62,
+      "walkSound": { "source": "audio/scarab-walk.wav" }
+    },
+    {
+      "id": "scarab-gold",
+      "defaultSize": 0.6,
+      "label": "3D 金金龜子",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/scarab.glb",
+      "modelColor": "#d0a030",
+      "modelColorMaterials": "shell|leg",
+      "strideLengthPx": 62,
+      "walkSound": { "source": "audio/scarab-walk.wav" }
+    },
+    {
+      "id": "scarab-blue",
+      "defaultSize": 0.6,
+      "label": "3D 藍金龜子",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/scarab.glb",
+      "modelColor": "#2a6ad8",
+      "modelColorMaterials": "shell|leg",
+      "strideLengthPx": 62,
+      "walkSound": { "source": "audio/scarab-walk.wav" }
+    },
+    {
+      "id": "centipede",
+      "defaultSize": 0.8,
+      "label": "3D 紅蜈蚣",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/centipede.glb",
+      "strideLengthPx": 17,
+      "walkSound": { "source": "audio/centipede-walk.wav" }
+    },
+    {
+      "id": "centipede-brown",
+      "defaultSize": 0.8,
+      "label": "3D 棕蜈蚣",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/centipede.glb",
+      "modelColor": "#6a4422",
+      "modelColorMaterials": "plate|head",
+      "strideLengthPx": 17,
+      "walkSound": { "source": "audio/centipede-walk.wav" }
+    },
+    {
+      "id": "centipede-blue",
+      "defaultSize": 0.8,
+      "label": "3D 藍蜈蚣",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/centipede.glb",
+      "modelColor": "#2a4aa8",
+      "modelColorMaterials": "plate|head",
+      "strideLengthPx": 17,
+      "walkSound": { "source": "audio/centipede-walk.wav" }
+    },
+    {
+      "id": "pill-bug",
+      "defaultSize": 0.45,
+      "label": "3D 灰西瓜蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/pill-bug.glb",
+      "strideLengthPx": 34,
+      "walkSound": { "source": "audio/pill-bug-walk.wav" }
+    },
+    {
+      "id": "pill-bug-brown",
+      "defaultSize": 0.45,
+      "label": "3D 棕西瓜蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/pill-bug.glb",
+      "modelColor": "#7a5a3a",
+      "strideLengthPx": 34,
+      "walkSound": { "source": "audio/pill-bug-walk.wav" }
+    },
+    {
+      "id": "pill-bug-blue",
+      "defaultSize": 0.45,
+      "label": "3D 藍西瓜蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/pill-bug.glb",
+      "modelColor": "#3a5aa0",
+      "strideLengthPx": 34,
+      "walkSound": { "source": "audio/pill-bug-walk.wav" }
+    },
+    {
+      "id": "shield-bug",
+      "defaultSize": 0.55,
+      "label": "3D 綠椿象",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/shield-bug.glb",
+      "strideLengthPx": 58,
+      "walkSound": { "source": "audio/shield-bug-walk.wav" }
+    },
+    {
+      "id": "shield-bug-brown",
+      "defaultSize": 0.55,
+      "label": "3D 棕椿象",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/shield-bug.glb",
+      "modelColor": "#7a5530",
+      "modelColorMaterials": "shell|leg",
+      "strideLengthPx": 58,
+      "walkSound": { "source": "audio/shield-bug-walk.wav" }
+    },
+    {
+      "id": "shield-bug-red",
+      "defaultSize": 0.55,
+      "label": "3D 紅椿象",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/shield-bug.glb",
+      "modelColor": "#b8301e",
+      "modelColorMaterials": "shell|leg",
+      "strideLengthPx": 58,
+      "walkSound": { "source": "audio/shield-bug-walk.wav" }
+    },
+    {
+      "id": "slug",
+      "defaultSize": 0.7,
+      "label": "3D 棕鼻涕蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/slug.glb",
+      "strideLengthPx": 24,
+      "walkSound": { "source": "audio/snail-walk.wav", "fixedRate": true }
+    },
+    {
+      "id": "slug-orange",
+      "defaultSize": 0.7,
+      "label": "3D 橙鼻涕蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/slug.glb",
+      "modelColor": "#e0661a",
+      "modelColorMaterials": "skin|mantle|tentacle",
+      "strideLengthPx": 24,
+      "walkSound": { "source": "audio/snail-walk.wav", "fixedRate": true }
+    },
+    {
+      "id": "slug-yellow",
+      "defaultSize": 0.7,
+      "label": "3D 黃鼻涕蟲",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/slug.glb",
+      "modelColor": "#d8b02a",
+      "modelColorMaterials": "skin|mantle|tentacle",
+      "strideLengthPx": 24,
+      "walkSound": { "source": "audio/snail-walk.wav", "fixedRate": true }
     },
     {
       "id": "butterfly",
@@ -312,6 +663,301 @@
       "modelAnimation": "fly",
       "modelView": "angled",
       "walkSound": { "source": "audio/bee-fly.wav" }
+    },
+    {
+      "id": "wasp",
+      "defaultSize": 0.55,
+      "label": "3D 黃蜂",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/wasp.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/wasp-fly.wav" }
+    },
+    {
+      "id": "wasp-red",
+      "defaultSize": 0.55,
+      "label": "3D 紅黃蜂",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/wasp.glb",
+      "modelColor": "#d8321e",
+      "modelColorMaterials": "wasp yellow",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/wasp-fly.wav" }
+    },
+    {
+      "id": "wasp-blue",
+      "defaultSize": 0.55,
+      "label": "3D 藍黃蜂",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/wasp.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/wasp-fly.wav" }
+    },
+    {
+      "id": "mosquito",
+      "defaultSize": 0.45,
+      "label": "3D 灰蚊子",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/mosquito.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/mosquito-fly.wav" }
+    },
+    {
+      "id": "mosquito-brown",
+      "defaultSize": 0.45,
+      "label": "3D 棕蚊子",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/mosquito.glb",
+      "modelColor": "#7a5a3a",
+      "modelColorMaterials": "body",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/mosquito-fly.wav" }
+    },
+    {
+      "id": "mosquito-blue",
+      "defaultSize": 0.45,
+      "label": "3D 藍蚊子",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/mosquito.glb",
+      "modelColor": "#3a5aa8",
+      "modelColorMaterials": "body",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/mosquito-fly.wav" }
+    },
+    {
+      "id": "bumblebee",
+      "defaultSize": 0.6,
+      "label": "3D 黃大黃蜂",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/bumblebee.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/bumblebee-fly.wav" }
+    },
+    {
+      "id": "bumblebee-orange",
+      "defaultSize": 0.6,
+      "label": "3D 橙大黃蜂",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/bumblebee.glb",
+      "modelColor": "#e8741a",
+      "modelColorMaterials": "yellow",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/bumblebee-fly.wav" }
+    },
+    {
+      "id": "bumblebee-blue",
+      "defaultSize": 0.6,
+      "label": "3D 藍大黃蜂",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/bumblebee.glb",
+      "modelColor": "#4a9ae8",
+      "modelColorMaterials": "yellow",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/bumblebee-fly.wav" }
+    },
+    {
+      "id": "damselfly",
+      "defaultSize": 0.7,
+      "label": "3D 藍豆娘",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/damselfly.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/damselfly-fly.wav" }
+    },
+    {
+      "id": "damselfly-green",
+      "defaultSize": 0.7,
+      "label": "3D 綠豆娘",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/damselfly.glb",
+      "modelColor": "#2aa84a",
+      "modelColorMaterials": "abdomen|thorax",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/damselfly-fly.wav" }
+    },
+    {
+      "id": "damselfly-red",
+      "defaultSize": 0.7,
+      "label": "3D 紅豆娘",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/damselfly.glb",
+      "modelColor": "#d0302a",
+      "modelColorMaterials": "abdomen|thorax",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/damselfly-fly.wav" }
+    },
+    {
+      "id": "rhino-beetle-flying",
+      "defaultSize": 0.85,
+      "label": "3D 棕飛行獨角仙",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/rhino-beetle-flying.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/rhino-beetle-flying-fly.wav" }
+    },
+    {
+      "id": "rhino-beetle-flying-green",
+      "defaultSize": 0.85,
+      "label": "3D 綠飛行獨角仙",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/rhino-beetle-flying.glb",
+      "modelColor": "#2e8a3e",
+      "modelColorMaterials": "shell",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/rhino-beetle-flying-fly.wav" }
+    },
+    {
+      "id": "rhino-beetle-flying-blue",
+      "defaultSize": 0.85,
+      "label": "3D 藍飛行獨角仙",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/rhino-beetle-flying.glb",
+      "modelColor": "#2f62c0",
+      "modelColorMaterials": "shell",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/rhino-beetle-flying-fly.wav" }
+    },
+    {
+      "id": "swallowtail",
+      "defaultSize": 0.8,
+      "label": "3D 黃鳳蝶",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/swallowtail.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/swallowtail-fly.wav" }
+    },
+    {
+      "id": "swallowtail-blue",
+      "defaultSize": 0.8,
+      "label": "3D 藍鳳蝶",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/swallowtail.glb",
+      "modelColor": "#3a8ae8",
+      "modelColorMaterials": "wing scales",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/swallowtail-fly.wav" }
+    },
+    {
+      "id": "swallowtail-orange",
+      "defaultSize": 0.8,
+      "label": "3D 橙鳳蝶",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/swallowtail.glb",
+      "modelColor": "#f07a1a",
+      "modelColorMaterials": "wing scales",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/swallowtail-fly.wav" }
+    },
+    {
+      "id": "locust-flying",
+      "defaultSize": 0.8,
+      "label": "3D 綠飛行蚱蜢",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/locust-flying.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/locust-flying-fly.wav" }
+    },
+    {
+      "id": "locust-flying-yellow",
+      "defaultSize": 0.8,
+      "label": "3D 黃飛行蚱蜢",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/locust-flying.glb",
+      "modelColor": "#c8b030",
+      "modelColorMaterials": "grasshopper",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/locust-flying-fly.wav" }
+    },
+    {
+      "id": "locust-flying-brown",
+      "defaultSize": 0.8,
+      "label": "3D 棕飛行蚱蜢",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/locust-flying.glb",
+      "modelColor": "#8a6a3a",
+      "modelColorMaterials": "grasshopper",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/locust-flying-fly.wav" }
+    },
+    {
+      "id": "lacewing",
+      "defaultSize": 0.6,
+      "label": "3D 綠草蛉",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/lacewing.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/lacewing-fly.wav" }
+    },
+    {
+      "id": "lacewing-blue",
+      "defaultSize": 0.6,
+      "label": "3D 藍草蛉",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/lacewing.glb",
+      "modelColor": "#4a8ae0",
+      "modelColorMaterials": "body|vein",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/lacewing-fly.wav" }
+    },
+    {
+      "id": "lacewing-yellow",
+      "defaultSize": 0.6,
+      "label": "3D 黃草蛉",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/lacewing.glb",
+      "modelColor": "#d8c840",
+      "modelColorMaterials": "body|vein",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/lacewing-fly.wav" }
     },
     {
       "id": "pigeon",
@@ -1520,6 +2166,387 @@
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
       "background": { "source": "image/backgroud/Sky Through Leafy Canopy.png" }
+    },
+    {
+      "id": "autumn-leaf-forest-floor",
+      "label": "秋天落葉林地",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Autumn Leaf Forest Floor.png" }
+    },
+    {
+      "id": "mossy-forest-floor",
+      "label": "青苔森林地面",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Mossy Forest Floor.png" }
+    },
+    {
+      "id": "wildflower-meadow-ground",
+      "label": "野花草原",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Wildflower Meadow Ground.png" }
+    },
+    {
+      "id": "dry-sandy-beach",
+      "label": "乾燥沙灘",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Dry Sandy Beach.png" }
+    },
+    {
+      "id": "cracked-desert-earth",
+      "label": "沙漠龜裂土地",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Cracked Desert Earth.png" }
+    },
+    {
+      "id": "vegetable-garden-soil",
+      "label": "菜園泥土",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Vegetable Garden Soil.png" }
+    },
+    {
+      "id": "alpine-gravel-with-lichen",
+      "label": "山間碎石地衣",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Alpine Gravel with Lichen.png" }
+    },
+    {
+      "id": "rainforest-floor-with-ferns",
+      "label": "熱帶雨林地面",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Rainforest Floor with Ferns.png" }
+    },
+    {
+      "id": "country-dirt-path",
+      "label": "鄉間泥土小徑",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Country Dirt Path.png" }
+    },
+    {
+      "id": "pine-needle-forest-floor",
+      "label": "松針林地",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Pine Needle Forest Floor.png" }
+    },
+    {
+      "id": "cherry-petal-ground",
+      "label": "櫻花花瓣地面",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Cherry Petal Ground.png" }
+    },
+    {
+      "id": "harvested-rice-field",
+      "label": "收割後稻田",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Harvested Rice Field.png" }
+    },
+    {
+      "id": "volcanic-black-sand",
+      "label": "火山黑沙",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Volcanic Black Sand.png" }
+    },
+    {
+      "id": "cobblestone-plaza",
+      "label": "石板廣場",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Cobblestone Plaza.png" }
+    },
+    {
+      "id": "bamboo-forest-floor",
+      "label": "竹林地面",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Bamboo Forest Floor.png" }
+    },
+    {
+      "id": "red-clay-earth",
+      "label": "紅土地",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Red Clay Earth.png" }
+    },
+    {
+      "id": "zen-raked-gravel",
+      "label": "枯山水砂紋",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Zen Raked Gravel.png" }
+    },
+    {
+      "id": "sand-dune-ripples",
+      "label": "沙丘風紋",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Sand Dune Ripples.png" }
+    },
+    {
+      "id": "frozen-pond-ice",
+      "label": "結冰湖面",
+      "category": "outdoor",
+      "background": { "source": "image/backgroud/Frozen Pond Ice.png" }
+    },
+    {
+      "id": "warm-wooden-floor",
+      "label": "溫暖木地板",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Warm Wooden Floor.png" }
+    },
+    {
+      "id": "kitchen-checkered-tiles",
+      "label": "廚房格紋磁磚",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Kitchen Checkered Tiles.png" }
+    },
+    {
+      "id": "living-room-wool-rug",
+      "label": "客廳羊毛地毯",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Living Room Wool Rug.png" }
+    },
+    {
+      "id": "bathroom-mosaic-tiles",
+      "label": "浴室馬賽克磁磚",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Bathroom Mosaic Tiles.png" }
+    },
+    {
+      "id": "wooden-study-desk",
+      "label": "木頭書桌桌面",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Wooden Study Desk.png" }
+    },
+    {
+      "id": "checkered-tablecloth-dining-table",
+      "label": "格紋桌布餐桌",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Checkered Tablecloth Dining Table.png" }
+    },
+    {
+      "id": "japanese-tatami-room",
+      "label": "和室榻榻米",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Japanese Tatami Room.png" }
+    },
+    {
+      "id": "garage-concrete-floor",
+      "label": "車庫水泥地",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Garage Concrete Floor.png" }
+    },
+    {
+      "id": "windowsill-with-potted-plants",
+      "label": "窗台盆栽",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Windowsill with Potted Plants.png" }
+    },
+    {
+      "id": "kids-room-play-mat",
+      "label": "兒童房遊戲地墊",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Kids Room Play Mat.png" }
+    },
+    {
+      "id": "barn-hay-floor",
+      "label": "穀倉乾草地面",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Barn Hay Floor.png" }
+    },
+    {
+      "id": "herringbone-parquet-floor",
+      "label": "人字拼木地板",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Herringbone Parquet Floor.png" }
+    },
+    {
+      "id": "kitchen-cutting-board-counter",
+      "label": "料理台木砧板",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Kitchen Cutting Board Counter.png" }
+    },
+    {
+      "id": "white-bed-linen",
+      "label": "白色床單",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/White Bed Linen.png" }
+    },
+    {
+      "id": "persian-rug",
+      "label": "波斯地毯",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Persian Rug.png" }
+    },
+    {
+      "id": "greenhouse-potting-bench",
+      "label": "溫室育苗台",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Greenhouse Potting Bench.png" }
+    },
+    {
+      "id": "craft-cutting-mat",
+      "label": "手作切割墊",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Craft Cutting Mat.png" }
+    },
+    {
+      "id": "fireplace-brick-hearth",
+      "label": "壁爐紅磚地",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Fireplace Brick Hearth.png" }
+    },
+    {
+      "id": "velvet-sofa-cushion",
+      "label": "絲絨沙發",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Velvet Sofa Cushion.png" }
+    },
+    {
+      "id": "floured-baking-counter",
+      "label": "撒麵粉的烘焙檯",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Floured Baking Counter.png" }
+    },
+    {
+      "id": "stone-cellar-floor",
+      "label": "石砌地窖地板",
+      "category": "indoor",
+      "background": { "source": "image/backgroud/Stone Cellar Floor.png" }
+    },
+    {
+      "id": "mangrove-shallows",
+      "label": "紅樹林淺水",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Mangrove Shallows.png" }
+    },
+    {
+      "id": "lotus-pond",
+      "label": "荷花池",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Lotus Pond.png" }
+    },
+    {
+      "id": "volcanic-rock-reef",
+      "label": "火山岩礁",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Volcanic Rock Reef.png" }
+    },
+    {
+      "id": "bioluminescent-night-sea",
+      "label": "夜光藻海面",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Bioluminescent Night Sea.png" }
+    },
+    {
+      "id": "open-ocean-surface",
+      "label": "深海水面俯視",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Open Ocean Surface.png" }
+    },
+    {
+      "id": "polar-ice-floe-water",
+      "label": "極地浮冰海水",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Polar Ice Floe Water.png" }
+    },
+    {
+      "id": "seashell-sandy-shallows",
+      "label": "貝殼淺灘",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Seashell Sandy Shallows.png" }
+    },
+    {
+      "id": "coral-rubble-reef-flat",
+      "label": "珊瑚碎石礁台",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Coral Rubble Reef Flat.png" }
+    },
+    {
+      "id": "garden-koi-pond",
+      "label": "庭園錦鯉池",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Garden Koi Pond.png" }
+    },
+    {
+      "id": "turquoise-sandbar",
+      "label": "沙洲漸層淺海",
+      "category": "underwater",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Turquoise Sandbar.png" }
+    },
+    {
+      "id": "aurora-night-sky",
+      "label": "北極光夜空",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Aurora Night Sky.png" }
+    },
+    {
+      "id": "full-moon-cloudy-night",
+      "label": "滿月雲夜",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Full Moon Cloudy Night.png" }
+    },
+    {
+      "id": "mackerel-sky",
+      "label": "魚鱗雲",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Mackerel Sky.png" }
+    },
+    {
+      "id": "lavender-dusk-sky",
+      "label": "薰衣草紫暮色",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Lavender Dusk Sky.png" }
+    },
+    {
+      "id": "snowfall-sky",
+      "label": "飄雪灰白天空",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Snowfall Sky.png" }
+    },
+    {
+      "id": "milky-way-sky",
+      "label": "銀河星空",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Milky Way Sky.png" }
+    },
+    {
+      "id": "summer-noon-sky",
+      "label": "夏日正午晴空",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Summer Noon Sky.png" }
+    },
+    {
+      "id": "sunbeams-through-clouds",
+      "label": "雲隙光",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Sunbeams Through Clouds.png" }
+    },
+    {
+      "id": "misty-morning-sky",
+      "label": "晨霧淡雲",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Misty Morning Sky.png" }
+    },
+    {
+      "id": "sky-through-cherry-blossoms",
+      "label": "櫻花枝仰望天空",
+      "category": "sky",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/Sky Through Cherry Blossoms.png" }
     }
+
   ]
 }

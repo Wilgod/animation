@@ -9,7 +9,7 @@ app.whenReady().then(async()=>{
  const {loadAnimal3D}=await import('./animal-3d.js');
  const config=await fetch('/api/config').then(r=>r.json());
  const results=[];const board=document.createElement('canvas');board.width=1200;board.height=450;const ctx=board.getContext('2d');ctx.fillStyle='#eee';ctx.fillRect(0,0,1200,450);
- for(const [index,id] of ['yellow','green','red'].entries()){
+ for(const [index,id] of ['lizard-yellow','green','red'].entries()){
  const def=config.animals.find(a=>a.id===id);if(!def.model3d)throw Error('Not a 3D animal: '+id);
  const model=await loadAnimal3D(def.model3d,def.modelColor);model.render(.2);
  const pixels=document.createElement('canvas');pixels.width=pixels.height=768;const c=pixels.getContext('2d');c.drawImage(model.canvas,0,0);const data=c.getImageData(0,0,768,768).data;

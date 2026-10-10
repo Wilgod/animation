@@ -22,22 +22,22 @@ app.whenReady().then(async()=>{
  await wait();
  [...document.querySelectorAll('.animal-row')].find(r=>r.querySelector('.name').textContent===other.querySelector('.name').textContent).click();
  lizard().click();
- for(let i=0;i<200&&!AnimEngine.actorHasWalkFrames('yellow');i++)await wait();
+ for(let i=0;i<200&&!AnimEngine.actorHasWalkFrames('lizard-yellow');i++)await wait();
  if(!document.getElementById('editingAnimalLabel').textContent.includes('3D 黃蜥蝪'))throw Error('Checking 3D lizard leaves the previous animal selected for placement');
  const canvas=document.getElementById('stage'), rect=canvas.getBoundingClientRect();
- const before=AnimEngine.getActorPath('yellow').length;
+ const before=AnimEngine.getActorPath('lizard-yellow').length;
  for(const x of [650,1000]){
  const event={clientX:rect.left+x/1600*rect.width,clientY:rect.top+450/900*rect.height,bubbles:true,button:0};
  canvas.dispatchEvent(new MouseEvent('mousedown',event));window.dispatchEvent(new MouseEvent('mouseup',event));
  }
- if(AnimEngine.getActorPath('yellow').length!==before+2)throw Error('Canvas clicks did not add 3D lizard waypoints');
+ if(AnimEngine.getActorPath('lizard-yellow').length!==before+2)throw Error('Canvas clicks did not add 3D lizard waypoints');
  lizard().click();await wait();row('3D 黃蜥蝪').querySelector('.name').click();
- for(let i=0;i<200&&!AnimEngine.actorHasWalkFrames('yellow');i++)await wait();
+ for(let i=0;i<200&&!AnimEngine.actorHasWalkFrames('lizard-yellow');i++)await wait();
  if(!lizard().checked || !document.getElementById('editingAnimalLabel').textContent.includes('3D 黃蜥蝪'))throw Error('Clicking name did not enable and select lizard');
- const data=new DataTransfer();data.setData('application/x-path-animator-animal','yellow');
+ const data=new DataTransfer();data.setData('application/x-path-animator-animal','lizard-yellow');
  document.getElementById('stagePad').dispatchEvent(new DragEvent('drop',{dataTransfer:data,clientX:rect.left+800/1600*rect.width,clientY:rect.top+450/900*rect.height,bubbles:true}));
  await wait();
- if(Math.abs(AnimEngine.getActorPath('yellow')[0].x-800)>1)throw Error('Drag placement failed');
+ if(Math.abs(AnimEngine.getActorPath('lizard-yellow')[0].x-800)>1)throw Error('Drag placement failed');
  return {checkboxSelectsAnimal:true,clickPlacement:true,pathPoints:true,nameSelection:true,dragPlacement:true};
  })()`)); app.exit(0);
  }catch(e){console.error(e);app.exit(1)}

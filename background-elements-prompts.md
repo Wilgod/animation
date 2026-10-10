@@ -600,3 +600,473 @@ full-bleed, high resolution
 **生成之後：** 存進 `image/backgroud/`，檔名用英文 Title Case，例如 `Clear Blue Sky.png`、`Starry Night Sky.png`。放好後跟我說，我會幫你加進 `config/scenes.json`（整個畫面設為天空 air zone，只讓飛行動物上場），再跑 `npm run prepare-assets`。
 
 **想只換花園場景上方的天空 band？** 把生成的圖裁成寬:高 約 8:1 的扁長條，照「提示詞 1a」的方式替換天空 band 即可。
+
+---
+
+## 提示詞 6：陸地完整背景（10 款，靜態圖）
+
+用途：直接生成一整張陸地背景，存進 `image/backgroud/`，給烏龜、蝸牛、蜥蜴、蜘蛛、螳螂、瓢蟲、松鼠、青蛙、螃蟹、走路的麻雀/鴿子等地面動物在上面爬行走動。整個畫面設為地面（ground）zone。
+
+**共通原則（每一款都適用）：**
+- **俯視角度、沒有地平線**：鏡頭從正上方往下看地面，沒有天空、沒有遠景透視，動物的陰影才會自然。
+- **畫面中不要有任何動物或昆蟲**：動物由程式疊上去，背景裡如果已經有蟲或動物會跟真的角色搶戲。
+- **中間留出開闊空間**：大型物件（石頭、樹根、蕨類、花叢）盡量放在畫面邊緣，中間保留相對平坦、乾淨的地面，讓路徑有地方走。
+- **光線柔和均勻**：避免強烈的大片陰影或高反差，以免跟程式加上的動物陰影互相干擾。
+- **比例 16:9**，盡量高解析度（輸出影片是 3840×2160）。
+
+### 6-1 秋天落葉林地 Autumn Leaf Forest Floor
+**檔名：** `image/backgroud/Autumn Leaf Forest Floor.png`
+
+適合：松鼠、蝸牛、蜘蛛、烏龜
+**中文：**
+```
+俯視角度的秋天森林地面照片，鏡頭從正上方往下拍，
+鋪滿紅、橘、黃、褐色的楓葉與橡樹落葉，邊緣零星有小樹枝與橡實，
+中間落葉較平整、層次均勻，柔和自然光，色彩溫暖寫實，
+沒有任何動物或昆蟲，沒有天空、沒有地平線，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、對焦清晰、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of an autumn forest floor, camera pointing straight down, covered in
+red, orange, yellow and brown maple and oak leaves, a few small twigs and acorns near
+the edges, flatter even leaf layer in the center, soft natural light, warm realistic
+color, no animals, no insects, no sky, no horizon, no text, no watermark, 16:9,
+full-bleed, high resolution, sharp focus, photorealistic
+```
+
+### 6-2 青苔森林地面 Mossy Forest Floor
+**檔名：** `image/backgroud/Mossy Forest Floor.png`
+
+適合：蝸牛、青蛙、瓢蟲、蜥蜴
+**中文：**
+```
+俯視角度的潮濕森林地面照片，從正上方往下看，
+整片柔軟翠綠的青苔地毯，邊緣有長滿青苔的石頭、小蕨類嫩芽和枯樹枝，
+中間是平整連續的青苔面，散射柔光、帶一點露水，
+沒有任何動物或昆蟲、沒有菇類擠在中間，沒有天空、沒有地平線，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a damp forest floor, looking straight down, a continuous soft
+emerald moss carpet, moss-covered stones, small fern sprouts and dry twigs around the
+edges, smooth open moss surface in the center, diffused soft light with a little dew,
+no animals, no insects, no sky, no horizon, no text, no watermark, 16:9, full-bleed,
+high resolution, photorealistic
+```
+
+### 6-3 野花草原 Wildflower Meadow Ground
+**檔名：** `image/backgroud/Wildflower Meadow Ground.png`
+
+適合：瓢蟲、螳螂、蜜蜂（停在地上）、蝴蝶（停在地上）
+**中文：**
+```
+俯視角度的野花草原照片，鏡頭正上方往下拍，
+綠色短草地上點綴白色雛菊、黃色蒲公英與紫色小野花，花朵集中在畫面邊緣，
+中間是較低矮、平整的綠草區，明亮自然的陽光，色彩清新寫實，
+沒有任何動物或昆蟲，沒有天空、沒有地平線，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a wildflower meadow, camera straight down, short green grass dotted
+with white daisies, yellow dandelions and small purple wildflowers concentrated
+toward the edges, lower flatter green grass in the center, bright natural sunlight,
+fresh realistic color, no animals, no insects, no sky, no horizon, no text, no
+watermark, 16:9, full-bleed, high resolution, photorealistic
+```
+
+### 6-4 乾燥沙灘 Dry Sandy Beach
+**檔名：** `image/backgroud/Dry Sandy Beach.png`
+
+適合：螃蟹、寄居蟹、海龜、烏龜
+**中文：**
+```
+俯視角度的乾燥沙灘照片，從正上方往下看，
+整片淺米色細沙，帶有自然的風吹沙紋，邊緣零星散落貝殼、小卵石和一段漂流木，
+中間是乾淨平坦的沙面，明亮陽光，色彩溫暖寫實，
+沒有海水、沒有浪花、沒有腳印、沒有任何動物，沒有天空、沒有地平線，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a dry sandy beach, looking straight down, pale beige fine sand with
+natural wind ripples, a few seashells, small pebbles and a piece of driftwood
+scattered near the edges, clean flat sand in the center, bright sunlight, warm
+realistic color, no water, no waves, no footprints, no animals, no sky, no horizon,
+no text, no watermark, 16:9, full-bleed, high resolution, photorealistic
+```
+
+### 6-5 沙漠龜裂土地 Cracked Desert Earth
+**檔名：** `image/backgroud/Cracked Desert Earth.png`
+
+適合：蜥蜴、烏龜、蜘蛛
+**中文：**
+```
+俯視角度的乾旱沙漠地面照片，鏡頭正上方往下拍，
+土黃與赤褐色的乾裂泥土，形成不規則的多邊形龜裂紋路，邊緣有少量乾枯小草和碎石，
+中間裂紋較細緻、地面平整，溫暖明亮但不刺眼的陽光，
+沒有任何動物或昆蟲、沒有骨頭，沒有天空、沒有地平線，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of parched desert ground, camera straight down, ochre and rust-brown
+dry mud with irregular polygonal crack patterns, a little dry grass and gravel near
+the edges, finer cracks and flatter ground in the center, warm bright but not harsh
+sunlight, no animals, no insects, no bones, no sky, no horizon, no text, no
+watermark, 16:9, full-bleed, high resolution, photorealistic
+```
+
+### 6-6 菜園泥土 Vegetable Garden Soil
+**檔名：** `image/backgroud/Vegetable Garden Soil.png`
+
+適合：蝸牛、瓢蟲、螳螂、麻雀、鴿子
+**中文：**
+```
+俯視角度的菜園土壤照片，從正上方往下看，
+鬆軟深褐色的濕潤泥土，畫面上下邊緣有一排排綠色菜苗（萵苣、小白菜嫩葉），
+中間是平整乾淨的泥土走道，柔和自然光，色彩真實，
+沒有任何動物、昆蟲或蚯蚓，沒有工具、沒有人，沒有天空、沒有地平線，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of vegetable garden soil, looking straight down, loose dark-brown
+moist soil, rows of young green seedlings (lettuce, bok choy leaves) along the top
+and bottom edges, a smooth clean strip of soil through the middle, soft natural
+light, realistic color, no animals, no insects, no worms, no tools, no people, no
+sky, no horizon, no text, no watermark, 16:9, full-bleed, high resolution,
+photorealistic
+```
+
+### 6-7 山間碎石地衣 Alpine Gravel with Lichen
+**檔名：** `image/backgroud/Alpine Gravel with Lichen.png`
+
+適合：蜥蜴、蜘蛛、烏龜
+**中文：**
+```
+俯視角度的高山碎石地面照片，鏡頭正上方往下拍，
+灰色與淺褐色的大小碎石，邊緣較大的石塊上長著橘黃與淡綠色的地衣，
+中間是細碎、平坦的小碎石，清爽自然的日光，色彩寫實，
+沒有任何動物或昆蟲，沒有天空、沒有地平線，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of alpine gravel ground, camera straight down, grey and light-brown
+stones of mixed sizes, larger rocks near the edges covered with orange-yellow and
+pale-green lichen, fine flat gravel in the center, crisp natural daylight, realistic
+color, no animals, no insects, no sky, no horizon, no text, no watermark, 16:9,
+full-bleed, high resolution, photorealistic
+```
+
+### 6-8 熱帶雨林地面 Rainforest Floor with Ferns
+**檔名：** `image/backgroud/Rainforest Floor with Ferns.png`
+
+適合：青蛙、蜥蜴、蜘蛛、螳螂
+**中文：**
+```
+俯視角度的熱帶雨林地面照片，從正上方往下看，
+深色潮濕的腐植土與落葉，畫面四角有茂密的大片蕨類葉子和粗壯的樹根，
+中間是開闊的深褐色地面，林間柔和的散射光、帶濕潤光澤，
+蕨類只在邊緣、不擋住中間，沒有任何動物或昆蟲，沒有天空、沒有地平線，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a tropical rainforest floor, looking straight down, dark moist humus
+and fallen leaves, lush large fern fronds and thick tree roots in the corners, open
+dark-brown ground in the center, soft diffused jungle light with a wet sheen, ferns
+kept to the edges and never covering the center, no animals, no insects, no sky, no
+horizon, no text, no watermark, 16:9, full-bleed, high resolution, photorealistic
+```
+
+### 6-9 鄉間泥土小徑 Country Dirt Path
+**檔名：** `image/backgroud/Country Dirt Path.png`
+
+適合：麻雀、鴿子、松鼠、烏龜、蝸牛
+**中文：**
+```
+俯視角度的鄉間小路照片，鏡頭正上方往下拍，
+一條淺褐色的平坦泥土路從畫面左邊延伸到右邊，佔畫面中間大部分，
+上下兩側邊緣是綠色雜草與小野花，路面有細小砂礫，自然陽光，
+沒有輪胎痕、沒有腳印、沒有任何動物或昆蟲，沒有天空、沒有地平線，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a country dirt path, camera straight down, a flat light-brown dirt
+road running from the left edge to the right edge and filling most of the middle,
+green weeds and small wildflowers along the top and bottom edges, fine grit on the
+path surface, natural sunlight, no tire tracks, no footprints, no animals, no
+insects, no sky, no horizon, no text, no watermark, 16:9, full-bleed, high
+resolution, photorealistic
+```
+
+### 6-10 松針林地 Pine Needle Forest Floor
+**檔名：** `image/backgroud/Pine Needle Forest Floor.png`
+
+適合：松鼠、蜘蛛、螳螂、蝸牛
+**中文：**
+```
+俯視角度的松樹林地面照片，從正上方往下看，
+鋪滿金褐色乾燥松針，邊緣散落幾顆松果和小塊樹皮，
+中間是均勻平整的松針層，透過樹梢灑下的柔和斑駁光（光斑不要太強烈），
+沒有任何動物或昆蟲，沒有天空、沒有地平線，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a pine forest floor, looking straight down, covered in golden-brown
+dry pine needles, a few pine cones and small bark pieces scattered near the edges,
+an even flat needle layer in the center, soft gentle dappled light through the
+canopy (not high contrast), no animals, no insects, no sky, no horizon, no text, no
+watermark, 16:9, full-bleed, high resolution, photorealistic
+```
+
+**生成之後：** 存進 `image/backgroud/`，檔名照上面每一款的建議（英文 Title Case）。放好後跟我說，我會幫你加進 `config/scenes.json`（整個畫面設為地面 ground zone，讓爬行／走路的動物上場），再跑 `npm run prepare-assets`。
+
+---
+
+## 提示詞 7：室內完整背景（10 款，靜態圖）
+
+用途：直接生成一整張室內地面／桌面背景，存進 `image/backgroud/`，給家裡常見的小動物在上面爬行走動，例如壁虎／蜥蜴、蜘蛛、蝸牛、瓢蟲、家蠅、田鼠、寵物烏龜、寄居蟹。整個畫面設為地面（ground）zone。
+
+**共通原則（每一款都適用）：**
+- **俯視角度、沒有牆角透視**：鏡頭從正上方垂直往下拍地板或桌面，看不到牆壁、天花板、窗外景色，動物的陰影才會自然。
+- **畫面中不要有任何動物、昆蟲或人**：連人的手、腳、寵物毛都不要，動物由程式疊上去。
+- **中間留出開闊空間**：家具腳、拖鞋、杯子、書本等物件只放在畫面邊緣，中間保留平坦乾淨的表面，讓路徑有地方走。
+- **光線柔和均勻**：像室內窗光或柔和的頂燈，避免強烈的窗框陰影、大面積反光或高反差，以免跟程式加上的動物陰影互相干擾。
+- **比例 16:9**，盡量高解析度（輸出影片是 3840×2160）。
+
+### 7-1 溫暖木地板 Warm Wooden Floor
+**檔名：** `image/backgroud/Warm Wooden Floor.png`
+
+適合：烏龜、田鼠、蜘蛛、蜥蜴
+**中文：**
+```
+俯視角度的室內木地板照片，鏡頭從正上方垂直往下拍，
+蜂蜜色的橡木長條地板從畫面左邊延伸到右邊，木紋清楚、拼縫整齊，
+邊緣角落有一小角地毯流蘇和一雙拖鞋的鞋尖，中間是開闊乾淨的木地板，
+柔和的室內窗光、色彩溫暖寫實，沒有強烈窗框陰影，
+沒有任何動物、昆蟲或人，沒有牆壁、沒有透視，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of an indoor wooden floor, camera pointing straight down, honey-toned
+oak planks running from left to right with clear grain and neat seams, a corner of a
+rug fringe and the toes of a pair of slippers at the edges, open clean floor in the
+center, soft indoor window light, warm realistic color, no hard window shadows, no
+animals, no insects, no people, no walls, no perspective, no text, no watermark,
+16:9, full-bleed, high resolution, photorealistic
+```
+
+### 7-2 廚房格紋磁磚 Kitchen Checkered Tiles
+**檔名：** `image/backgroud/Kitchen Checkered Tiles.png`
+
+適合：家蠅、蜘蛛、田鼠、瓢蟲
+**中文：**
+```
+俯視角度的廚房地板照片，鏡頭正上方往下拍，
+米白與淺灰相間的方形格紋磁磚，磁磚縫隙乾淨整齊，
+畫面邊緣有一角木櫥櫃底座和幾顆掉落的米粒，中間是開闊乾淨的磁磚地面，
+柔和明亮的室內光，磁磚只有微微光澤、沒有刺眼反光，
+沒有任何動物、昆蟲或人，沒有牆壁、沒有透視，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a kitchen floor, camera straight down, cream and light-grey
+checkered square tiles with clean even grout lines, the edge of a wooden cabinet base
+and a few dropped grains of rice near the borders, open clean tile floor in the
+center, soft bright indoor light, tiles with a subtle sheen and no glare, no animals,
+no insects, no people, no walls, no perspective, no text, no watermark, 16:9,
+full-bleed, high resolution, photorealistic
+```
+
+### 7-3 客廳羊毛地毯 Living Room Wool Rug
+**檔名：** `image/backgroud/Living Room Wool Rug.png`
+
+適合：烏龜、田鼠、瓢蟲、蝸牛
+**中文：**
+```
+俯視角度的客廳地毯照片，從正上方往下看，
+柔軟的米色羊毛地毯，帶有淡淡的藍灰色幾何花紋，毛絨質感清楚，
+畫面角落露出一點木地板和沙發腳，中間是平整開闊的地毯，
+柔和均勻的室內光、色彩溫和寫實，
+沒有任何動物、昆蟲或人，沒有牆壁、沒有透視，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a living-room rug, looking straight down, soft beige wool rug with a
+faint blue-grey geometric pattern and visible pile texture, a little wooden floor and
+a sofa leg showing in the corners, flat open rug in the center, soft even indoor
+light, gentle realistic color, no animals, no insects, no people, no walls, no
+perspective, no text, no watermark, 16:9, full-bleed, high resolution, photorealistic
+```
+
+### 7-4 浴室馬賽克磁磚 Bathroom Mosaic Tiles
+**檔名：** `image/backgroud/Bathroom Mosaic Tiles.png`
+
+適合：蜘蛛、蝸牛、壁虎／蜥蜴
+**中文：**
+```
+俯視角度的浴室地板照片，鏡頭正上方往下拍，
+白色與淡青色的小方塊馬賽克磁磚，邊緣有一角毛巾地墊和排水孔蓋，
+中間是乾燥、平整、開闊的磁磚地面，幾滴小水珠點綴，
+柔和明亮的白光，沒有刺眼反光，
+沒有任何動物、昆蟲或人，沒有牆壁、沒有透視，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a bathroom floor, camera straight down, small white and pale-aqua
+square mosaic tiles, a corner of a towel bath mat and a drain cover near the edges,
+dry flat open tile floor in the center with a few tiny water droplets, soft bright
+white light, no glare, no animals, no insects, no people, no walls, no perspective,
+no text, no watermark, 16:9, full-bleed, high resolution, photorealistic
+```
+
+### 7-5 木頭書桌桌面 Wooden Study Desk
+**檔名：** `image/backgroud/Wooden Study Desk.png`
+
+適合：瓢蟲、家蠅、蜘蛛、螳螂
+**中文：**
+```
+俯視角度的木頭書桌桌面照片，從正上方垂直往下拍，
+胡桃木色的桌面木紋清楚，邊緣散放著鉛筆、打開一角的筆記本、橡皮擦和一個馬克杯的杯緣，
+中間是大片開闊乾淨的桌面，柔和的檯燈與窗光、色彩溫暖寫實，
+沒有任何動物、昆蟲或人，沒有手，沒有牆壁、沒有透視，沒有文字、浮水印（筆記本上也不要字），
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a wooden study desk, camera pointing straight down, walnut-toned
+desktop with clear wood grain, a pencil, the corner of an open notebook, an eraser and
+the rim of a mug scattered at the edges, a large open clean desk surface in the
+center, soft lamp and window light, warm realistic color, no animals, no insects, no
+people, no hands, no walls, no perspective, no text or writing anywhere, no
+watermark, 16:9, full-bleed, high resolution, photorealistic
+```
+
+### 7-6 格紋桌布餐桌 Checkered Tablecloth Dining Table
+**檔名：** `image/backgroud/Checkered Tablecloth Dining Table.png`
+
+適合：家蠅、瓢蟲、蝸牛、蜜蜂
+**中文：**
+```
+俯視角度的餐桌照片，鏡頭正上方往下拍，
+鋪著紅白格紋棉布桌布，布料紋理清楚、平整沒有大皺褶，
+畫面邊緣有一角白色餐盤、幾片麵包屑和一顆紅蘋果，中間是開闊平整的桌布，
+柔和明亮的白天室內光、色彩寫實，
+沒有任何動物、昆蟲或人，沒有手，沒有牆壁、沒有透視，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a dining table, camera straight down, covered with a red-and-white
+gingham cotton tablecloth with visible weave and no big wrinkles, the edge of a white
+plate, a few bread crumbs and a red apple near the borders, open flat tablecloth in
+the center, soft bright daytime indoor light, realistic color, no animals, no
+insects, no people, no hands, no walls, no perspective, no text, no watermark, 16:9,
+full-bleed, high resolution, photorealistic
+```
+
+### 7-7 和室榻榻米 Japanese Tatami Room
+**檔名：** `image/backgroud/Japanese Tatami Room.png`
+
+適合：烏龜、蜘蛛、螳螂、田鼠
+**中文：**
+```
+俯視角度的和室榻榻米地面照片，從正上方往下看，
+淡黃綠色的榻榻米，草蓆編織紋理清楚，深色布邊整齊拼接，
+畫面角落有一角矮木桌的桌腳和一個坐墊，中間是開闊平整的榻榻米，
+柔和的紙窗散射光、色彩自然寫實，
+沒有任何動物、昆蟲或人，沒有牆壁、沒有透視，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a Japanese tatami room floor, looking straight down, pale
+yellow-green tatami mats with clear woven rush texture and neat dark fabric borders,
+a low wooden table leg and a floor cushion in the corners, open flat tatami in the
+center, soft diffused shoji-screen light, natural realistic color, no animals, no
+insects, no people, no walls, no perspective, no text, no watermark, 16:9,
+full-bleed, high resolution, photorealistic
+```
+
+### 7-8 車庫水泥地 Garage Concrete Floor
+**檔名：** `image/backgroud/Garage Concrete Floor.png`
+
+適合：蜘蛛、蜥蜴、田鼠、螃蟹
+**中文：**
+```
+俯視角度的車庫水泥地照片，鏡頭正上方往下拍，
+淺灰色光滑水泥地，帶有細微斑點、髮絲細紋和一條直直的伸縮縫，
+畫面邊緣有一角紙箱、一捆麻繩和幾顆螺絲，中間是開闊乾淨的水泥地，
+柔和的頂燈光、色彩寫實，沒有油漬大污點，
+沒有任何動物、昆蟲或人，沒有牆壁、沒有透視，沒有文字、浮水印（紙箱上也不要字），
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a garage concrete floor, camera straight down, smooth light-grey
+concrete with fine speckles, hairline cracks and one straight expansion joint, the
+corner of a cardboard box, a coil of twine and a few screws near the edges, open
+clean concrete in the center, soft overhead light, realistic color, no big oil
+stains, no animals, no insects, no people, no walls, no perspective, no text or
+labels anywhere, no watermark, 16:9, full-bleed, high resolution, photorealistic
+```
+
+### 7-9 窗台盆栽 Windowsill with Potted Plants
+**檔名：** `image/backgroud/Windowsill with Potted Plants.png`
+
+適合：瓢蟲、蝸牛、螳螂、蜘蛛
+**中文：**
+```
+俯視角度的寬木窗台照片，從正上方往下看，
+白色漆面的寬窗台橫跨畫面，上下兩側邊緣擺著小陶盆的多肉植物、香草盆栽，
+有幾片葉子和一點點散落的泥土，中間是開闊乾淨的窗台表面，
+柔和明亮的晨光、色彩清新寫實，沒有強烈窗框陰影，
+沒有任何動物、昆蟲或人，看不到窗外景色、沒有透視，沒有文字、浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a wide wooden windowsill, looking straight down, a broad
+white-painted sill spanning the frame, small terracotta pots of succulents and herbs
+along the top and bottom edges, a few leaves and a little scattered soil, open clean
+sill surface in the center, soft bright morning light, fresh realistic color, no hard
+window-frame shadows, no animals, no insects, no people, no outdoor view, no
+perspective, no text, no watermark, 16:9, full-bleed, high resolution,
+photorealistic
+```
+
+### 7-10 兒童房遊戲地墊 Kids Room Play Mat
+**檔名：** `image/backgroud/Kids Room Play Mat.png`
+
+適合：烏龜、田鼠、瓢蟲、螃蟹
+**中文：**
+```
+俯視角度的兒童房地面照片，鏡頭正上方往下拍，
+柔和粉彩色（淡藍、淡黃、淡綠、淡粉）的方塊拼接軟墊，拼接邊緣整齊，
+畫面角落有幾個木頭積木和一個小玩具車，中間是開闊平整的地墊，
+柔和明亮的室內光、色彩溫和寫實，
+沒有任何動物、昆蟲或人，沒有動物造型玩具，沒有牆壁、沒有透視，沒有文字、字母或數字圖案，沒有浮水印，
+16:9 橫向構圖，畫面填滿不留白，高解析度、寫實攝影風格。
+```
+**English：**
+```
+top-down photo of a kids room floor, camera straight down, soft pastel (pale blue,
+pale yellow, pale green, pale pink) interlocking foam play-mat squares with neat
+seams, a few wooden blocks and a small toy car in the corners, open flat mat in the
+center, soft bright indoor light, gentle realistic color, no animals, no insects, no
+people, no animal-shaped toys, no walls, no perspective, no letters, numbers or text,
+no watermark, 16:9, full-bleed, high resolution, photorealistic
+```
+
+**生成之後：** 存進 `image/backgroud/`，檔名照上面每一款的建議（英文 Title Case）。放好後跟我說，我會幫你加進 `config/scenes.json`（整個畫面設為地面 ground zone，讓爬行／走路的動物上場），再跑 `npm run prepare-assets`。

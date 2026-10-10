@@ -3,7 +3,7 @@ const fs = require("fs");
 const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 
 const { start } = require("./server");
-const { exportScene } = require("./electronExport");
+const { exportScene, joinVideos, encodeIntro } = require("./electronExport");
 
 const isDev = process.argv.includes("--dev");
 const smokeTestExport = process.argv.includes("--smoke-test-export");
@@ -231,6 +231,7 @@ app.whenReady().then(async () => {
 
   // Registered before the first window loads — the editor asks for it on startup.
   ipcMain.handle("export:defaultDir", () => app.getPath("videos"));
+  ipcMain.handle("intro:default", () => defaultIntroPath());
 
   mainWindow = await createEditorWindow(port);
 
@@ -248,11 +249,16 @@ app.whenReady().then(async () => {
   // window invoked it, so concurrent exports (from the same or different
   // editor windows) just run in parallel with no shared state between them.
   ipcMain.handle("export:run", async (event, sceneId, opts) => {
+    // Long-video pieces go to a temp folder (one per run), not the user's
+    // output folder — export:join assembles them and then deletes them.
+    const segment = !!opts?.segmentGroup;
     const result = await exportScene({
       port,
       sceneId,
-      outputDir: resolveOutputDir(opts?.outputDir),
+      outputDir: segment ? segmentDir(opts.segmentGroup) : resolveOutputDir(opts?.outputDir),
       gif: !!opts?.gif,
+      segment,
+      minDurationMs: Number(opts?.minDurationMs) || 0,
       layoutId: opts?.layoutId,
       name: opts?.name,
       onProgress: (frame, total, phase) => {
@@ -261,6 +267,36 @@ app.whenReady().then(async () => {
       },
     });
     return result;
+  });
+
+  // files: segment paths from export:run, in play order. The segments and
+  // their temp folder are removed once the joined video is written.
+  ipcMain.handle("export:join", async (event, segmentGroup, files, opts) => {
+    const dir = segmentDir(segmentGroup);
+    const inDir = (files || []).filter((f) => path.dirname(path.resolve(f)) === dir);
+    if (inDir.length === 0) throw new Error("No video segments to join.");
+    // introPath: optional opening video (片頭) played before the segments.
+    const intro = opts?.introPath ? await preparedIntro(opts.introPath) : null;
+    const result = await joinVideos({
+      files: intro ? [intro, ...inDir] : inDir,
+      outputDir: resolveOutputDir(opts?.outputDir),
+      name: opts?.name,
+    });
+    fs.rmSync(dir, { recursive: true, force: true });
+    return result;
+  });
+
+  ipcMain.handle("intro:choose", async (event, current) => {
+    const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
+      title: "Choose opening video (片頭)",
+      defaultPath: current || app.getPath("videos"),
+      properties: ["openFile"],
+      filters: [
+        { name: "Videos", extensions: ["mp4", "mov", "m4v", "mkv", "webm", "avi"] },
+        { name: "All files", extensions: ["*"] },
+      ],
+    });
+    return result.canceled ? null : result.filePaths[0];
   });
 
   ipcMain.handle("export:chooseDir", async (event, current) => {
@@ -299,6 +335,54 @@ function resolveOutputDir(dir) {
     throw new Error(`Output folder must be a full path (e.g. D:\Videos), got "${trimmed}"`);
   }
   return trimmed;
+}
+
+function segmentDir(segmentGroup) {
+  const safe = String(segmentGroup).replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!safe) throw new Error("Invalid segment group.");
+  return path.join(app.getPath("temp"), "pathanim-segments", safe);
+}
+
+// The opening video bundled in header/ (first video file found), or "" if
+// none. Packaged builds unpack header/ out of app.asar (see asarUnpack) so
+// ffmpeg can read it.
+function defaultIntroPath() {
+  const dir = path.join(__dirname.replace("app.asar", "app.asar.unpacked"), "header");
+  try {
+    const file = fs.readdirSync(dir).sort().find((f) => /\.(mp4|mov|m4v|mkv|webm|avi)$/i.test(f));
+    return file ? path.join(dir, file) : "";
+  } catch (err) {
+    return "";
+  }
+}
+
+// Opening videos re-encoded to the export format, cached by path + size +
+// modified time so a batch of videos (or a re-run) encodes each one once.
+const introJobs = new Map();
+function preparedIntro(introPath) {
+  const file = String(introPath).trim();
+  if (!path.isAbsolute(file) || !fs.existsSync(file)) {
+    return Promise.reject(new Error(`Opening video not found: "${file}"`));
+  }
+  const stat = fs.statSync(file);
+  const key = require("crypto").createHash("sha1").update(`${file}|${stat.size}|${stat.mtimeMs}`).digest("hex");
+  const cacheDir = path.join(app.getPath("temp"), "pathanim-segments", "intro-cache");
+  const out = path.join(cacheDir, `${key}.mp4`);
+  if (fs.existsSync(out)) return Promise.resolve(out);
+  if (!introJobs.has(key)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+    const tmp = path.join(cacheDir, `${key}.part.mp4`);
+    introJobs.set(
+      key,
+      encodeIntro(file, tmp)
+        .then(() => {
+          fs.renameSync(tmp, out);
+          return out;
+        })
+        .finally(() => introJobs.delete(key))
+    );
+  }
+  return introJobs.get(key);
 }
 
 app.on("window-all-closed", () => {

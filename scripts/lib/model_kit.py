@@ -53,6 +53,13 @@ def mat(name, color, rough=.6, alpha=1.0, image=None, metal=0.0):
     return m
 
 
+def set_color(m, color):
+    """Change a plain (untextured) material's color, e.g. to export a second
+    base color of the same rig (a black and a brown beetle)."""
+    m.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (*color, 1)
+    m.diffuse_color = (*color, m.diffuse_color[3])
+
+
 def _value_noise(size, cells):
     grid = np.random.rand(cells + 1, cells + 1)
     grid[-1, :] = grid[0, :]

@@ -674,6 +674,195 @@ def fish_school():
         L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.15, .35))
     return L
 
+
+def ant():
+    # Tiny, quick tripod ticks: barely-there pitter-patter.
+    rng = np.random.default_rng(311)
+    cycle, cycles = walk_loop(64)
+    L = Loop(cycle * cycles, 311)
+    for t in touchdowns(cycle, cycles, [0, .5], rng):
+        for k in range(3):
+            L.add(insect_tick(rng, 1.5), t + k * rng.uniform(.003, .007), rng.uniform(.35, .7))
+    return L
+
+
+def rhino_beetle():
+    # Heavy armoured steps: duller shell taps plus a short claw scrape.
+    rng = np.random.default_rng(313)
+    cycle, cycles = walk_loop(39)
+    L = Loop(cycle * cycles, 313)
+    for t in touchdowns(cycle, cycles, [0, .5], rng):
+        for k in range(3):
+            tap = shell_tap(rng) * .7
+            tick = insect_tick(rng, .7)
+            tap[:len(tick)] += tick
+            L.add(tap, t + k * rng.uniform(.01, .02), rng.uniform(.6, 1))
+        L.add(claw_scrape(rng), t + .02, .35)
+    return L
+
+
+def grasshopper():
+    # Light ticks, plus a short stridulation chirp (leg rasped on wing) now
+    # and then.
+    rng = np.random.default_rng(317)
+    cycle, cycles = walk_loop(45)
+    L = Loop(cycle * cycles, 317)
+    for t in touchdowns(cycle, cycles, [0, .5], rng):
+        L.add(insect_tick(rng, 1.0), t, 1)
+        L.add(insect_tick(rng, 1.0), t + rng.uniform(.01, .025), .6)
+    for c in range(0, cycles, 3):
+        t0 = c * cycle + .3 * cycle
+        for k in range(8):
+            L.add(burst(.012, 3500, 9000, .001, .004, rng), t0 + k * .022, .45)
+    return L
+
+
+def caterpillar():
+    # No feet to keep time with: a soft leafy hush with gentle squeezes as
+    # the body wave passes. Fixed rate like the snail (walkSound.fixedRate).
+    rng = np.random.default_rng(331)
+    L = Loop(4.0, 331)
+    L.bed(colored(L.n, 300, 2600, L.rng) * (.6 + .4 * periodic_lfo(L, 4)), .25)
+    for i in range(8):
+        t = i * .5 + rng.uniform(-.06, .06)
+        L.add(burst(.12, 300, 2000, .03, .04, rng), t, rng.uniform(.5, .8))
+        L.add(burst(.03, 2000, 6000, .001, .006, rng), t + .08, .15)
+    return L
+
+
+def wasp():
+    # Higher, thinner and more aggressive buzz than the honeybee.
+    L = Loop(4.0, 337)
+    x = buzz_bed(L, 160.0, 140, 5000, harmonics=20, drift=6.0)
+    L.bed(x * (1 + .25 * periodic_lfo(L, 3)), 1)
+    L.bed(colored(L.n, 500, 5500, L.rng), .07)
+    return L
+
+
+def tripod_ticks(stride, seed, per_set=3, bright=1.0, gain=(.5, 1.0), extra=None):
+    """Generic six-legged walk: a tripod of quick ticks twice per cycle."""
+    rng = np.random.default_rng(seed)
+    cycle, cycles = walk_loop(stride)
+    L = Loop(cycle * cycles, seed)
+    for t in touchdowns(cycle, cycles, [0, .5], rng):
+        for k in range(per_set):
+            L.add(insect_tick(rng, bright), t + k * rng.uniform(.004, .012), rng.uniform(*gain))
+        if extra:
+            extra(L, rng, t)
+    return L
+
+
+def stag_beetle():
+    def scrape(L, rng, t):
+        L.add(claw_scrape(rng), t + .015, .3)
+    return tripod_ticks(42, 341, bright=.7, gain=(.6, 1), extra=scrape)
+
+
+def cricket():
+    # Ticking steps under a bright, regular chirp (three pulses every second).
+    L = tripod_ticks(37, 343, per_set=2, bright=1.0)
+    t = 0.0
+    while t < L.seconds - .2:
+        for k in range(3):
+            n = int(.025 * SR)
+            L.add(np.sin(2 * np.pi * 4500 * np.arange(n) / SR) * env_ad(n, .003, .008), t + k * .045, .5)
+        t += 1.0
+    return L
+
+
+def stick_insect():
+    def rustle(L, rng, t):
+        L.add(burst(.1, 600, 3000, .02, .03, rng), t, .1)
+    return tripod_ticks(34, 347, per_set=2, bright=.7, gain=(.3, .6), extra=rustle)
+
+
+def scarab():
+    return tripod_ticks(62, 349, bright=1.2, gain=(.5, .9))
+
+
+def centipede():
+    # Dozens of feet: a dense, even patter instead of distinct sets.
+    rng = np.random.default_rng(353)
+    cycle, cycles = walk_loop(17, 4.0)
+    L = Loop(cycle * cycles, 353)
+    for _ in range(int(L.seconds * 70)):
+        L.add(insect_tick(rng, 1.4), rng.uniform(0, L.seconds), rng.uniform(.2, .55))
+    L.bed(colored(L.n, 1500, 6000, L.rng), .04)
+    return L
+
+
+def pill_bug():
+    rng = np.random.default_rng(359)
+    cycle, cycles = walk_loop(34)
+    L = Loop(cycle * cycles, 359)
+    for c in range(cycles):
+        for k in range(14):
+            L.add(insect_tick(rng, .9), (c + k / 14 + rng.uniform(-.01, .01)) * cycle, rng.uniform(.25, .5))
+    return L
+
+
+def shield_bug():
+    return tripod_ticks(58, 367, bright=.9, gain=(.45, .85))
+
+
+def mosquito():
+    # The thin high whine, swelling and fading as it circles.
+    L = Loop(4.0, 373)
+    x = buzz_bed(L, 520.0, 400, 7000, harmonics=12, drift=14.0)
+    L.bed(x * (.75 + .25 * periodic_lfo(L, 2)), 1)
+    return L
+
+
+def bumblebee():
+    # Deep, round, lazy drone.
+    L = Loop(4.0, 379)
+    L.bed(buzz_bed(L, 130.0, 90, 2500, harmonics=18, drift=4.0) * (1 + .15 * periodic_lfo(L, 2)), 1)
+    L.bed(colored(L.n, 150, 1500, L.rng), .06)
+    return L
+
+
+def damselfly():
+    period = 14 / 60
+    L, cycles = flap_loop(period, 4.0, 383)
+    L.bed(colored(L.n, 80, 700, L.rng) * (1 + .5 * periodic_lfo(L, cycles)), .3)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .1, 400, 2800), c * period, L.rng.uniform(.3, .5))
+    return L
+
+
+def rhino_beetle_flying():
+    # Heavy, low clattering hum of a big beetle.
+    L = Loop(4.0, 389)
+    L.bed(buzz_bed(L, 70.0, 55, 1400, harmonics=14, drift=2.0), 1)
+    L.bed(colored(L.n, 100, 1500, L.rng) * (1 + .4 * periodic_lfo(L, 24)), .15)
+    return L
+
+
+def swallowtail():
+    period = 30 / 60
+    L, cycles = flap_loop(period, 4.0, 397)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .26, 70, 600), c * period, L.rng.uniform(.6, 1))
+    return L
+
+
+def locust_flying():
+    # Papery wing clatter at the beat.
+    period = 10 / 60
+    L, cycles = flap_loop(period, 4.0, 401)
+    L.bed(colored(L.n, 300, 3500, L.rng) * (1 + .7 * periodic_lfo(L, cycles)), .35)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .07, 600, 4000), c * period, L.rng.uniform(.4, .6))
+    return L
+
+
+def lacewing():
+    period = 20 / 60
+    L, cycles = flap_loop(period, 4.0, 409)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .16, 150, 1500), c * period, L.rng.uniform(.5, .8))
+    return L
+
 # Output file, generator, and loudness target (RMS dBFS before the limiter's
 # ~+3 dB): quiet for small insects, louder for birds, frog and buzzing wings.
 SOUNDS = {
@@ -716,6 +905,25 @@ SOUNDS = {
     'moray-eel':     ('moray-eel-swim.wav',     moray_eel,            ('rms', -33)),
     'sea-snake':     ('sea-snake-swim.wav',     sea_snake,            ('rms', -34)),
     'fish-school':   ('fish-school-swim.wav',   fish_school,          ('rms', -33)),
+    'ant':           ('ant-walk.wav',           ant,                  ('rms', -40)),
+    'rhino-beetle':  ('rhino-beetle-walk.wav',  rhino_beetle,         ('rms', -34)),
+    'grasshopper':   ('grasshopper-walk.wav',   grasshopper,          ('rms', -36)),
+    'caterpillar':   ('caterpillar-walk.wav',   caterpillar,          ('rms', -36)),
+    'wasp':          ('wasp-fly.wav',           wasp,                 ('rms', -29)),
+    'stag-beetle':   ('stag-beetle-walk.wav',   stag_beetle,          ('rms', -34)),
+    'cricket':       ('cricket-walk.wav',       cricket,              ('rms', -33)),
+    'stick-insect':  ('stick-insect-walk.wav',  stick_insect,         ('rms', -39)),
+    'scarab':        ('scarab-walk.wav',        scarab,               ('rms', -37)),
+    'centipede':     ('centipede-walk.wav',     centipede,            ('rms', -36)),
+    'pill-bug':      ('pill-bug-walk.wav',      pill_bug,             ('rms', -39)),
+    'shield-bug':    ('shield-bug-walk.wav',    shield_bug,           ('rms', -38)),
+    'mosquito':      ('mosquito-fly.wav',       mosquito,             ('rms', -31)),
+    'bumblebee':     ('bumblebee-fly.wav',      bumblebee,            ('rms', -28)),
+    'damselfly':     ('damselfly-fly.wav',      damselfly,            ('rms', -35)),
+    'rhino-beetle-flying': ('rhino-beetle-flying-fly.wav', rhino_beetle_flying, ('rms', -30)),
+    'swallowtail':   ('swallowtail-fly.wav',    swallowtail,          ('rms', -36)),
+    'locust-flying': ('locust-flying-fly.wav',  locust_flying,        ('rms', -32)),
+    'lacewing':      ('lacewing-fly.wav',       lacewing,             ('rms', -38)),
 }
 
 

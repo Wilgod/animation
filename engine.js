@@ -369,7 +369,9 @@
       const after = getPositionAt(actor, tAfter);
       const dx = after.x - before.x;
       const dy = after.y - before.y;
-      flipped = actor.options.flip && dx < 0 && !(actor.model3d && actor.options.rotationFollowsPath);
+      // A top-down 3D model turns 180deg to head left; a side-angled one
+      // (snail, sparrow…) would end up upside down, so it mirrors instead.
+      flipped = actor.options.flip && dx < 0 && !(actor.model3d && !actor.model3d.angled && actor.options.rotationFollowsPath);
       if (actor.options.rotationFollowsPath) {
         angle = (flipped ? Math.atan2(dy, -dx) : Math.atan2(dy, dx)) + (rotationOffsetRad || 0);
       }

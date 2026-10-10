@@ -74,6 +74,14 @@
   const fxShuffleBtn = document.getElementById("fxShuffleBtn");
   const autoGenRandomOptionsEl = document.getElementById("autoGenRandomOptions");
   const autoGenCountEl = document.getElementById("autoGenCount");
+  const autoGenCountLabelEl = document.getElementById("autoGenCountLabel");
+  const autoGenJoinEl = document.getElementById("autoGenJoin");
+  const autoGenLengthHintEl = document.getElementById("autoGenLengthHint");
+  const autoGenIntroSectionEl = document.getElementById("autoGenIntroSection");
+  const autoGenIntroEl = document.getElementById("autoGenIntro");
+  const autoGenIntroPathEl = document.getElementById("autoGenIntroPath");
+  const autoGenIntroBrowseBtn = document.getElementById("autoGenIntroBrowseBtn");
+  const autoGenIntroHintEl = document.getElementById("autoGenIntroHint");
   const autoGenMaxAnimalsEl = document.getElementById("autoGenMaxAnimals");
   const autoGenCameraDriftEl = document.getElementById("autoGenCameraDrift");
   const autoGenBgLabelEl = document.getElementById("autoGenBgLabel");
@@ -1690,12 +1698,14 @@
   // template — see buildLayoutData) to the current scene: resets animals and
   // placed ornaments, then re-registers them as engine actors.
   async function applyLayoutData(saved) {
-    // Older 3D-only layouts used a separate ID. Yellow now uses that model.
-    if (saved && saved.activeAnimals?.includes('lizard-3d')) {
+    // Older layouts saved the yellow lizard as 'lizard-3d' or 'yellow'; it is
+    // now 'lizard-yellow'.
+    const legacyYellow = ['lizard-3d', 'yellow'].find(id => saved?.activeAnimals?.includes(id));
+    if (legacyYellow) {
       saved = {
         ...saved,
-        activeAnimals: [...new Set(saved.activeAnimals.map(id => id === 'lizard-3d' ? 'yellow' : id))],
-        animals: { ...saved.animals, yellow: saved.animals?.yellow || saved.animals?.['lizard-3d'] },
+        activeAnimals: [...new Set(saved.activeAnimals.map(id => id === 'lizard-3d' || id === 'yellow' ? 'lizard-yellow' : id))],
+        animals: { ...saved.animals, 'lizard-yellow': saved.animals?.['lizard-yellow'] || saved.animals?.[legacyYellow] },
       };
     }
     animalData = new Map();
@@ -2444,6 +2454,8 @@
     renderAutoGenBgList();
     autoGenGoBtn.textContent = window.electronAPI ? "Generate & Export" : "Generate & Save Paths";
     applyAutoGenMode();
+    updateAutoGenLengthHint();
+    updateAutoGenIntroHint();
     autoGenModalStatusEl.textContent = "";
     autoGenProgressListEl.innerHTML = "";
     autoGenOverlayEl.hidden = false;
@@ -2478,7 +2490,57 @@
   autoGenRandomEl.addEventListener("change", () => {
     if (autoGenRandomEl.checked) autoGenSecondsEl.value = 15;
     applyAutoGenMode();
+    updateAutoGenLengthHint();
+    updateAutoGenIntroHint();
   });
+
+  // "Join into one long video": the count becomes a number of screens (each
+  // `seconds` long) joined back to back, capped at AUTO_GEN_LONG_MAX_SECONDS
+  // in total — e.g. 240 screens x 15s = 1 hour, 480 x 15s = 2 hours.
+  const AUTO_GEN_MAX_VIDEOS = 50;
+  const AUTO_GEN_LONG_MAX_SECONDS = 2 * 60 * 60;
+
+  function autoGenSeconds() {
+    return Math.max(3, Math.min(120, Number(autoGenSecondsEl.value) || 8));
+  }
+
+  function autoGenMaxCount() {
+    return autoGenJoinEl.checked ? Math.floor(AUTO_GEN_LONG_MAX_SECONDS / autoGenSeconds()) : AUTO_GEN_MAX_VIDEOS;
+  }
+
+  function formatLength(totalSeconds) {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const sec = totalSeconds % 60;
+    return [h ? `${h}h` : "", m ? `${m}m` : "", sec || (!h && !m) ? `${sec}s` : ""].filter(Boolean).join(" ");
+  }
+
+  function updateAutoGenLengthHint() {
+    const join = autoGenJoinEl.checked;
+    const max = autoGenMaxCount();
+    autoGenCountEl.max = String(max);
+    autoGenCountLabelEl.textContent = join ? `Screens (up to ${max})` : "Videos to make";
+    if (!join) {
+      autoGenLengthHintEl.textContent = "";
+      return;
+    }
+    const count = Math.max(1, Math.min(max, Math.round(Number(autoGenCountEl.value) || 1)));
+    const seconds = autoGenSeconds();
+    autoGenLengthHintEl.textContent = `${count} screens × ${seconds}s = ${formatLength(count * seconds)} in one video.`;
+  }
+
+  autoGenJoinEl.addEventListener("change", () => {
+    updateAutoGenIntroHint();
+    if (autoGenJoinEl.checked) {
+      autoGenSecondsEl.value = 15;
+      autoGenCountEl.value = 240;
+    } else if (Number(autoGenCountEl.value) > AUTO_GEN_MAX_VIDEOS) {
+      autoGenCountEl.value = 5;
+    }
+    updateAutoGenLengthHint();
+  });
+  autoGenCountEl.addEventListener("input", updateAutoGenLengthHint);
+  autoGenSecondsEl.addEventListener("input", updateAutoGenLengthHint);
 
   function shuffled(list) {
     const a = [...list];
@@ -2536,6 +2598,7 @@
 
     const plan = [];
     let lastBg = null;
+    let lastAnimals = [];
     for (let v = 0; v < count; v++) {
       if (allKeys.every((k) => used.has(k))) {
         // Pool used up: forget earlier runs' use of it, keeping this run's
@@ -2548,8 +2611,12 @@
       const bgOrder = shuffled(bgPool).sort((a, b) => (a === lastBg) - (b === lastBg));
       let job = null;
       for (const sceneId of bgOrder) {
-        const fresh = combosByBg.get(sceneId).filter((c) => !used.has(keyOf(sceneId, c)));
+        let fresh = combosByBg.get(sceneId).filter((c) => !used.has(keyOf(sceneId, c)));
         if (fresh.length === 0) continue;
+        // Prefer animals that weren't in the previous video, so back-to-back
+        // screens of a long video never show the same animal twice in a row.
+        const notLast = fresh.filter((c) => !c.some((id) => lastAnimals.includes(id)));
+        if (notLast.length > 0) fresh = notLast;
         // Choose the animal count evenly rather than by how many
         // combinations each count has (pairs vastly outnumber singles).
         const sizes = [...new Set(fresh.map((c) => c.length))];
@@ -2563,17 +2630,20 @@
       used.add(job.key);
       plan.push(job);
       lastBg = job.sceneId;
+      lastAnimals = job.animals;
     }
     // Earlier history entries that survived any restart above.
     return { plan, history: history.filter((k) => used.has(k)) };
   }
 
-  async function runRandomMix(animalPool, bgPool, seconds) {
+  // introPath: opening video (片頭) to put first, or null for none.
+  async function runRandomMix(animalPool, bgPool, seconds, introPath = null) {
     if (!window.electronAPI) {
       autoGenModalStatusEl.textContent = "Random mix renders videos, so it needs the desktop app or the packaged .exe.";
       return;
     }
-    const count = Math.max(1, Math.min(50, Math.round(Number(autoGenCountEl.value) || 1)));
+    const join = autoGenJoinEl.checked;
+    const count = Math.max(1, Math.min(autoGenMaxCount(), Math.round(Number(autoGenCountEl.value) || 1)));
     const maxAnimals = Math.max(1, Math.min(4, Math.round(Number(autoGenMaxAnimalsEl.value) || 1)));
     const totalMs = seconds * 1000;
     const category = autoGenCategoryEl.value;
@@ -2589,8 +2659,12 @@
       return;
     }
     const confirmed = await confirmDialog(
-      `This makes ${plan.length} video(s), ${seconds}s each, with random backgrounds, animals and paths. ` +
-        `Your saved scene layouts are not changed. Continue?`
+      join
+        ? `This makes one ${formatLength(plan.length * seconds)} video: ${plan.length} screens of ${seconds}s, each with a ` +
+            `new random background, animals and paths. Rendering takes a long time and needs free disk space. ` +
+            `Your saved scene layouts are not changed.${introConfirmText(introPath, true)} Continue?`
+        : `This makes ${plan.length} video(s), ${seconds}s each, with random backgrounds, animals and paths. ` +
+            `Your saved scene layouts are not changed.${introConfirmText(introPath, false)} Continue?`
     );
     if (!confirmed) return;
 
@@ -2607,6 +2681,10 @@
     renderAutoGenProgressRows(jobs.map((j) => ({ key: j.rowKey, label: j.label })));
 
     const succeeded = [];
+    // Join mode: each video is a segment of the long one, padded to exactly
+    // `seconds` and kept in a temp folder until they're all joined in order.
+    const segmentGroup = join ? `long-${runId}` : null;
+    const segmentFiles = new Array(jobs.length).fill(null);
     async function renderOne(job, i) {
       setAutoGenRowStatus(job.rowKey, "Generating path…", "info");
       const layout = buildAutoLayoutForScene(job.sceneId, job.animals, totalMs, job.zones);
@@ -2622,13 +2700,15 @@
         setAutoGenRowStatus(job.rowKey, exportProgressText(frame, total, phase), "info");
       });
       try {
-        const result = await exportVideo(job.sceneId, {
+        const result = await exportWithIntro(job.sceneId, {
           gif: false,
           layoutId: job.rowKey,
           progressKey: job.rowKey,
-          name: `${sceneLabel(job.sceneId)}-${job.animals.map(animalName).join("-")}`,
-        });
-        setAutoGenRowStatus(job.rowKey, `Done: ${result.outputFile}`, "done");
+          name: join ? `segment-${String(i + 1).padStart(4, "0")}` : `${sceneLabel(job.sceneId)}-${job.animals.map(animalName).join("-")}`,
+          ...(join ? { segmentGroup, minDurationMs: totalMs } : {}),
+        }, join ? null : introPath);
+        segmentFiles[i] = result.outputFile;
+        setAutoGenRowStatus(job.rowKey, join ? "Done." : `Done: ${result.outputFile}`, "done");
         succeeded.push(job.key);
       } finally {
         exportProgressRoutes.delete(job.rowKey);
@@ -2641,11 +2721,15 @@
     async function worker() {
       while (next < jobs.length) {
         const i = next++;
-        try {
-          await renderOne(jobs[i], i);
-          ok[i] = true;
-        } catch (err) {
-          setAutoGenRowStatus(jobs[i].rowKey, "Failed: " + (err?.message || String(err)), "error");
+        // A long video is hours of work, so give a failed screen one retry
+        // before leaving it out.
+        for (let attempt = 1; attempt <= (join ? 2 : 1) && !ok[i]; attempt++) {
+          try {
+            await renderOne(jobs[i], i);
+            ok[i] = true;
+          } catch (err) {
+            setAutoGenRowStatus(jobs[i].rowKey, "Failed: " + (err?.message || String(err)), "error");
+          }
         }
       }
     }
@@ -2665,11 +2749,29 @@
     const failCount = ok.filter((v) => !v).length;
     const summaryEl = document.createElement("p");
     summaryEl.className = "status";
-    summaryEl.textContent =
-      failCount === 0
-        ? `All ${jobs.length} video(s) generated.`
-        : `${jobs.length - failCount}/${jobs.length} succeeded, ${failCount} failed.`;
-    autoGenProgressListEl.appendChild(summaryEl);
+    if (join) {
+      const files = segmentFiles.filter(Boolean);
+      summaryEl.textContent = `Joining ${files.length} screens into one video…`;
+      autoGenProgressListEl.appendChild(summaryEl);
+      try {
+        const result = await window.electronAPI.joinSegments(segmentGroup, files, {
+          outputDir: outputDirInput.value.trim(),
+          name: `long-video-${formatLength(files.length * seconds).replace(/\s+/g, "")}`,
+          introPath,
+        });
+        summaryEl.textContent =
+          `Done: ${result.outputFile} (${formatLength(files.length * seconds)})` +
+          (failCount ? ` — ${failCount} screen(s) failed and were left out.` : "");
+      } catch (err) {
+        summaryEl.textContent = "Joining failed: " + (err?.message || String(err));
+      }
+    } else {
+      summaryEl.textContent =
+        failCount === 0
+          ? `All ${jobs.length} video(s) generated.`
+          : `${jobs.length - failCount}/${jobs.length} succeeded, ${failCount} failed.`;
+      autoGenProgressListEl.appendChild(summaryEl);
+    }
     setExportUIState(false);
   }
 
@@ -2685,9 +2787,14 @@
       return;
     }
 
-    const seconds = Math.max(3, Math.min(120, Number(autoGenSecondsEl.value) || 8));
+    const seconds = autoGenSeconds();
+    const introPath = window.electronAPI && autoGenIntroEl.checked ? autoGenIntroPathEl.value.trim() : null;
+    if (introPath === "") {
+      autoGenModalStatusEl.textContent = 'Choose the opening video (片頭), or untick "Add opening video".';
+      return;
+    }
     if (autoGenRandomEl.checked) {
-      await runRandomMix(selectedAnimalIds, sceneIds, seconds);
+      await runRandomMix(selectedAnimalIds, sceneIds, seconds, introPath);
       return;
     }
     const totalMs = seconds * 1000;
@@ -2696,7 +2803,7 @@
     const confirmed = await confirmDialog(
       canExport
         ? `This generates and overwrites the saved layout for ${sceneIds.length} background(s), then exports ` +
-          `${sceneIds.length} video(s) at ${seconds}s each. Continue?`
+          `${sceneIds.length} video(s) at ${seconds}s each.${introConfirmText(introPath, false)} Continue?`
         : `This generates and overwrites the saved layout for ${sceneIds.length} background(s) at ${seconds}s ` +
           `each. No video file is produced here — open the desktop app to render them. Continue?`
     );
@@ -2729,7 +2836,7 @@
         setAutoGenRowStatus(sceneId, exportProgressText(frame, total, phase), "info");
       });
       try {
-        const result = await exportVideo(sceneId, { gif: false });
+        const result = await exportWithIntro(sceneId, { gif: false }, introPath);
         setAutoGenRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
         return result;
       } finally {
@@ -2806,7 +2913,64 @@
   // phase: "capture" while frames are being rendered, "encode" while ffmpeg
   // turns them into the MP4 (see electronExport.js's exportScene).
   function exportProgressText(frame, total, phase) {
+    if (phase === "intro") return "Adding opening video…";
     return phase === "encode" ? `Encoding video ${frame}/${total}…` : `Rendering frame ${frame}/${total}…`;
+  }
+
+  // Exports one video, with the opening video (片頭) joined in front when
+  // introPath is set: the scene is rendered as a segment (uniform audio, in
+  // a temp folder) and export:join writes the final file to the output
+  // folder. Callers that already render segments pass introPath = null.
+  async function exportWithIntro(sceneId, opts, introPath) {
+    if (!introPath || opts.segmentGroup) return exportVideo(sceneId, opts);
+    const segmentGroup = `intro-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const rendered = await exportVideo(sceneId, { ...opts, segmentGroup });
+    exportProgressRoutes.get(opts.progressKey || sceneId)?.(0, 0, "intro");
+    return window.electronAPI.joinSegments(segmentGroup, [rendered.outputFile], {
+      outputDir: outputDirInput.value.trim(),
+      name: opts.name || sceneLabel(sceneId),
+      introPath,
+    });
+  }
+
+  function introConfirmText(introPath, once) {
+    if (!introPath) return "";
+    const name = introPath.split(/[\\/]/).pop();
+    return once ? ` The opening video "${name}" plays first.` : ` Every video starts with the opening video "${name}".`;
+  }
+
+  function updateAutoGenIntroHint() {
+    autoGenIntroHintEl.textContent = autoGenJoinEl.checked && autoGenRandomEl.checked
+      ? "Plays once at the start of the long video. Any size works — it's fitted to 4K."
+      : "Every generated video starts with it. Any size works — it's fitted to 4K.";
+  }
+
+  // The opening-video choice is remembered per machine; first run defaults
+  // to the video bundled in the header/ folder (if any).
+  const INTRO_STORAGE_KEY = "pathAnimator.intro";
+
+  function saveIntroSettings() {
+    try {
+      localStorage.setItem(INTRO_STORAGE_KEY, JSON.stringify({ enabled: autoGenIntroEl.checked, path: autoGenIntroPathEl.value.trim() }));
+    } catch (err) { /* not persisted */ }
+  }
+
+  async function initIntro() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(INTRO_STORAGE_KEY) || "null"); } catch (err) { /* use default */ }
+    const defaultPath = await window.electronAPI.defaultIntroPath();
+    autoGenIntroPathEl.value = saved?.path || defaultPath;
+    autoGenIntroEl.checked = saved ? !!saved.enabled : !!defaultPath;
+    autoGenIntroSectionEl.hidden = false;
+    autoGenIntroEl.addEventListener("change", saveIntroSettings);
+    autoGenIntroPathEl.addEventListener("change", saveIntroSettings);
+    autoGenIntroBrowseBtn.addEventListener("click", async () => {
+      const file = await window.electronAPI.chooseIntroFile(autoGenIntroPathEl.value.trim());
+      if (!file) return;
+      autoGenIntroPathEl.value = file;
+      autoGenIntroEl.checked = true;
+      saveIntroSettings();
+    });
   }
 
   function exportVideo(sceneId, opts) {
@@ -2827,6 +2991,7 @@
     exportBtn.hidden = false;
     outputDirRowEl.hidden = false;
     initOutputDir();
+    initIntro();
     openConfigBtn.hidden = false;
     openConfigBtn.addEventListener("click", () => window.electronAPI.openConfigFile());
     newWindowBtn.hidden = false;

@@ -26,7 +26,11 @@ foot = loft('Pale sole edge', [(-1.67,.075,.01,.015),(-1.35,.09,.19,.045),
 
 # A swept logarithmic spiral, widening into the final body whorl. Fine
 # corrugations follow growth; pigment bands follow the length of the coil.
-shell = pivot('Shell sway', (-.35, 0, .91))
+# The coil is tipped back so its spiral faces the overhead camera (scenes
+# are viewed top-down), apex up, the way a garden snail's shell reads from above.
+shell_tilt = pivot('Shell tilt', (-.35, 0, .60))
+shell_tilt.rotation_euler = (-1.2, 0, 0)
+shell = pivot('Shell sway', (0, 0, 0), shell_tilt)
 verts, faces, material_ids = [], [], []
 steps, sides = 360, 48
 turns = math.tau * 2.55

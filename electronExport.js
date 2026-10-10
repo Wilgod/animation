@@ -229,7 +229,7 @@ function setContentSizeReliably(win, width, height) {
   }
 }
 
-async function captureFrames({ port, sceneId, layoutId, framesDir, onProgress }) {
+async function captureFrames({ port, sceneId, layoutId, framesDir, minDurationMs = 0, onProgress }) {
   // Created small and offscreen, then grown via setContentSize() below —
   // Windows caps a *newly created* window (even a hidden/offscreen one) to
   // roughly the monitor's resolution when a size is requested directly in
@@ -290,7 +290,10 @@ async function captureFrames({ port, sceneId, layoutId, framesDir, onProgress })
         return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) }; })()`
     );
 
-    const frameCount = Math.max(1, Math.round((totalMs / 1000) * FPS));
+    // minDurationMs: long-video segments are padded to their full slot
+    // length (animals have already walked off by then) so every segment of
+    // a joined video lasts exactly as long as asked.
+    const frameCount = Math.max(1, Math.round((Math.max(totalMs, minDurationMs) / 1000) * FPS));
 
     for (let i = 0; i < frameCount; i++) {
       const t = (i * 1000) / FPS;
@@ -331,11 +334,23 @@ async function captureFrames({ port, sceneId, layoutId, framesDir, onProgress })
   }
 }
 
-function encodeVideo(framesDir, outputFile, audioPath, frameCount, onProgress) {
+// segment: a piece of a joined long video. Every segment must have
+// identical stream layouts for the concat step to copy them without
+// re-encoding, so it always gets a 48 kHz stereo AAC track (silence when the
+// scene has no sound) padded/trimmed to exactly the video's length.
+function encodeVideo(framesDir, outputFile, audioPath, frameCount, onProgress, { segment = false } = {}) {
   return new Promise((resolve, reject) => {
     const cmd = ffmpeg().input(path.join(framesDir, "frame_%05d.jpg")).inputFPS(FPS);
     const outputOptions = ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-r", String(FPS)];
-    if (audioPath) {
+    if (segment) {
+      if (audioPath) cmd.input(audioPath);
+      else cmd.input("anullsrc=r=48000:cl=stereo").inputFormat("lavfi");
+      outputOptions.push(
+        "-map", "0:v:0", "-map", "1:a:0",
+        "-af", "apad", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
+        "-t", (frameCount / FPS).toFixed(3)
+      );
+    } else if (audioPath) {
       cmd.input(audioPath);
       outputOptions.push("-map", "0:v:0", "-map", "1:a:0", "-c:a", "aac", "-b:a", "192k", "-shortest");
     }
@@ -402,7 +417,8 @@ function reserveOutputPath(outputDir, base, ext) {
 // gif: also produce a palette-optimized GIF alongside the MP4
 // onProgress(frame, total, phase): optional progress callback; phase is
 // "capture" while rendering frames, then "encode" while ffmpeg builds the MP4
-async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = false, onProgress }) {
+// minDurationMs / segment: see captureFrames / encodeVideo (long-video pieces)
+async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = false, minDurationMs = 0, segment = false, onProgress }) {
   const framesDir = fs.mkdtempSync(path.join(os.tmpdir(), "pathanim-frames-"));
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -413,12 +429,13 @@ async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = fal
         sceneId,
         layoutId,
         framesDir,
+        minDurationMs,
         onProgress: (frame, total) => onProgress?.(frame, total, "capture"),
       });
 
       const base = `${safeFileName(name || sceneId)}-${timestampSuffix()}`;
       const outputFile = reserveOutputPath(outputDir, base, ".mp4");
-      await encodeVideo(framesDir, outputFile, audioPath, frameCount, onProgress);
+      await encodeVideo(framesDir, outputFile, audioPath, frameCount, onProgress, { segment });
 
       let outputGif = null;
       if (gif) {
@@ -433,4 +450,62 @@ async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = fal
   }
 }
 
-module.exports = { exportScene };
+// Joins long-video segments (all encoded with segment: true, so their
+// streams match) into one MP4 without re-encoding — a 2-hour 4K video is
+// joined in about the time it takes to copy the files.
+function joinVideos({ files, outputDir, name }) {
+  fs.mkdirSync(outputDir, { recursive: true });
+  const outputFile = reserveOutputPath(outputDir, `${safeFileName(name || "long-video")}-${timestampSuffix()}`, ".mp4");
+  const listFile = path.join(os.tmpdir(), `pathanim-concat-${process.pid}-${Date.now()}.txt`);
+  fs.writeFileSync(listFile, files.map((f) => `file '${f.replace(/\\/g, "/").replace(/'/g, "'\\''")}'`).join("\n"));
+  return new Promise((resolve, reject) => {
+    ffmpeg()
+      .input(listFile)
+      .inputOptions(["-f", "concat", "-safe", "0"])
+      .outputOptions(["-c", "copy", "-movflags", "+faststart"])
+      .on("error", reject)
+      .on("end", () => resolve({ outputFile }))
+      .save(outputFile);
+  }).finally(() => fs.rmSync(listFile, { force: true }));
+}
+
+// Whether a media file has an audio track. ffmpeg-static ships no ffprobe,
+// so read it from `ffmpeg -i`'s stream listing instead.
+function hasAudioStream(file) {
+  return new Promise((resolve, reject) => {
+    const proc = require("child_process").spawn(ffmpegPath, ["-hide_banner", "-i", file]);
+    let stderr = "";
+    proc.stderr.on("data", (d) => (stderr += d));
+    proc.on("error", reject);
+    proc.on("close", () => {
+      if (!/Stream #.*Video:/.test(stderr)) reject(new Error(`Not a video file: ${file}`));
+      else resolve(/Stream #.*Audio:/.test(stderr));
+    });
+  });
+}
+
+// Re-encodes an opening video (片頭) of any size/frame rate into the same
+// format as segment-encoded exports (4K 60fps H.264 + 48 kHz stereo AAC), so
+// joinVideos can put it in front of them. Letterboxed, never stretched.
+async function encodeIntro(inputFile, outputFile) {
+  const withAudio = await hasAudioStream(inputFile);
+  return new Promise((resolve, reject) => {
+    const cmd = ffmpeg().input(inputFile);
+    if (!withAudio) cmd.input("anullsrc=r=48000:cl=stereo").inputFormat("lavfi");
+    const vf =
+      `scale=${CANVAS_WIDTH}:${CANVAS_HEIGHT}:force_original_aspect_ratio=decrease:flags=lanczos,` +
+      `pad=${CANVAS_WIDTH}:${CANVAS_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,setsar=1,fps=${FPS}`;
+    cmd
+      .outputOptions([
+        "-map", "0:v:0", "-map", withAudio ? "0:a:0" : "1:a:0",
+        "-vf", vf, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-r", String(FPS),
+        "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
+        ...(withAudio ? [] : ["-shortest"]),
+      ])
+      .on("error", reject)
+      .on("end", resolve)
+      .save(outputFile);
+  });
+}
+
+module.exports = { exportScene, joinVideos, encodeIntro };

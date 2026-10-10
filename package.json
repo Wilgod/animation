@@ -31,7 +31,8 @@
     "appId": "com.example.pathanimator",
     "productName": "Path Animator",
     "asarUnpack": [
-      "node_modules/ffmpeg-static/**"
+      "node_modules/ffmpeg-static/**",
+      "header/**"
     ],
     "files": [
       "main.js",
@@ -49,6 +50,7 @@
       "assets/**/*",
       "model/**/*.glb",
       "audio/**/*",
+      "header/**/*",
       "node_modules/**/*",
       "scripts/lib/scenesConfig.js",
       "scripts/lib/zones.js",

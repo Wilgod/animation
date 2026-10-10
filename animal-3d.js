@@ -140,5 +140,5 @@ export async function loadAnimal3D(url, color = null, options = {}) {
     renderer.dispose();
     renderer.forceContextLoss();
   }
-  return { render, dispose, canvas: renderer.domElement, mixer, model: alignment };
+  return { render, dispose, canvas: renderer.domElement, mixer, model: alignment, angled: options.modelView === 'angled' };
 }
