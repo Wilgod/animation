@@ -2694,6 +2694,54 @@
     return out;
   }
 
+  const RANDOM_MIX_ENUMERATE_LIMIT = 20000;
+
+  function binomial(n, k) {
+    let r = 1;
+    for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i;
+    return Math.round(r);
+  }
+
+  // `size` random distinct ids from `ids`, sorted.
+  function randomPick(ids, size) {
+    return shuffled(ids).slice(0, size).sort();
+  }
+
+  // planRandomMix for pools too large to list: same rules (background
+  // first, avoid the previous background and animals, animal count chosen
+  // evenly, no reused combination), but each screen's animals are drawn at
+  // random and redrawn if that combination was already used.
+  function sampleRandomMix(count, bgPool, groupsByBg, zonesByBg, used, keyOf, minSize, maxAnimals) {
+    const plan = [];
+    let lastBg = null;
+    let lastAnimals = [];
+    for (let v = 0; v < count; v++) {
+      const bgOrder = shuffled(bgPool).sort((a, b) => (a === lastBg) - (b === lastBg));
+      let job = null;
+      for (let attempt = 0; attempt < 200 && !job; attempt++) {
+        const sceneId = bgOrder[attempt % bgOrder.length];
+        const groups = groupsByBg.get(sceneId);
+        if (groups.length === 0) continue;
+        const group = groups[Math.floor(Math.random() * groups.length)];
+        // Early attempts leave out the previous screen's animals.
+        const fresh = group.filter((id) => !lastAnimals.includes(id));
+        const pool = attempt < 100 && fresh.length >= minSize ? fresh : group;
+        const top = Math.min(maxAnimals, pool.length);
+        const size = minSize + Math.floor(Math.random() * (top - minSize + 1));
+        const animals = randomPick(pool, size);
+        const key = keyOf(sceneId, animals);
+        if (used.has(key)) continue;
+        job = { sceneId, animals, key, zones: zonesByBg.get(sceneId) };
+      }
+      if (!job) break;
+      used.add(job.key);
+      plan.push(job);
+      lastBg = job.sceneId;
+      lastAnimals = job.animals;
+    }
+    return plan;
+  }
+
   // Plans `count` videos for the random mix. Each gets a random background
   // from the pool and 1..maxAnimals random animals that can live there,
   // never reusing a background+animals combination already used in this
@@ -2711,12 +2759,30 @@
     }
     const used = new Set(history);
 
-    const combosByBg = new Map();
+    // Animal groups per background (one group of every eligible animal, or
+    // one per same-model group for "variants") and the allowed sizes.
+    const minSize = category === "variants" ? 2 : 1;
+    const groupsByBg = new Map();
     for (const sceneId of bgPool) {
       const eligible = animalPool.filter((id) => isHabitatAvailableInScene(habitatFor(id), zonesByBg.get(sceneId)));
-      combosByBg.set(sceneId, category === "variants" ? variantCombos(eligible, maxAnimals) : animalCombos(eligible, maxAnimals));
+      const groups = category === "variants" ? variantGroups(eligible) : [eligible];
+      groupsByBg.set(sceneId, groups.filter((g) => g.length >= minSize).map((g) => [...g].sort()));
     }
     const keyOf = (sceneId, animals) => `${sceneId}|${animals.join("+")}`;
+    const comboCount = [...groupsByBg.values()].flat().reduce((sum, g) => {
+      for (let k = minSize; k <= Math.min(maxAnimals, g.length); k++) sum += binomial(g.length, k);
+      return sum;
+    }, 0);
+    // Listing every combination freezes the app for large pools (e.g. 100
+    // animals x up to 4 per screen is millions), so those are sampled.
+    if (comboCount > RANDOM_MIX_ENUMERATE_LIMIT) {
+      return { plan: sampleRandomMix(count, bgPool, groupsByBg, zonesByBg, used, keyOf, minSize, maxAnimals), history };
+    }
+
+    const combosByBg = new Map();
+    for (const [sceneId, groups] of groupsByBg) {
+      combosByBg.set(sceneId, category === "variants" ? groups.flatMap((g) => variantCombos(g, maxAnimals)) : animalCombos(groups[0] || [], maxAnimals));
+    }
     const allKeys = [...combosByBg].flatMap(([sceneId, combos]) => combos.map((c) => keyOf(sceneId, c)));
     if (allKeys.length === 0) return { plan: [], history };
 
