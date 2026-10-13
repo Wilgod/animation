@@ -88,6 +88,14 @@
   const autoGenAnimalLabelEl = document.getElementById("autoGenAnimalLabel");
   const autoGenCategoryEl = document.getElementById("autoGenCategory");
   const autoGenCategoryHintEl = document.getElementById("autoGenCategoryHint");
+  const autoGenScreensSectionEl = document.getElementById("autoGenScreensSection");
+  const autoGenScreensDirEl = document.getElementById("autoGenScreensDir");
+  const autoGenScreensBrowseBtn = document.getElementById("autoGenScreensBrowseBtn");
+  const autoGenUseSavedEl = document.getElementById("autoGenUseSaved");
+  const longJobResumeEl = document.getElementById("longJobResume");
+  const longJobResumeTextEl = document.getElementById("longJobResumeText");
+  const longJobContinueBtn = document.getElementById("longJobContinueBtn");
+  const longJobDiscardBtn = document.getElementById("longJobDiscardBtn");
   const configStatusEl = document.getElementById("configStatus");
   const animalListEl = document.getElementById("animalList");
   const ornamentListEl = document.getElementById("ornamentList");
@@ -296,6 +304,8 @@
       ornamentShadowToggleEl,
       exportBtn,
       autoGenerateBtn,
+      longJobContinueBtn,
+      longJobDiscardBtn,
       outputDirInput,
       outputDirBrowseBtn,
     ].forEach((el) => (el.disabled = exporting));
@@ -1135,9 +1145,11 @@
   // confirm() is a real OS-blocking dialog there — this in-page modal works
   // identically in the packaged app and the plain browser dev workflow.
   // withInput: show a text field (prompt-style) vs. just OK/Cancel (confirm-style).
-  function showModal(message, { withInput = false, defaultValue = "" } = {}) {
+  function showModal(message, { withInput = false, defaultValue = "", okText = "OK", cancelText = "Cancel" } = {}) {
     return new Promise((resolve) => {
       modalMessageEl.textContent = message;
+      modalOkBtn.textContent = okText;
+      modalCancelBtn.textContent = cancelText;
       modalInputEl.hidden = !withInput;
       modalInputEl.value = defaultValue;
       modalOverlayEl.hidden = false;
@@ -2400,9 +2412,33 @@
   }
 
   // rows: [{ key, label }] — key addresses the row in setAutoGenRowStatus.
+  // A counter above the rows shows how many videos are done, in progress
+  // and still waiting, so a long run (e.g. 480 screens) is easy to follow.
+  const autoGenRowKinds = new Map();
+  let autoGenCounterEl = null;
+
+  function updateAutoGenCounter() {
+    if (!autoGenCounterEl) return;
+    let done = 0, working = 0, failed = 0;
+    for (const kind of autoGenRowKinds.values()) {
+      if (kind === "done") done++;
+      else if (kind === "info") working++;
+      else if (kind === "error") failed++;
+    }
+    const waiting = autoGenRowKinds.size - done - working - failed;
+    autoGenCounterEl.textContent =
+      `Done ${done} / ${autoGenRowKinds.size} · In progress ${working} · Waiting ${waiting}` +
+      (failed ? ` · Failed ${failed}` : "");
+  }
+
   function renderAutoGenProgressRows(rows) {
     autoGenProgressListEl.innerHTML = "";
+    autoGenRowKinds.clear();
+    autoGenCounterEl = document.createElement("div");
+    autoGenCounterEl.className = "autogen-progress-counter";
+    autoGenProgressListEl.appendChild(autoGenCounterEl);
     rows.forEach(({ key, label: text }) => {
+      autoGenRowKinds.set(key, "queued");
       const row = document.createElement("div");
       row.className = "scene-progress-row";
 
@@ -2418,6 +2454,7 @@
 
       autoGenProgressListEl.appendChild(row);
     });
+    updateAutoGenCounter();
   }
 
   function setAutoGenRowStatus(sceneId, text, kind) {
@@ -2425,6 +2462,10 @@
     if (!el) return;
     el.textContent = text;
     el.className = "scene-progress-status" + (kind ? ` ${kind}` : "");
+    if (autoGenRowKinds.has(sceneId)) {
+      autoGenRowKinds.set(sceneId, kind || "queued");
+      updateAutoGenCounter();
+    }
   }
 
   // The plain browser dev workflow (npm start, no window.electronAPI) has no
@@ -2483,9 +2524,36 @@
     }
     applyAutoGenCategory();
     updateAutoGenBgHint();
+    applyAutoGenSavedMode();
   }
 
-  autoGenCategoryEl.addEventListener("change", applyAutoGenCategory);
+  // Long videos keep their screens in the screens folder; "Use saved
+  // screens" joins some of those instead of rendering, so the animal,
+  // background, length and per-screen options don't apply then.
+  function useSavedScreens() {
+    return !!window.electronAPI && autoGenRandomEl.checked && autoGenJoinEl.checked && autoGenUseSavedEl.checked;
+  }
+
+  function applyAutoGenSavedMode() {
+    autoGenScreensSectionEl.hidden = !(window.electronAPI && autoGenRandomEl.checked && autoGenJoinEl.checked);
+    const saved = useSavedScreens();
+    for (const el of [
+      autoGenAnimalSelectEl.closest("label"),
+      autoGenBgSelectEl.closest("label"),
+      autoGenBgCountHintEl,
+      autoGenSecondsEl.closest("label"),
+      autoGenMaxAnimalsEl.closest("label"),
+      autoGenCameraDriftEl.closest("label"),
+    ]) {
+      el.hidden = saved;
+    }
+    if (saved) refreshSavedScreens();
+  }
+
+  autoGenCategoryEl.addEventListener("change", () => {
+    applyAutoGenCategory();
+    if (useSavedScreens()) refreshSavedScreens();
+  });
 
   autoGenRandomEl.addEventListener("change", () => {
     if (autoGenRandomEl.checked) autoGenSecondsEl.value = 15;
@@ -2505,7 +2573,43 @@
   }
 
   function autoGenMaxCount() {
+    if (useSavedScreens()) return Math.max(1, savedScreens.length);
     return autoGenJoinEl.checked ? Math.floor(AUTO_GEN_LONG_MAX_SECONDS / autoGenSeconds()) : AUTO_GEN_MAX_VIDEOS;
+  }
+
+  // Screens folder sub-folders. A screen goes to sky / ground / sea when
+  // all its animals live there, otherwise to mixed.
+  const SCREEN_FOLDERS = ["sky", "ground", "sea", "mixed"];
+  const SCREEN_FOLDERS_BY_CATEGORY = { sea: ["sea"], ground: ["ground"], air: ["sky"] };
+
+  function screenFolderFor(animalIds) {
+    const habitats = new Set(animalIds.map(habitatFor));
+    if (habitats.size !== 1) return "mixed";
+    return { water: "sea", air: "sky", ground: "ground" }[[...habitats][0]] || "mixed";
+  }
+
+  function screensDirValue() {
+    return autoGenScreensDirEl.value.trim();
+  }
+
+  // Saved screens for the current category: [{ file, folder, seconds }].
+  let savedScreens = [];
+  let savedScreensRequest = 0;
+  async function refreshSavedScreens() {
+    const request = ++savedScreensRequest;
+    autoGenLengthHintEl.textContent = "Looking for saved screens…";
+    const folders = SCREEN_FOLDERS_BY_CATEGORY[autoGenCategoryEl.value] || SCREEN_FOLDERS;
+    let found = [];
+    try {
+      found = await window.electronAPI.listScreens(screensDirValue(), folders);
+    } catch (err) {
+      found = [];
+    }
+    if (request !== savedScreensRequest) return savedScreens;
+    savedScreens = found;
+    if (useSavedScreens() && Number(autoGenCountEl.value) > found.length) autoGenCountEl.value = Math.max(1, found.length);
+    updateAutoGenLengthHint();
+    return savedScreens;
   }
 
   function formatLength(totalSeconds) {
@@ -2519,6 +2623,21 @@
     const join = autoGenJoinEl.checked;
     const max = autoGenMaxCount();
     autoGenCountEl.max = String(max);
+    if (useSavedScreens()) {
+      const folders = (SCREEN_FOLDERS_BY_CATEGORY[autoGenCategoryEl.value] || SCREEN_FOLDERS).join(" / ");
+      const total = savedScreens.reduce((sum, f) => sum + f.seconds, 0);
+      autoGenCountLabelEl.textContent = `Saved screens to use (up to ${savedScreens.length})`;
+      if (savedScreens.length === 0) {
+        autoGenLengthHintEl.textContent = `No saved screens in the ${folders} folder(s) yet.`;
+        return;
+      }
+      const count = Math.max(1, Math.min(max, Math.round(Number(autoGenCountEl.value) || 1)));
+      const average = total / savedScreens.length;
+      autoGenLengthHintEl.textContent =
+        `${savedScreens.length} saved screens in ${folders} (${formatLength(Math.round(total))}). ` +
+        `${count} picked at random ≈ ${formatLength(Math.round(count * average))} in one video.`;
+      return;
+    }
     autoGenCountLabelEl.textContent = join ? `Screens (up to ${max})` : "Videos to make";
     if (!join) {
       autoGenLengthHintEl.textContent = "";
@@ -2531,6 +2650,7 @@
 
   autoGenJoinEl.addEventListener("change", () => {
     updateAutoGenIntroHint();
+    applyAutoGenSavedMode();
     if (autoGenJoinEl.checked) {
       autoGenSecondsEl.value = 15;
       autoGenCountEl.value = 240;
@@ -2540,6 +2660,10 @@
     updateAutoGenLengthHint();
   });
   autoGenCountEl.addEventListener("input", updateAutoGenLengthHint);
+  autoGenUseSavedEl.addEventListener("change", () => {
+    applyAutoGenSavedMode();
+    updateAutoGenLengthHint();
+  });
   autoGenSecondsEl.addEventListener("input", updateAutoGenLengthHint);
 
   function shuffled(list) {
@@ -2658,124 +2782,360 @@
           : "None of the chosen animals can live on the chosen backgrounds (fish need water, birds need sky).";
       return;
     }
+    // Only one long-video task is kept, so starting a new one replaces an
+    // unfinished one (its finished screens stay in the screens folder).
+    const unfinished = join ? await window.electronAPI.loadLongJob() : null;
+    if (unfinished?.busy) {
+      autoGenModalStatusEl.textContent = "A long video is already being made in another window.";
+      return;
+    }
+    const replaceText = unfinished
+      ? ` This replaces the unfinished long video (${unfinished.job.screens.filter((sc) => sc.file).length} / ` +
+        `${unfinished.job.screens.length} screens done) — its finished screens stay in the screens folder.`
+      : "";
     const confirmed = await confirmDialog(
       join
         ? `This makes one ${formatLength(plan.length * seconds)} video: ${plan.length} screens of ${seconds}s, each with a ` +
             `new random background, animals and paths. Rendering takes a long time and needs free disk space. ` +
-            `Your saved scene layouts are not changed.${introConfirmText(introPath, true)} Continue?`
+            `If it stops (error, closing the app, restart), you can continue it later.` +
+            `${introConfirmText(introPath, true)}${replaceText} Continue?`
         : `This makes ${plan.length} video(s), ${seconds}s each, with random backgrounds, animals and paths. ` +
             `Your saved scene layouts are not changed.${introConfirmText(introPath, false)} Continue?`
     );
     if (!confirmed) return;
 
     autoGenOverlayEl.hidden = true;
-    setExportUIState(true);
     const runId = Date.now().toString(36);
-    // Chinese display label without the "3D " prefix, for filenames/rows.
-    const animalName = (id) => (animalDefFor(id)?.label || id).replace(/^3D\s*/i, "");
     const jobs = plan.map((job, i) => ({
-      ...job,
+      sceneId: job.sceneId,
+      animals: job.animals,
+      key: job.key,
       rowKey: `rnd-${runId}-${i + 1}`,
-      label: `${sceneLabel(job.sceneId)} — ${job.animals.map(animalName).join(", ")}`,
+      label: `${sceneLabel(job.sceneId)} — ${job.animals.map(screenAnimalName).join(", ")}`,
     }));
-    renderAutoGenProgressRows(jobs.map((j) => ({ key: j.rowKey, label: j.label })));
 
+    if (join) {
+      // A long video is saved as a task list first, so it can be continued
+      // after an error, closing the app or a restart.
+      await runLongJob({
+        version: 1,
+        runId,
+        createdAt: new Date().toISOString(),
+        seconds,
+        introPath,
+        outputDir: outputDirInput.value.trim(),
+        screensDir: screensDirValue(),
+        camera: autoGenCameraDriftEl.checked,
+        history,
+        screens: jobs.map((job) => ({ ...job, folder: screenFolderFor(job.animals), file: null })),
+      });
+      return;
+    }
+
+    setExportUIState(true);
+    renderAutoGenProgressRows(jobs.map((j) => ({ key: j.rowKey, label: j.label })));
     const succeeded = [];
-    // Join mode: each video is a segment of the long one, padded to exactly
-    // `seconds` and kept in a temp folder until they're all joined in order.
-    const segmentGroup = join ? `long-${runId}` : null;
-    const segmentFiles = new Array(jobs.length).fill(null);
-    async function renderOne(job, i) {
-      setAutoGenRowStatus(job.rowKey, "Generating path…", "info");
-      const layout = buildAutoLayoutForScene(job.sceneId, job.animals, totalMs, job.zones);
-      layout.effects = randomSceneEffects(job.sceneId, job.zones, Math.random, { camera: autoGenCameraDriftEl.checked });
-      const saveRes = await fetch(`/api/auto-layout/${job.rowKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(layout),
-      });
-      if (!saveRes.ok) throw new Error(`Save failed (HTTP ${saveRes.status})`);
-      setAutoGenRowStatus(job.rowKey, "Starting export…", "info");
-      exportProgressRoutes.set(job.rowKey, (frame, total, phase) => {
-        setAutoGenRowStatus(job.rowKey, exportProgressText(frame, total, phase), "info");
-      });
-      try {
-        const result = await exportWithIntro(job.sceneId, {
-          gif: false,
-          layoutId: job.rowKey,
-          progressKey: job.rowKey,
-          name: join ? `segment-${String(i + 1).padStart(4, "0")}` : `${sceneLabel(job.sceneId)}-${job.animals.map(animalName).join("-")}`,
-          ...(join ? { segmentGroup, minDurationMs: totalMs } : {}),
-        }, join ? null : introPath);
-        segmentFiles[i] = result.outputFile;
-        setAutoGenRowStatus(job.rowKey, join ? "Done." : `Done: ${result.outputFile}`, "done");
-        succeeded.push(job.key);
-      } finally {
-        exportProgressRoutes.delete(job.rowKey);
-      }
+    const camera = autoGenCameraDriftEl.checked;
+    async function renderOne(job) {
+      const result = await renderRandomScreen(job, { seconds, camera, introPath });
+      setAutoGenRowStatus(job.rowKey, `Done: ${result.outputFile}`, "done");
+      succeeded.push(job.key);
     }
 
     // Render up to MULTI_EXPORT_MAX videos at a time.
-    const ok = new Array(jobs.length).fill(false);
+    let failCount = 0;
     let next = 0;
     async function worker() {
       while (next < jobs.length) {
-        const i = next++;
-        // A long video is hours of work, so give a failed screen one retry
-        // before leaving it out.
-        for (let attempt = 1; attempt <= (join ? 2 : 1) && !ok[i]; attempt++) {
-          try {
-            await renderOne(jobs[i], i);
-            ok[i] = true;
-          } catch (err) {
-            setAutoGenRowStatus(jobs[i].rowKey, "Failed: " + (err?.message || String(err)), "error");
-          }
+        const job = jobs[next++];
+        try {
+          await renderOne(job);
+        } catch (err) {
+          failCount++;
+          setAutoGenRowStatus(job.rowKey, "Failed: " + (err?.message || String(err)), "error");
         }
       }
     }
     await Promise.all(Array.from({ length: Math.min(MULTI_EXPORT_MAX, jobs.length) }, worker));
+    await saveAutoHistory([...history, ...succeeded]);
 
-    // Only combinations that actually became videos count as used.
+    const summaryEl = document.createElement("p");
+    summaryEl.className = "status";
+    summaryEl.textContent =
+      failCount === 0
+        ? `All ${jobs.length} video(s) generated.`
+        : `${jobs.length - failCount}/${jobs.length} succeeded, ${failCount} failed.`;
+    autoGenProgressListEl.appendChild(summaryEl);
+    setExportUIState(false);
+  }
+
+  // Chinese display label without the "3D " prefix, for filenames/rows.
+  function screenAnimalName(id) {
+    return (animalDefFor(id)?.label || id).replace(/^3D\s*/i, "");
+  }
+
+  // Only combinations that actually became videos count as used.
+  async function saveAutoHistory(used) {
     try {
       await fetch("/api/auto-history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ used: [...history, ...succeeded] }),
+        body: JSON.stringify({ used }),
       });
     } catch (err) {
       console.warn("Could not save the random-mix history:", err);
     }
+  }
 
-    const failCount = ok.filter((v) => !v).length;
+  // Renders one random-mix video: a fresh random path for job.animals on
+  // job.sceneId. screensFolder set = a long-video screen, padded to exactly
+  // `seconds` and kept in that sub-folder of the screens folder.
+  async function renderRandomScreen(job, { seconds, camera, introPath = null, screensDir = "", screensFolder = null }) {
+    setAutoGenRowStatus(job.rowKey, "Generating path…", "info");
+    const zones = await fetchSceneZones(job.sceneId);
+    const layout = buildAutoLayoutForScene(job.sceneId, job.animals, seconds * 1000, zones);
+    layout.effects = randomSceneEffects(job.sceneId, zones, Math.random, { camera });
+    const saveRes = await fetch(`/api/auto-layout/${job.rowKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(layout),
+    });
+    if (!saveRes.ok) throw new Error(`Save failed (HTTP ${saveRes.status})`);
+    setAutoGenRowStatus(job.rowKey, "Starting export…", "info");
+    exportProgressRoutes.set(job.rowKey, (frame, total, phase) => {
+      setAutoGenRowStatus(job.rowKey, exportProgressText(frame, total, phase), "info");
+    });
+    try {
+      return await exportWithIntro(job.sceneId, {
+        gif: false,
+        layoutId: job.rowKey,
+        progressKey: job.rowKey,
+        name: `${sceneLabel(job.sceneId)}-${job.animals.map(screenAnimalName).join("-")}`,
+        ...(screensFolder ? { screensDir, screensFolder, minDurationMs: seconds * 1000 } : {}),
+      }, screensFolder ? null : introPath);
+    } finally {
+      exportProgressRoutes.delete(job.rowKey);
+    }
+  }
+
+  // Runs (or continues) a long-video task: renders every screen that has no
+  // file yet, saving the task after each one, then joins them in order.
+  // The task file is only removed once the long video is written, so an
+  // error, closing the app or a restart can be continued from the
+  // "Unfinished long video" box (also offered when the app opens).
+  async function runLongJob(job) {
+    hideLongJobResume();
+    setExportUIState(true);
+    await window.electronAPI.saveLongJob(job);
+    const screens = job.screens;
+    renderAutoGenProgressRows(screens.map((sc) => ({ key: sc.rowKey, label: sc.label })));
+    screens.forEach((sc) => {
+      if (sc.file) setAutoGenRowStatus(sc.rowKey, "Done (earlier).", "done");
+    });
+
+    let saving = Promise.resolve();
+    const saveJob = () => (saving = saving.then(() => window.electronAPI.saveLongJob(job)).catch((err) => {
+      console.warn("Could not save the long-video task:", err);
+    }));
+
+    const pending = screens.filter((sc) => !sc.file);
+    let next = 0;
+    async function worker() {
+      while (next < pending.length) {
+        const sc = pending[next++];
+        // A long video is hours of work, so give a failed screen one retry
+        // before moving on (it can still be retried later by continuing).
+        for (let attempt = 1; attempt <= 2 && !sc.file; attempt++) {
+          try {
+            const result = await renderRandomScreen(sc, {
+              seconds: job.seconds,
+              camera: job.camera,
+              screensDir: job.screensDir,
+              screensFolder: sc.folder,
+            });
+            sc.file = result.outputFile;
+            setAutoGenRowStatus(sc.rowKey, "Done.", "done");
+            await saveJob();
+          } catch (err) {
+            setAutoGenRowStatus(sc.rowKey, "Failed: " + (err?.message || String(err)), "error");
+          }
+        }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(MULTI_EXPORT_MAX, pending.length) }, worker));
+    await saving;
+    await saveAutoHistory([...(job.history || []), ...screens.filter((sc) => sc.file).map((sc) => sc.key)]);
+
+    const done = screens.filter((sc) => sc.file);
+    const failCount = screens.length - done.length;
     const summaryEl = document.createElement("p");
     summaryEl.className = "status";
-    if (join) {
-      const files = segmentFiles.filter(Boolean);
-      summaryEl.textContent = `Joining ${files.length} screens into one video…`;
-      autoGenProgressListEl.appendChild(summaryEl);
-      try {
-        const result = await window.electronAPI.joinSegments(segmentGroup, files, {
-          outputDir: outputDirInput.value.trim(),
-          name: `long-video-${formatLength(files.length * seconds).replace(/\s+/g, "")}`,
-          introPath,
-        });
-        summaryEl.textContent =
-          `Done: ${result.outputFile} (${formatLength(files.length * seconds)})` +
-          (failCount ? ` — ${failCount} screen(s) failed and were left out.` : "");
-      } catch (err) {
-        summaryEl.textContent = "Joining failed: " + (err?.message || String(err));
+    autoGenProgressListEl.appendChild(summaryEl);
+    if (failCount > 0) {
+      const joinAnyway = done.length > 0 && await confirmDialog(
+        `${failCount} of ${screens.length} screens failed. Join the long video without them now? ` +
+          `(Cancel keeps the task, so you can press Continue later to retry them.)`
+      );
+      if (!joinAnyway) {
+        summaryEl.textContent = `${failCount} screen(s) failed. The task is saved — press Continue to retry them.`;
+        await window.electronAPI.releaseLongJob();
+        setExportUIState(false);
+        showLongJobResume(job);
+        return;
       }
-    } else {
+    }
+
+    const total = done.length * job.seconds;
+    summaryEl.textContent = `Joining ${done.length} screens into one video…`;
+    try {
+      const result = await window.electronAPI.joinSegments(null, done.map((sc) => sc.file), {
+        outputDir: job.outputDir,
+        name: `long-video-${formatLength(total).replace(/\s+/g, "")}`,
+        introPath: job.introPath,
+      });
+      await window.electronAPI.clearLongJob();
       summaryEl.textContent =
-        failCount === 0
-          ? `All ${jobs.length} video(s) generated.`
-          : `${jobs.length - failCount}/${jobs.length} succeeded, ${failCount} failed.`;
-      autoGenProgressListEl.appendChild(summaryEl);
+        `Done: ${result.outputFile} (${formatLength(total)})` +
+        (failCount ? ` — ${failCount} screen(s) failed and were left out.` : "");
+    } catch (err) {
+      summaryEl.textContent = "Joining failed: " + (err?.message || String(err)) + " The task is saved — press Continue to try again.";
+      await window.electronAPI.releaseLongJob();
+      showLongJobResume(job);
+    }
+    setExportUIState(false);
+  }
+
+  function longJobProgressText(job) {
+    const done = job.screens.filter((sc) => sc.file).length;
+    const started = new Date(job.createdAt);
+    return (
+      `Unfinished long video (${formatLength(job.screens.length * job.seconds)}, started ` +
+      `${started.toLocaleString()}): ${done} / ${job.screens.length} screens done, ` +
+      `${job.screens.length - done} to go.`
+    );
+  }
+
+  let resumableLongJob = null;
+  function showLongJobResume(job) {
+    resumableLongJob = job;
+    longJobResumeTextEl.textContent = longJobProgressText(job);
+    longJobResumeEl.hidden = false;
+  }
+
+  function hideLongJobResume() {
+    resumableLongJob = null;
+    longJobResumeEl.hidden = true;
+  }
+
+  longJobContinueBtn.addEventListener("click", async () => {
+    if (isExporting || !resumableLongJob) return;
+    // Re-read it: files may have been deleted since, and another window
+    // may have started it.
+    const saved = await window.electronAPI.loadLongJob();
+    if (!saved) return hideLongJobResume();
+    if (saved.busy) {
+      longJobResumeTextEl.textContent = "This long video is already being made in another window.";
+      return;
+    }
+    await runLongJob(saved.job);
+  });
+
+  longJobDiscardBtn.addEventListener("click", async () => {
+    if (isExporting || !resumableLongJob) return;
+    const ok = await confirmDialog(
+      "Discard the unfinished long video? Screens already made stay in the screens folder (you can reuse them with \"Use saved screens\")."
+    );
+    if (!ok) return;
+    await window.electronAPI.clearLongJob();
+    hideLongJobResume();
+  });
+
+  // On opening the app: offer to continue a long video that didn't finish.
+  async function checkUnfinishedLongJob() {
+    const saved = await window.electronAPI.loadLongJob();
+    if (!saved || saved.busy || !saved.job?.screens?.length) return;
+    showLongJobResume(saved.job);
+    const ok = await showModal(`${longJobProgressText(saved.job)} Continue it now?`, {
+      okText: "Continue",
+      cancelText: "Later",
+    });
+    if (ok && !isExporting) longJobContinueBtn.click();
+  }
+
+  // Saved screens are named "<background>-<animals>-<time>.mp4"; the
+  // background is the longest scene label the name starts with.
+  function screenSceneLabel(file) {
+    const name = file.split(/[\\/]/).pop();
+    let best = "";
+    for (const scene of scenes) {
+      const label = sceneLabel(scene.id);
+      if (name.startsWith(`${label}-`) && label.length > best.length) best = label;
+    }
+    return best || name;
+  }
+
+  // Random order that avoids the same background twice in a row where
+  // possible.
+  function orderScreens(screens) {
+    const left = shuffled(screens);
+    const out = [];
+    while (left.length) {
+      const last = out.length ? screenSceneLabel(out[out.length - 1].file) : null;
+      let i = left.findIndex((f) => screenSceneLabel(f.file) !== last);
+      if (i < 0) i = 0;
+      out.push(left.splice(i, 1)[0]);
+    }
+    return out;
+  }
+
+  // Makes a long video by joining saved screens from the screens folder —
+  // no rendering, so it takes about as long as copying the files.
+  async function runFromSavedScreens(introPath) {
+    const screens = await refreshSavedScreens();
+    if (screens.length === 0) {
+      autoGenModalStatusEl.textContent =
+        "No saved screens found. Make a long video once (without this option) to fill the screens folder.";
+      return;
+    }
+    const count = Math.max(1, Math.min(screens.length, Math.round(Number(autoGenCountEl.value) || 1)));
+    const picked = orderScreens(shuffled(screens).slice(0, count));
+    const total = Math.round(picked.reduce((sum, f) => sum + f.seconds, 0));
+    const confirmed = await confirmDialog(
+      `This makes one ${formatLength(total)} video from ${picked.length} saved screens picked at random. ` +
+        `Nothing is rendered, and the saved screens are kept.${introConfirmText(introPath, true)} Continue?`
+    );
+    if (!confirmed) return;
+
+    autoGenOverlayEl.hidden = true;
+    setExportUIState(true);
+    autoGenProgressListEl.innerHTML = "";
+    const summaryEl = document.createElement("p");
+    summaryEl.className = "status";
+    summaryEl.textContent = `Joining ${picked.length} saved screens into one video…`;
+    autoGenProgressListEl.appendChild(summaryEl);
+    try {
+      const result = await window.electronAPI.joinSegments(null, picked.map((f) => f.file), {
+        outputDir: outputDirInput.value.trim(),
+        name: `long-video-${formatLength(total).replace(/\s+/g, "")}`,
+        introPath,
+      });
+      summaryEl.textContent = `Done: ${result.outputFile} (${formatLength(total)})`;
+    } catch (err) {
+      summaryEl.textContent = "Joining failed: " + (err?.message || String(err));
     }
     setExportUIState(false);
   }
 
   autoGenGoBtn.addEventListener("click", async () => {
+    if (useSavedScreens()) {
+      const introPath = autoGenIntroEl.checked ? autoGenIntroPathEl.value.trim() : null;
+      if (introPath === "") {
+        autoGenModalStatusEl.textContent = 'Choose the opening video (片頭), or untick "Add opening video".';
+        return;
+      }
+      await runFromSavedScreens(introPath);
+      return;
+    }
     const selectedAnimalIds = [...autoGenAnimalSelectEl.selectedOptions].map((o) => o.value);
     if (selectedAnimalIds.length === 0) {
       autoGenModalStatusEl.textContent = "Pick at least one animal.";
@@ -2887,6 +3247,7 @@
 
     await loadScene(initialSceneId, { loadSavedLayout: true });
     window.__ready = true;
+    if (window.electronAPI && !isExportMode) checkUnfinishedLongJob();
   }
 
   // Every export (single, Batch, Generate & Export) goes to the folder in the
@@ -2973,6 +3334,28 @@
     });
   }
 
+  // The screens folder is remembered per machine; first run defaults to
+  // Videos\PathAnimator screens.
+  const SCREENS_DIR_STORAGE_KEY = "pathAnimator.screensDir";
+
+  function saveScreensDir() {
+    try { localStorage.setItem(SCREENS_DIR_STORAGE_KEY, screensDirValue()); } catch (err) { /* not persisted */ }
+    if (useSavedScreens()) refreshSavedScreens();
+  }
+
+  async function initScreensDir() {
+    let saved = "";
+    try { saved = localStorage.getItem(SCREENS_DIR_STORAGE_KEY) || ""; } catch (err) { /* use default */ }
+    autoGenScreensDirEl.value = saved || await window.electronAPI.defaultScreensDir();
+    autoGenScreensDirEl.addEventListener("change", saveScreensDir);
+    autoGenScreensBrowseBtn.addEventListener("click", async () => {
+      const dir = await window.electronAPI.chooseScreensDir(screensDirValue());
+      if (!dir) return;
+      autoGenScreensDirEl.value = dir;
+      saveScreensDir();
+    });
+  }
+
   function exportVideo(sceneId, opts) {
     // Videos are named after the scene's Chinese label unless a caller
     // passes its own name.
@@ -2992,6 +3375,7 @@
     outputDirRowEl.hidden = false;
     initOutputDir();
     initIntro();
+    initScreensDir();
     openConfigBtn.hidden = false;
     openConfigBtn.addEventListener("click", () => window.electronAPI.openConfigFile());
     newWindowBtn.hidden = false;

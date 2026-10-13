@@ -277,6 +277,19 @@ button:hover {
   margin: 8px 0 4px;
 }
 
+.autogen-progress-counter {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #1e2023;
+  border: 1px solid #3a3d41;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e6e6e6;
+}
+
 .scene-progress-row {
   display: flex;
   justify-content: space-between;
@@ -617,4 +630,39 @@ body.export-mode #stage {
 
 .effects-panel button {
   align-self: flex-start;
+}
+
+/* The "Use saved screens" option hides the render-only fields; these
+   classes set their own `display`, which would otherwise beat [hidden]. */
+.scrub-label[hidden],
+.autogen-random[hidden] {
+  display: none;
+}
+
+#autoGenScreensSection {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#autoGenScreensSection[hidden] {
+  display: none;
+}
+
+.long-job-resume {
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid #806a1f;
+  border-radius: 4px;
+  background: #2b2614;
+}
+
+.long-job-resume[hidden] {
+  display: none;
+}
+
+.long-job-resume .hint {
+  color: #ffcc33;
+  margin: 0 0 6px;
 }

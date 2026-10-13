@@ -435,7 +435,19 @@ async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = fal
 
       const base = `${safeFileName(name || sceneId)}-${timestampSuffix()}`;
       const outputFile = reserveOutputPath(outputDir, base, ".mp4");
-      await encodeVideo(framesDir, outputFile, audioPath, frameCount, onProgress, { segment });
+      // Encode under a .part name and rename when done, so a failed or
+      // interrupted encode never leaves a broken .mp4 behind (long-video
+      // screens are kept and reused later, so that matters).
+      const partFile = outputFile.replace(/\.mp4$/, ".part.mp4");
+      try {
+        await encodeVideo(framesDir, partFile, audioPath, frameCount, onProgress, { segment });
+        fs.renameSync(partFile, outputFile);
+      } catch (err) {
+        fs.rmSync(partFile, { force: true });
+        throw err;
+      } finally {
+        reservedOutputs.delete(outputFile);
+      }
 
       let outputGif = null;
       if (gif) {
@@ -484,6 +496,21 @@ function hasAudioStream(file) {
   });
 }
 
+// A media file's length in seconds, read from `ffmpeg -i` (no ffprobe).
+function probeDuration(file) {
+  return new Promise((resolve, reject) => {
+    const proc = require("child_process").spawn(ffmpegPath, ["-hide_banner", "-i", file]);
+    let stderr = "";
+    proc.stderr.on("data", (d) => (stderr += d));
+    proc.on("error", reject);
+    proc.on("close", () => {
+      const m = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(stderr);
+      if (!m) reject(new Error(`Not a video file: ${file}`));
+      else resolve(Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]));
+    });
+  });
+}
+
 // Re-encodes an opening video (片頭) of any size/frame rate into the same
 // format as segment-encoded exports (4K 60fps H.264 + 48 kHz stereo AAC), so
 // joinVideos can put it in front of them. Letterboxed, never stretched.
@@ -508,4 +535,4 @@ async function encodeIntro(inputFile, outputFile) {
   });
 }
 
-module.exports = { exportScene, joinVideos, encodeIntro };
+module.exports = { exportScene, joinVideos, encodeIntro, probeDuration };

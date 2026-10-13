@@ -3,7 +3,7 @@ const fs = require("fs");
 const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 
 const { start } = require("./server");
-const { exportScene, joinVideos, encodeIntro } = require("./electronExport");
+const { exportScene, joinVideos, encodeIntro, probeDuration } = require("./electronExport");
 
 const isDev = process.argv.includes("--dev");
 const smokeTestExport = process.argv.includes("--smoke-test-export");
@@ -231,6 +231,7 @@ app.whenReady().then(async () => {
 
   // Registered before the first window loads — the editor asks for it on startup.
   ipcMain.handle("export:defaultDir", () => app.getPath("videos"));
+  ipcMain.handle("screens:defaultDir", () => defaultScreensDir());
   ipcMain.handle("intro:default", () => defaultIntroPath());
 
   mainWindow = await createEditorWindow(port);
@@ -249,13 +250,18 @@ app.whenReady().then(async () => {
   // window invoked it, so concurrent exports (from the same or different
   // editor windows) just run in parallel with no shared state between them.
   ipcMain.handle("export:run", async (event, sceneId, opts) => {
-    // Long-video pieces go to a temp folder (one per run), not the user's
-    // output folder — export:join assembles them and then deletes them.
-    const segment = !!opts?.segmentGroup;
+    // Long-video screens are kept in the user's screens folder (screensDir,
+    // already split into sky/ground/sea/mixed) so they can be reused later.
+    // Other segments (a video plus its opening) go to a temp folder that
+    // export:join deletes.
+    const screensDir = opts?.screensFolder
+      ? path.join(resolveScreensDir(opts.screensDir), path.basename(String(opts.screensFolder)))
+      : null;
+    const segment = !!screensDir || !!opts?.segmentGroup;
     const result = await exportScene({
       port,
       sceneId,
-      outputDir: segment ? segmentDir(opts.segmentGroup) : resolveOutputDir(opts?.outputDir),
+      outputDir: screensDir || (opts?.segmentGroup ? segmentDir(opts.segmentGroup) : resolveOutputDir(opts?.outputDir)),
       gif: !!opts?.gif,
       segment,
       minDurationMs: Number(opts?.minDurationMs) || 0,
@@ -269,11 +275,17 @@ app.whenReady().then(async () => {
     return result;
   });
 
-  // files: segment paths from export:run, in play order. The segments and
-  // their temp folder are removed once the joined video is written.
+  // files: segment paths from export:run, in play order. With a
+  // segmentGroup the segments and their temp folder are removed once the
+  // joined video is written; without one (long-video screens from the
+  // screens folder) the files are kept so they can be reused.
   ipcMain.handle("export:join", async (event, segmentGroup, files, opts) => {
-    const dir = segmentDir(segmentGroup);
-    const inDir = (files || []).filter((f) => path.dirname(path.resolve(f)) === dir);
+    const dir = segmentGroup ? segmentDir(segmentGroup) : null;
+    const inDir = (files || []).filter((f) =>
+      dir
+        ? path.dirname(path.resolve(f)) === dir
+        : path.isAbsolute(f) && /\.mp4$/i.test(f) && fs.existsSync(f)
+    );
     if (inDir.length === 0) throw new Error("No video segments to join.");
     // introPath: optional opening video (片頭) played before the segments.
     const intro = opts?.introPath ? await preparedIntro(opts.introPath) : null;
@@ -282,8 +294,86 @@ app.whenReady().then(async () => {
       outputDir: resolveOutputDir(opts?.outputDir),
       name: opts?.name,
     });
-    fs.rmSync(dir, { recursive: true, force: true });
+    if (dir) fs.rmSync(dir, { recursive: true, force: true });
     return result;
+  });
+
+  // The long-video task list (see app.js runLongJob): one file in userData,
+  // updated after every finished screen, so a run interrupted by an error,
+  // closing the app or a restart can be continued later. longJobOwner is
+  // the window currently running it, so a second window doesn't offer to
+  // continue the same task at the same time.
+  let longJobOwner = null;
+  ipcMain.handle("longjob:load", (event) => {
+    let job = null;
+    try {
+      job = JSON.parse(fs.readFileSync(longJobFile(), "utf8"));
+    } catch (err) {
+      return null;
+    }
+    // A screen whose file has gone missing is rendered again.
+    for (const screen of job.screens || []) {
+      if (screen.file && !fs.existsSync(screen.file)) screen.file = null;
+    }
+    // (A reloaded window that was running it isn't busy for itself.)
+    return { job, busy: longJobOwner !== null && longJobOwner !== event.sender.id };
+  });
+  ipcMain.handle("longjob:save", (event, job) => {
+    if (longJobOwner !== event.sender.id) {
+      longJobOwner = event.sender.id;
+      event.sender.once("destroyed", () => {
+        if (longJobOwner === event.sender.id) longJobOwner = null;
+      });
+    }
+    const file = longJobFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(`${file}.tmp`, JSON.stringify(job, null, 2));
+    fs.renameSync(`${file}.tmp`, file);
+    return true;
+  });
+  // Stops running it (it stays saved, to continue later).
+  ipcMain.handle("longjob:release", (event) => {
+    if (longJobOwner === event.sender.id) longJobOwner = null;
+    return true;
+  });
+  ipcMain.handle("longjob:clear", () => {
+    longJobOwner = null;
+    fs.rmSync(longJobFile(), { force: true });
+    return true;
+  });
+
+  ipcMain.handle("screens:chooseDir", async (event, current) => {
+    const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
+      title: "Choose screens folder",
+      defaultPath: current || defaultScreensDir(),
+      properties: ["openDirectory", "createDirectory"],
+    });
+    return result.canceled ? null : result.filePaths[0];
+  });
+
+  // Saved screens in the chosen sub-folders (e.g. ["sky", "ground"]) of
+  // the screens folder: [{ file, folder, seconds }].
+  ipcMain.handle("screens:list", async (event, rootDir, folders) => {
+    const root = resolveScreensDir(rootDir);
+    const files = [];
+    for (const folder of folders || []) {
+      const dir = path.join(root, path.basename(String(folder)));
+      let names = [];
+      try { names = fs.readdirSync(dir); } catch (err) { continue; }
+      for (const name of names) {
+        if (/\.mp4$/i.test(name) && !/\.part\.mp4$/i.test(name)) files.push({ file: path.join(dir, name), folder });
+      }
+    }
+    // Read lengths a few at a time; cached by path + size + modified time.
+    let next = 0;
+    async function worker() {
+      while (next < files.length) {
+        const entry = files[next++];
+        entry.seconds = await screenDuration(entry.file).catch(() => 0);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(8, files.length) }, worker));
+    return files.filter((f) => f.seconds > 0);
   });
 
   ipcMain.handle("intro:choose", async (event, current) => {
@@ -335,6 +425,33 @@ function resolveOutputDir(dir) {
     throw new Error(`Output folder must be a full path (e.g. D:\Videos), got "${trimmed}"`);
   }
   return trimmed;
+}
+
+function longJobFile() {
+  return path.join(app.getPath("userData"), "long-video-task.json");
+}
+
+// Where long-video screens are kept for reuse; blank = Videos\PathAnimator screens.
+function defaultScreensDir() {
+  return path.join(app.getPath("videos"), "PathAnimator screens");
+}
+
+// The screens folder box's value as a full path.
+function resolveScreensDir(dir) {
+  const trimmed = typeof dir === "string" ? dir.trim() : "";
+  if (!trimmed) return defaultScreensDir();
+  if (!path.isAbsolute(trimmed)) {
+    throw new Error(`Screens folder must be a full path (e.g. D:\Screens), got "${trimmed}"`);
+  }
+  return trimmed;
+}
+
+const screenDurations = new Map();
+async function screenDuration(file) {
+  const stat = fs.statSync(file);
+  const key = `${file}|${stat.size}|${stat.mtimeMs}`;
+  if (!screenDurations.has(key)) screenDurations.set(key, await probeDuration(file));
+  return screenDurations.get(key);
 }
 
 function segmentDir(segmentGroup) {

@@ -27,6 +27,13 @@
         in from off-screen, wanders, and walks back off before the video ends — with multiple
         animals starting at different times and a different random path on every background.
       </p>
+      <div id="longJobResume" class="long-job-resume" hidden>
+        <p class="hint" id="longJobResumeText"></p>
+        <div class="controls-row">
+          <button id="longJobContinueBtn">Continue</button>
+          <button id="longJobDiscardBtn">Discard</button>
+        </div>
+      </div>
       <div id="autoGenProgressList" class="multi-export-progress"></div>
     </div>
 
@@ -202,6 +209,17 @@
         Join into one long video — every screen gets a new random background and animals,
         never the same as the screen before (up to 2 hours)
       </label>
+      <div id="autoGenScreensSection" hidden>
+        <span class="hint">Screens folder — every screen is kept here, sorted into sky / ground / sea / mixed folders</span>
+        <div class="controls-row output-dir-row">
+          <input type="text" id="autoGenScreensDir" spellcheck="false" placeholder="Full path to a folder" />
+          <button id="autoGenScreensBrowseBtn">Browse…</button>
+        </div>
+        <label class="autogen-random">
+          <input type="checkbox" id="autoGenUseSaved" />
+          Use saved screens — make a new long video from screens made before (no rendering, much faster)
+        </label>
+      </div>
       <label class="scrub-label">
         <span id="autoGenCountLabel">Videos to make</span>
         <input type="number" id="autoGenCount" min="1" max="50" step="1" value="5" />
