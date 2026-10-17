@@ -465,7 +465,8 @@ async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = fal
 // Joins long-video segments (all encoded with segment: true, so their
 // streams match) into one MP4 without re-encoding — a 2-hour 4K video is
 // joined in about the time it takes to copy the files.
-function joinVideos({ files, outputDir, name }) {
+// onProgress(seconds): optional, how much of the output is written so far.
+function joinVideos({ files, outputDir, name, onProgress }) {
   fs.mkdirSync(outputDir, { recursive: true });
   const outputFile = reserveOutputPath(outputDir, `${safeFileName(name || "long-video")}-${timestampSuffix()}`, ".mp4");
   const listFile = path.join(os.tmpdir(), `pathanim-concat-${process.pid}-${Date.now()}.txt`);
@@ -475,6 +476,10 @@ function joinVideos({ files, outputDir, name }) {
       .input(listFile)
       .inputOptions(["-f", "concat", "-safe", "0"])
       .outputOptions(["-c", "copy", "-movflags", "+faststart"])
+      .on("progress", (p) => {
+        const m = /^(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(p.timemark || "");
+        if (m) onProgress?.(Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]));
+      })
       .on("error", reject)
       .on("end", () => resolve({ outputFile }))
       .save(outputFile);

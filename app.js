@@ -2095,6 +2095,8 @@
   const AUTO_GEN_MIN_SEGMENT_MS = 600; // floor per leg so a short hop never reads as an instant jump
   const AUTO_GEN_SPEED_MIN = 90; // px/sec
   const AUTO_GEN_SPEED_MAX = 200; // px/sec
+  const AUTO_GEN_PATH_SPEED_MIN = 0.7; // random per-animal "Path speed" multiplier, so animals in one video don't all move at 1.00x
+  const AUTO_GEN_PATH_SPEED_MAX = 1.6;
   const AUTO_GEN_DWELL_MIN_MS = 1500; // how long the animal pauses at its on-screen stop — long enough to actually register on screen, not just flash past
   const AUTO_GEN_DWELL_MAX_MS = 2600;
   const AUTO_GEN_INTERIOR_PAD_FRACTION = 0.22; // keeps the dwell point well clear of the edges (not just technically on-canvas), so it isn't half-clipped by the frame
@@ -2271,12 +2273,18 @@
       const buffer = totalMs * 0.03;
       const budget = Math.max(totalMs * 0.25, totalMs - desiredStart - buffer);
 
-      const shape = generateAutoWalkForBudget(habitatFor(id), zones, budget);
-      const { path, totalDurationMs } = fitAutoWalkToBudget(shape, budget);
+      // The path speed multiplier divides every segment's duration at
+      // playback, so the path is generated/fitted in "raw" time (budget ×
+      // mult) and its on-screen length is totalDurationMs / mult.
+      const pathSpeedMultiplier = Math.round(randRange(AUTO_GEN_PATH_SPEED_MIN, AUTO_GEN_PATH_SPEED_MAX) * 20) / 20;
+      const rawBudget = budget * pathSpeedMultiplier;
+      const shape = generateAutoWalkForBudget(habitatFor(id), zones, rawBudget);
+      const { path, totalDurationMs } = fitAutoWalkToBudget(shape, rawBudget);
+      const playedDurationMs = totalDurationMs / pathSpeedMultiplier;
 
-      const maxStart = Math.max(0, totalMs - totalDurationMs);
+      const maxStart = Math.max(0, totalMs - playedDurationMs);
       const startAtMs = Math.round(Math.min(maxStart, desiredStart));
-      animals[id] = { path, options: normalizeOptions(id, {}, sceneId), startAtMs };
+      animals[id] = { path, options: normalizeOptions(id, { pathSpeedMultiplier }, sceneId), startAtMs };
     });
 
     return { sceneId, activeAnimals: shuffled, animals, placedOrnaments: [] };
@@ -2413,9 +2421,18 @@
 
   // rows: [{ key, label }] — key addresses the row in setAutoGenRowStatus.
   // A counter above the rows shows how many videos are done, in progress
-  // and still waiting, so a long run (e.g. 480 screens) is easy to follow.
+  // and still waiting, so a long run (e.g. 480 screens) is easy to follow,
+  // plus an overall progress bar. With join set, the run ends by joining
+  // everything into one video, and that step is the last part of the bar.
+  const AUTO_GEN_JOIN_WEIGHT = 0.05; // share of the overall bar for joining (it only copies the files, so it's quick next to rendering)
   const autoGenRowKinds = new Map();
+  const autoGenRowFractions = new Map(); // key -> 0..1 of that row's export
   let autoGenCounterEl = null;
+  let autoGenCounterTextEl = null;
+  let autoGenBarFillEl = null;
+  let autoGenBarPctEl = null;
+  let autoGenJoinStage = false;
+  let autoGenJoinFraction = null; // null until joining starts
 
   function updateAutoGenCounter() {
     if (!autoGenCounterEl) return;
@@ -2425,22 +2442,58 @@
       else if (kind === "info") working++;
       else if (kind === "error") failed++;
     }
-    const waiting = autoGenRowKinds.size - done - working - failed;
-    autoGenCounterEl.textContent =
-      `Done ${done} / ${autoGenRowKinds.size} · In progress ${working} · Waiting ${waiting}` +
-      (failed ? ` · Failed ${failed}` : "");
+    const rowCount = autoGenRowKinds.size;
+    const waiting = rowCount - done - working - failed;
+    const parts = [];
+    if (rowCount) {
+      parts.push(
+        `Done ${done} / ${rowCount} · In progress ${working} · Waiting ${waiting}` + (failed ? ` · Failed ${failed}` : "")
+      );
+    }
+    if (autoGenJoinFraction !== null) parts.push("Joining into one video…");
+    autoGenCounterTextEl.textContent = parts.join(" · ");
+
+    let renderShare = 0;
+    for (const f of autoGenRowFractions.values()) renderShare += f;
+    renderShare = rowCount ? renderShare / rowCount : 1;
+    const joinWeight = !autoGenJoinStage ? 0 : rowCount ? AUTO_GEN_JOIN_WEIGHT : 1;
+    const overall = renderShare * (1 - joinWeight) + (autoGenJoinFraction ?? 0) * joinWeight;
+    const pct = Math.floor(Math.min(1, overall) * 100);
+    autoGenBarFillEl.style.width = `${pct}%`;
+    autoGenBarPctEl.textContent = `${pct}%`;
   }
 
-  function renderAutoGenProgressRows(rows) {
+  function setAutoGenJoinProgress(fraction) {
+    autoGenJoinFraction = Math.max(0, Math.min(1, fraction));
+    updateAutoGenCounter();
+  }
+
+  function renderAutoGenProgressRows(rows, { join = false } = {}) {
     autoGenProgressListEl.innerHTML = "";
     autoGenRowKinds.clear();
+    autoGenRowFractions.clear();
+    autoGenJoinStage = join;
+    autoGenJoinFraction = null;
     autoGenCounterEl = document.createElement("div");
     autoGenCounterEl.className = "autogen-progress-counter";
+    autoGenCounterTextEl = document.createElement("div");
+    autoGenCounterEl.appendChild(autoGenCounterTextEl);
+    const bar = document.createElement("div");
+    bar.className = "autogen-progress-bar";
+    autoGenBarFillEl = document.createElement("div");
+    autoGenBarFillEl.className = "autogen-progress-bar-fill";
+    bar.appendChild(autoGenBarFillEl);
+    autoGenBarPctEl = document.createElement("span");
+    autoGenBarPctEl.className = "autogen-progress-bar-pct";
+    bar.appendChild(autoGenBarPctEl);
+    autoGenCounterEl.appendChild(bar);
     autoGenProgressListEl.appendChild(autoGenCounterEl);
     rows.forEach(({ key, label: text }) => {
       autoGenRowKinds.set(key, "queued");
+      autoGenRowFractions.set(key, 0);
       const row = document.createElement("div");
       row.className = "scene-progress-row";
+      row.id = `autoGenRow-${key}`;
 
       const label = document.createElement("span");
       label.textContent = text;
@@ -2457,12 +2510,20 @@
     updateAutoGenCounter();
   }
 
-  function setAutoGenRowStatus(sceneId, text, kind) {
+  // fraction: 0..1 of this row's export, for its own fill and the overall
+  // bar. Omitted = unchanged, except done/failed rows count as finished.
+  function setAutoGenRowStatus(sceneId, text, kind, fraction) {
     const el = document.getElementById(`autoGenStatus-${sceneId}`);
     if (!el) return;
     el.textContent = text;
     el.className = "scene-progress-status" + (kind ? ` ${kind}` : "");
     if (autoGenRowKinds.has(sceneId)) {
+      if (kind === "done" || kind === "error") fraction = 1;
+      if (fraction !== undefined) {
+        autoGenRowFractions.set(sceneId, fraction);
+        // A failed row counts toward the overall bar but shows no fill.
+        document.getElementById(`autoGenRow-${sceneId}`)?.style.setProperty("--progress", kind === "error" ? 0 : fraction);
+      }
       autoGenRowKinds.set(sceneId, kind || "queued");
       updateAutoGenCounter();
     }
@@ -2957,7 +3018,7 @@
   // job.sceneId. screensFolder set = a long-video screen, padded to exactly
   // `seconds` and kept in that sub-folder of the screens folder.
   async function renderRandomScreen(job, { seconds, camera, introPath = null, screensDir = "", screensFolder = null }) {
-    setAutoGenRowStatus(job.rowKey, "Generating path…", "info");
+    setAutoGenRowStatus(job.rowKey, "Generating path…", "info", 0);
     const zones = await fetchSceneZones(job.sceneId);
     const layout = buildAutoLayoutForScene(job.sceneId, job.animals, seconds * 1000, zones);
     layout.effects = randomSceneEffects(job.sceneId, zones, Math.random, { camera });
@@ -2969,7 +3030,7 @@
     if (!saveRes.ok) throw new Error(`Save failed (HTTP ${saveRes.status})`);
     setAutoGenRowStatus(job.rowKey, "Starting export…", "info");
     exportProgressRoutes.set(job.rowKey, (frame, total, phase) => {
-      setAutoGenRowStatus(job.rowKey, exportProgressText(frame, total, phase), "info");
+      setAutoGenRowStatus(job.rowKey, exportProgressText(frame, total, phase), "info", exportFraction(frame, total, phase));
     });
     try {
       return await exportWithIntro(job.sceneId, {
@@ -2994,7 +3055,7 @@
     setExportUIState(true);
     await window.electronAPI.saveLongJob(job);
     const screens = job.screens;
-    renderAutoGenProgressRows(screens.map((sc) => ({ key: sc.rowKey, label: sc.label })));
+    renderAutoGenProgressRows(screens.map((sc) => ({ key: sc.rowKey, label: sc.label })), { join: true });
     screens.forEach((sc) => {
       if (sc.file) setAutoGenRowStatus(sc.rowKey, "Done (earlier).", "done");
     });
@@ -3054,10 +3115,11 @@
     const total = done.length * job.seconds;
     summaryEl.textContent = `Joining ${done.length} screens into one video…`;
     try {
-      const result = await window.electronAPI.joinSegments(null, done.map((sc) => sc.file), {
+      const result = await joinLongVideo(done.map((sc) => sc.file), {
         outputDir: job.outputDir,
         name: `long-video-${formatLength(total).replace(/\s+/g, "")}`,
         introPath: job.introPath,
+        totalSeconds: total,
       });
       await window.electronAPI.clearLongJob();
       summaryEl.textContent =
@@ -3174,16 +3236,17 @@
 
     autoGenOverlayEl.hidden = true;
     setExportUIState(true);
-    autoGenProgressListEl.innerHTML = "";
+    renderAutoGenProgressRows([], { join: true });
     const summaryEl = document.createElement("p");
     summaryEl.className = "status";
     summaryEl.textContent = `Joining ${picked.length} saved screens into one video…`;
     autoGenProgressListEl.appendChild(summaryEl);
     try {
-      const result = await window.electronAPI.joinSegments(null, picked.map((f) => f.file), {
+      const result = await joinLongVideo(picked.map((f) => f.file), {
         outputDir: outputDirInput.value.trim(),
         name: `long-video-${formatLength(total).replace(/\s+/g, "")}`,
         introPath,
+        totalSeconds: picked.reduce((sum, f) => sum + f.seconds, 0),
       });
       summaryEl.textContent = `Done: ${result.outputFile} (${formatLength(total)})`;
     } catch (err) {
@@ -3259,7 +3322,7 @@
 
       setAutoGenRowStatus(sceneId, "Starting export…", "info");
       exportProgressRoutes.set(sceneId, (frame, total, phase) => {
-        setAutoGenRowStatus(sceneId, exportProgressText(frame, total, phase), "info");
+        setAutoGenRowStatus(sceneId, exportProgressText(frame, total, phase), "info", exportFraction(frame, total, phase));
       });
       try {
         const result = await exportWithIntro(sceneId, { gif: false }, introPath);
@@ -3342,6 +3405,32 @@
   function exportProgressText(frame, total, phase) {
     if (phase === "intro") return "Adding opening video…";
     return phase === "encode" ? `Encoding video ${frame}/${total}…` : `Rendering frame ${frame}/${total}…`;
+  }
+
+  // 0..1 of one export for the progress bars: rendering frames is most of
+  // the work, encoding the rest.
+  function exportFraction(frame, total, phase) {
+    if (phase === "intro") return 1;
+    const f = total > 0 ? Math.min(1, frame / total) : 0;
+    return phase === "encode" ? 0.85 + 0.15 * f : 0.85 * f;
+  }
+
+  // Joins files into one long video, feeding the overall progress bar.
+  // totalSeconds: the files' combined length (the opening video, if any, is
+  // measured by the main process).
+  async function joinLongVideo(files, { outputDir, name, introPath, totalSeconds }) {
+    const progressKey = `join-${Date.now().toString(36)}`;
+    setAutoGenJoinProgress(0);
+    exportProgressRoutes.set(progressKey, (frame, total, phase) => {
+      setAutoGenJoinProgress(phase === "join" && total > 0 ? frame / total : 0);
+    });
+    try {
+      const result = await window.electronAPI.joinSegments(null, files, { outputDir, name, introPath, progressKey, totalSeconds });
+      setAutoGenJoinProgress(1);
+      return result;
+    } finally {
+      exportProgressRoutes.delete(progressKey);
+    }
   }
 
   // Exports one video, with the opening video (片頭) joined in front when

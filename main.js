@@ -287,12 +287,22 @@ app.whenReady().then(async () => {
         : path.isAbsolute(f) && /\.mp4$/i.test(f) && fs.existsSync(f)
     );
     if (inDir.length === 0) throw new Error("No video segments to join.");
+    // progressKey + totalSeconds (the segments' combined length): report
+    // join progress as export:progress with phase "join", in seconds.
+    const key = opts?.progressKey;
+    const send = (frame, total, phase) => {
+      if (key) event.sender.send("export:progress", { key, frame, total, phase });
+    };
     // introPath: optional opening video (片頭) played before the segments.
+    if (opts?.introPath) send(0, 0, "intro");
     const intro = opts?.introPath ? await preparedIntro(opts.introPath) : null;
+    let totalSeconds = Number(opts?.totalSeconds) || 0;
+    if (key && intro && totalSeconds > 0) totalSeconds += await probeDuration(intro).catch(() => 0);
     const result = await joinVideos({
       files: intro ? [intro, ...inDir] : inDir,
       outputDir: resolveOutputDir(opts?.outputDir),
       name: opts?.name,
+      onProgress: totalSeconds > 0 ? (seconds) => send(Math.min(seconds, totalSeconds), totalSeconds, "join") : null,
     });
     if (dir) fs.rmSync(dir, { recursive: true, force: true });
     return result;

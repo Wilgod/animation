@@ -290,12 +290,39 @@ button:hover {
   color: #e6e6e6;
 }
 
+.autogen-progress-bar {
+  position: relative;
+  height: 16px;
+  margin-top: 6px;
+  background: #2c2f33;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.autogen-progress-bar-fill {
+  height: 100%;
+  width: 0;
+  background: #3d8b4f;
+  transition: width 0.3s ease;
+}
+
+.autogen-progress-bar-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #fff;
+}
+
 .scene-progress-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  background: #26282b;
+  /* --progress (0..1) is set by setAutoGenRowStatus: a fill behind the row */
+  background: linear-gradient(to right, #2e4434 calc(var(--progress, 0) * 100%), #26282b 0);
   border: 1px solid #3a3d41;
   border-radius: 4px;
   padding: 6px 8px;
