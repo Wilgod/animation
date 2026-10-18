@@ -263,6 +263,15 @@
       <input type="number" id="autoGenSeconds" min="3" max="120" step="1" value="8" />
     </label>
 
+    <label class="scrub-label">
+      Animal speed (random per animal, from – to)
+      <span class="controls-row">
+        <input type="number" id="autoGenSpeedMin" min="0.25" max="3" step="0.05" value="0.7" />
+        <span>to</span>
+        <input type="number" id="autoGenSpeedMax" min="0.25" max="3" step="0.05" value="1.6" />
+      </span>
+    </label>
+
     <div id="autoGenIntroSection" hidden>
       <label class="autogen-random">
         <input type="checkbox" id="autoGenIntro" />

@@ -83,6 +83,8 @@
   const autoGenIntroBrowseBtn = document.getElementById("autoGenIntroBrowseBtn");
   const autoGenIntroHintEl = document.getElementById("autoGenIntroHint");
   const autoGenMaxAnimalsEl = document.getElementById("autoGenMaxAnimals");
+  const autoGenSpeedMinEl = document.getElementById("autoGenSpeedMin");
+  const autoGenSpeedMaxEl = document.getElementById("autoGenSpeedMax");
   const autoGenCameraDriftEl = document.getElementById("autoGenCameraDrift");
   const autoGenBgLabelEl = document.getElementById("autoGenBgLabel");
   const autoGenAnimalLabelEl = document.getElementById("autoGenAnimalLabel");
@@ -2095,8 +2097,17 @@
   const AUTO_GEN_MIN_SEGMENT_MS = 600; // floor per leg so a short hop never reads as an instant jump
   const AUTO_GEN_SPEED_MIN = 90; // px/sec
   const AUTO_GEN_SPEED_MAX = 200; // px/sec
-  const AUTO_GEN_PATH_SPEED_MIN = 0.7; // random per-animal "Path speed" multiplier, so animals in one video don't all move at 1.00x
+  const AUTO_GEN_PATH_SPEED_MIN = 0.7; // default random per-animal "Path speed" multiplier, so animals in one video don't all move at 1.00x
   const AUTO_GEN_PATH_SPEED_MAX = 1.6;
+
+  // The modal's "Animal speed" from/to inputs, clamped to the Path speed
+  // slider's 0.25–3 range; a reversed pair is swapped.
+  function autoGenSpeedRange() {
+    const clamp = (v, fallback) => Math.max(0.25, Math.min(3, Number(v) || fallback));
+    const a = clamp(autoGenSpeedMinEl.value, AUTO_GEN_PATH_SPEED_MIN);
+    const b = clamp(autoGenSpeedMaxEl.value, AUTO_GEN_PATH_SPEED_MAX);
+    return a <= b ? [a, b] : [b, a];
+  }
   const AUTO_GEN_DWELL_MIN_MS = 1500; // how long the animal pauses at its on-screen stop — long enough to actually register on screen, not just flash past
   const AUTO_GEN_DWELL_MAX_MS = 2600;
   const AUTO_GEN_INTERIOR_PAD_FRACTION = 0.22; // keeps the dwell point well clear of the edges (not just technically on-canvas), so it isn't half-clipped by the frame
@@ -2276,7 +2287,8 @@
       // The path speed multiplier divides every segment's duration at
       // playback, so the path is generated/fitted in "raw" time (budget ×
       // mult) and its on-screen length is totalDurationMs / mult.
-      const pathSpeedMultiplier = Math.round(randRange(AUTO_GEN_PATH_SPEED_MIN, AUTO_GEN_PATH_SPEED_MAX) * 20) / 20;
+      const [speedMin, speedMax] = autoGenSpeedRange();
+      const pathSpeedMultiplier = Math.round(randRange(speedMin, speedMax) * 20) / 20;
       const rawBudget = budget * pathSpeedMultiplier;
       const shape = generateAutoWalkForBudget(habitatFor(id), zones, rawBudget);
       const { path, totalDurationMs } = fitAutoWalkToBudget(shape, rawBudget);
@@ -2603,6 +2615,7 @@
       autoGenBgSelectEl.closest("label"),
       autoGenBgCountHintEl,
       autoGenSecondsEl.closest("label"),
+      autoGenSpeedMinEl.closest("label"),
       autoGenMaxAnimalsEl.closest("label"),
       autoGenCameraDriftEl.closest("label"),
     ]) {
