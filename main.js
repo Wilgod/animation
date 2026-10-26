@@ -266,6 +266,7 @@ app.whenReady().then(async () => {
       segment,
       minDurationMs: Number(opts?.minDurationMs) || 0,
       format: opts?.format === "short" ? "short" : "landscape",
+      cropX: Number.isFinite(opts?.cropX) ? Math.max(0, Math.min(1, opts.cropX)) : 0.5,
       layoutId: opts?.layoutId,
       name: opts?.name,
       onProgress: (frame, total, phase) => {

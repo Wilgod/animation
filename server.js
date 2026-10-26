@@ -160,6 +160,28 @@ function createApp(options = {}) {
     }
   });
 
+  // Where each background's 9:16 Short is cut from: { sceneId: 0..1 }, the
+  // strip's left edge as a fraction of the room it can slide (0.5 = centre).
+  const shortsCropFile = path.join(pathsDir, "shorts-crop.json");
+
+  app.get("/api/shorts-crop", (req, res) => {
+    try {
+      res.json(JSON.parse(fs.readFileSync(shortsCropFile, "utf8")));
+    } catch {
+      res.json({});
+    }
+  });
+
+  app.post("/api/shorts-crop", (req, res) => {
+    const crop = {};
+    for (const [id, v] of Object.entries(req.body || {})) {
+      if (isValidSceneId(id) && Number.isFinite(v)) crop[id] = Math.max(0, Math.min(1, v));
+    }
+    fs.mkdirSync(pathsDir, { recursive: true });
+    fs.writeFileSync(shortsCropFile, JSON.stringify(crop, null, 2));
+    res.json({ ok: true });
+  });
+
   app.post("/api/template/:name", (req, res) => {
     const { name } = req.params;
     if (!isValidTemplateName(name)) return res.status(400).json({ error: "invalid template name" });

@@ -98,6 +98,9 @@
   const videoFormatSelectEl = document.getElementById("videoFormatSelect");
   const autoGenFormatEl = document.getElementById("autoGenFormat");
   const autoGenFormatHintEl = document.getElementById("autoGenFormatHint");
+  const shortsCropLabelEl = document.getElementById("shortsCropLabel");
+  const shortsCropEl = document.getElementById("shortsCrop");
+  const shortsCropValueEl = document.getElementById("shortsCropValue");
   const longJobResumeEl = document.getElementById("longJobResume");
   const longJobResumeTextEl = document.getElementById("longJobResumeText");
   const longJobContinueBtn = document.getElementById("longJobContinueBtn");
@@ -223,23 +226,31 @@
 
   // ---------------------------------------------------------------------
   // Video format. "landscape" is the normal 4K 16:9 video; "short" is a
-  // 9:16 YouTube Short made from the same 16:9 scene by keeping only its
-  // full-height centre strip (electronExport.js crops it at capture time).
-  // Auto-generated paths stay inside that strip, and the editor outlines it.
+  // 9:16 YouTube Short made from the same 16:9 scene by keeping only a
+  // full-height strip of it (electronExport.js crops it at capture time).
+  // Each background remembers where its strip sits (shortsCrop, 0 = left
+  // edge, 0.5 = centre, 1 = right edge; saved by the server). Auto-generated
+  // paths stay inside that strip, and the editor outlines it.
   // ---------------------------------------------------------------------
   const VIDEO_FORMAT_STORAGE_KEY = "pathAnimator.videoFormat";
   const SHORTS_MAX_SECONDS = 3 * 60; // YouTube's limit for a Short
+  let shortsCrop = {}; // sceneId -> 0..1, see videoFrame
+
+  function shortsCropFor(sceneId) {
+    const v = shortsCrop[sceneId];
+    return Number.isFinite(v) ? v : 0.5;
+  }
 
   function videoFormat() {
     return videoFormatSelectEl?.value === "short" ? "short" : "landscape";
   }
 
-  function videoFrame(format = videoFormat()) {
+  function videoFrame(format = videoFormat(), sceneId = currentScene?.id) {
     const W = window.AnimEngine.CANVAS_WIDTH;
     const H = window.AnimEngine.CANVAS_HEIGHT;
     if (format !== "short") return { x: 0, y: 0, w: W, h: H };
     const w = (H * 9) / 16;
-    return { x: (W - w) / 2, y: 0, w, h: H };
+    return { x: (W - w) * shortsCropFor(sceneId), y: 0, w, h: H };
   }
 
   function formatName(format) {
@@ -1868,6 +1879,7 @@
     }
 
     if (!isExportMode) localStorage.setItem(LAST_SCENE_STORAGE_KEY, scene.id);
+    syncShortsCropControl();
 
     draggingIndex = -1;
     if (loadSavedLayout) await loadSavedPathsForScene();
@@ -3059,7 +3071,7 @@
   // combination in the pool has been used, the history starts over.
   // Paths are generated fresh for every video, so even a reused
   // combination never looks the same.
-  async function planRandomMix(count, animalPool, bgPool, maxAnimals, category = "all", frame = null) {
+  async function planRandomMix(count, animalPool, bgPool, maxAnimals, category = "all", format = "landscape") {
     const zonesByBg = new Map(await Promise.all(bgPool.map(async (id) => [id, await fetchSceneZones(id)])));
     let history = [];
     try {
@@ -3074,6 +3086,7 @@
     const minSize = category === "variants" ? 2 : 1;
     const groupsByBg = new Map();
     for (const sceneId of bgPool) {
+      const frame = format === "short" ? videoFrame(format, sceneId) : null;
       const eligible = animalPool.filter((id) => isHabitatAvailableInScene(habitatFor(id), zonesByBg.get(sceneId), frame));
       const groups = category === "variants" ? variantGroups(eligible) : [eligible];
       groupsByBg.set(sceneId, groups.filter((g) => g.length >= minSize).map((g) => [...g].sort()));
@@ -3151,7 +3164,7 @@
     if (category !== "all") {
       animalPool = animalPool.filter((id) => animalMatchesCategory(animalDefFor(id) || { id }, category));
     }
-    const { plan, history } = await planRandomMix(count, animalPool, bgPool, maxAnimals, category, videoFrame(format));
+    const { plan, history } = await planRandomMix(count, animalPool, bgPool, maxAnimals, category, format);
     if (plan.length === 0) {
       autoGenModalStatusEl.textContent =
         category === "variants"
@@ -3271,7 +3284,7 @@
   async function renderRandomScreen(job, { seconds, camera, introPath = null, screensDir = "", screensFolder = null, format = "landscape" }) {
     setAutoGenRowStatus(job.rowKey, "Generating path…", "info", 0);
     const zones = await fetchSceneZones(job.sceneId);
-    const layout = buildAutoLayoutForScene(job.sceneId, job.animals, seconds * 1000, zones, videoFrame(format));
+    const layout = buildAutoLayoutForScene(job.sceneId, job.animals, seconds * 1000, zones, videoFrame(format, job.sceneId));
     layout.effects = randomSceneEffects(job.sceneId, zones, Math.random, { camera });
     const saveRes = await fetch(`/api/auto-layout/${job.rowKey}`, {
       method: "POST",
@@ -3562,7 +3575,7 @@
     async function generateAndSaveOne(sceneId, i) {
       setAutoGenRowStatus(sceneId, "Generating path…", "info");
       const zones = await fetchSceneZones(sceneId);
-      const layout = buildAutoLayoutForScene(sceneId, selectedAnimalIds, totalMs, zones, videoFrame(format));
+      const layout = buildAutoLayoutForScene(sceneId, selectedAnimalIds, totalMs, zones, videoFrame(format, sceneId));
 
       setAutoGenRowStatus(sceneId, "Saving…", "info");
       const saveRes = await fetch(`/api/path/${sceneId}`, {
@@ -3583,7 +3596,7 @@
       });
       try {
         const result = await exportWithIntro(sceneId, { gif: false, format }, introPath);
-        setAutoGenRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
+        setAutoGenRowStatus(sceneId, `Done: ${result.outputFile}${encoderNote(result)}`, "done");
         return result;
       } finally {
         exportProgressRoutes.delete(sceneId);
@@ -3626,12 +3639,14 @@
       try { localStorage.setItem(VIDEO_FORMAT_STORAGE_KEY, videoFormat()); } catch (err) { /* not persisted */ }
       autoGenFormatHintEl.textContent =
         videoFormat() === "short"
-          ? `Made from the centre of each background (the editor shades the rest). ` +
+          ? `Made from a 9:16 strip of each background — the centre unless you moved it with ` +
+            `"Shorts crop position" (the editor shades the rest). ` +
             `A joined Short is at most ${formatLength(SHORTS_MAX_SECONDS)}.`
           : "";
       if (!useSavedScreens() && Number(autoGenCountEl.value) > autoGenMaxCount()) autoGenCountEl.value = autoGenMaxCount();
       updateAutoGenLengthHint();
       if (useSavedScreens()) refreshSavedScreens();
+      syncShortsCropControl();
       if (!isExportMode && currentScene) drawOverlay();
     };
     videoFormatSelectEl.addEventListener("change", () => onChange(videoFormatSelectEl));
@@ -3639,8 +3654,46 @@
     onChange(null);
   }
 
+  function shortsCropText(v) {
+    if (Math.abs(v - 0.5) < 0.005) return "centre";
+    return v < 0.5 ? `${Math.round((0.5 - v) * 200)}% left` : `${Math.round((v - 0.5) * 200)}% right`;
+  }
+
+  function syncShortsCropControl() {
+    if (!shortsCropEl) return;
+    shortsCropLabelEl.hidden = videoFormat() !== "short" || !currentScene;
+    if (!currentScene) return;
+    const v = shortsCropFor(currentScene.id);
+    shortsCropEl.value = String(Math.round(v * 100));
+    shortsCropValueEl.textContent = shortsCropText(v);
+  }
+
+  async function initShortsCrop() {
+    try {
+      const res = await fetch("/api/shorts-crop");
+      if (res.ok) shortsCrop = await res.json();
+    } catch (err) { /* every background starts centred */ }
+    if (!shortsCropEl) return;
+    let saveTimer = null;
+    shortsCropEl.addEventListener("input", () => {
+      if (!currentScene) return;
+      shortsCrop[currentScene.id] = Number(shortsCropEl.value) / 100;
+      syncShortsCropControl();
+      drawOverlay();
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        fetch("/api/shorts-crop", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(shortsCrop),
+        }).catch(() => { /* kept for this session */ });
+      }, 300);
+    });
+  }
+
   async function init() {
     initVideoFormat();
+    await initShortsCrop();
     const config = await fetchConfig();
     scenes = config.scenes || [];
     animalDefs = config.animals || [];
@@ -3797,12 +3850,19 @@
     });
   }
 
+  // Which video encoder made an export (graphics card or CPU), shown after
+  // "Done:" so it's easy to check the GPU is actually being used.
+  function encoderNote(result) {
+    return result?.encoder ? ` (encoded with ${result.encoder})` : "";
+  }
+
   function exportVideo(sceneId, opts) {
     // Videos are named after the scene's Chinese label unless a caller
     // passes its own name.
     return window.electronAPI.exportScene(sceneId, {
       name: sceneLabel(sceneId),
       format: videoFormat(),
+      cropX: shortsCropFor(sceneId),
       ...opts,
       outputDir: outputDirInput.value.trim(),
     });
@@ -3842,7 +3902,7 @@
       });
       try {
         const result = await exportVideo(sceneId, { gif: false });
-        exportProgressEl.innerHTML = `Done: ${result.outputFile} <button id="revealBtn">Show in folder</button>`;
+        exportProgressEl.innerHTML = `Done: ${result.outputFile}${encoderNote(result)} <button id="revealBtn">Show in folder</button>`;
         document.getElementById("revealBtn").addEventListener("click", () => {
           window.electronAPI.showItemInFolder(result.outputFile);
         });
@@ -3888,7 +3948,7 @@
         });
         try {
           const result = await exportVideo(sceneId, { gif: false });
-          setMultiExportRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
+          setMultiExportRowStatus(sceneId, `Done: ${result.outputFile}${encoderNote(result)}`, "done");
           return result;
         } finally {
           exportProgressRoutes.delete(sceneId);

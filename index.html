@@ -27,6 +27,10 @@
         <option value="short">9:16 — 1080×1920 (YouTube Shorts)</option>
       </select>
     </label>
+    <label class="scrub-label" id="shortsCropLabel" hidden>
+      Shorts crop position (this background) — <span id="shortsCropValue">centre</span>
+      <input type="range" id="shortsCrop" min="0" max="100" step="1" value="50" title="Slide to choose which part of this background the 9:16 Short keeps" />
+    </label>
 
     <div id="autoGenSection">
       <button id="autoGenerateBtn">Generate Video…</button>
