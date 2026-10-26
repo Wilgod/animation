@@ -80,6 +80,7 @@ async function buildBackground(scene, sceneOutDir) {
     overlays.push({ input: buffer, left: 0, top: Math.round(band.y0 * BACKGROUND_SCALE) });
   }
   for (const patch of scene.patches) {
+    if (!patch.source) continue; // metadata-only zone tag — no image of its own
     const patchSrc = resolveSource(`Scene "${scene.id}" patch`, patch.source, "background patch");
     const buffer = await sharp(patchSrc)
       .resize(Math.round(patch.w * BACKGROUND_SCALE), Math.round(patch.h * BACKGROUND_SCALE), { fit: "cover" })
@@ -457,7 +458,7 @@ async function main() {
 // after re-cutting rig layers from a manually replaced source photo)
 // without running the full pipeline, which would otherwise regenerate
 // animal.png from the original raw photo and clobber that replacement.
-module.exports = { buildRig, buildAnimalStatic, buildWalkFrames, ROOT, ANIMALS_OUT_DIR, CONFIG_PATH };
+module.exports = { buildRig, buildAnimalStatic, buildWalkFrames, buildBackground, writeZones, ROOT, ASSETS_ROOT, ANIMALS_OUT_DIR, CONFIG_PATH };
 
 if (require.main === module) {
   main().catch((err) => {

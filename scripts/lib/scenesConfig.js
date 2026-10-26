@@ -42,10 +42,11 @@ function normalizeScene(scene, elements) {
     }
     return band;
   });
-  const patches = (scene.patches || []).map((p) => ({
-    ...p,
-    source: elementSource(elements, p.elementId, `Scene "${scene.id}" patch`),
-  }));
+  // Like bands, a patch with no elementId is metadata-only — it just tags a
+  // zone (e.g. the water inside a barrel already painted in the base photo).
+  const patches = (scene.patches || []).map((p) =>
+    p.elementId ? { ...p, source: elementSource(elements, p.elementId, `Scene "${scene.id}" patch`) } : { ...p }
+  );
 
   if (scene.baseElementId) {
     return { ...scene, baseSource: elementSource(elements, scene.baseElementId, `Scene "${scene.id}"`), bands, patches };

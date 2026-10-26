@@ -1882,670 +1882,966 @@
       "id": "gecko-blue-tiles",
       "label": "藍色瓷磚",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Gecko on Blue Tiles.png" }
+      "background": { "source": "image/backgroud/indoor/Gecko on Blue Tiles.png" }
     },
     {
       "id": "colorful-terrazzo-floor",
       "label": "彩色石粒水磨石地板",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Colorful Terrazzo Floor.png" }
+      "background": { "source": "image/backgroud/indoor/Colorful Terrazzo Floor.png" }
     },
     {
       "id": "entryway-tatami-mat",
       "label": "玄關榻榻米地板",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Entryway Tatami Mat Floor.png" }
+      "background": { "source": "image/backgroud/indoor/Entryway Tatami Mat Floor.png" }
     },
     {
       "id": "garden-pebble-stone",
       "label": "花園鵝卵石地面",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Garden Pebble Stone Floor.png" }
+      "background": { "source": "image/backgroud/outdoor/Garden Pebble Stone Floor.png" }
     },
     {
       "id": "raw-concrete-floor",
       "label": "原始混凝土地面",
       "category": "floor",
-      "background": { "source": "image/backgroud/Raw Concrete Floor.png" }
+      "background": { "source": "image/backgroud/floor/Raw Concrete Floor.png" }
     },
     {
       "id": "warm-wooden-plank",
       "label": "溫暖木質地板",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Warm Wooden Plank Floor.png" }
+      "background": { "source": "image/backgroud/indoor/Warm Wooden Plank Floor.png" }
     },
     {
       "id": "cork-memo-board",
       "label": "軟木便箋板牆面",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Cork Memo Board Wall.png" }
+      "background": { "source": "image/backgroud/indoor/Cork Memo Board Wall.png" }
     },
     {
       "id": "desk-green-leather-blotter",
       "label": "書桌綠色皮革桌墊",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Desk Green Leather Blotter Pad.png" }
+      "background": { "source": "image/backgroud/indoor/Desk Green Leather Blotter Pad.png" }
     },
     {
       "id": "fresh-snow-ground",
       "label": "雪地表面",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Fresh Snow Ground Surface.png" }
+      "background": { "source": "image/backgroud/outdoor/Fresh Snow Ground Surface.png" }
     },
     {
       "id": "garden-lawn-grass",
       "sway": { "strength": 0.4 },
       "label": "草坪綠地面",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Garden Lawn Grass Ground.png" }
+      "background": { "source": "image/backgroud/outdoor/Garden Lawn Grass Ground.png" }
     },
     {
       "id": "kitchen-marble-island",
       "label": "廚房大理石中島檯面",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Kitchen Marble Island Countertop.png" }
+      "background": { "source": "image/backgroud/indoor/Kitchen Marble Island Countertop.png" }
     },
     {
       "id": "large-leaf-closeup",
       "label": "大片綠色葉面特寫",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Large Leaf Surface Close-Up.png" }
+      "background": { "source": "image/backgroud/outdoor/Large Leaf Surface Close-Up.png" }
     },
     {
       "id": "living-room-grey-carpet",
       "label": "客廳灰色地毯絨面",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Living Room Grey Carpet Pile.png" }
+      "background": { "source": "image/backgroud/indoor/Living Room Grey Carpet Pile.png" }
     },
     {
       "id": "marble-bathroom-vanity",
       "label": "大理石浴室洗手台檯面",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Marble Bathroom Vanity Countertop.png" }
+      "background": { "source": "image/backgroud/indoor/Marble Bathroom Vanity Countertop.png" }
     },
     {
       "id": "outdoor-wooden-deck",
       "label": "戶外木棧板露台地板",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Outdoor Wooden Deck Planks.png" }
+      "background": { "source": "image/backgroud/outdoor/Outdoor Wooden Deck Planks.png" }
     },
     {
       "id": "sunroom-rattan-chair",
       "label": "陽光房藤椅椅面",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Sunroom Rattan Chair Seat Surface.png" }
+      "background": { "source": "image/backgroud/indoor/Sunroom Rattan Chair Seat Surface.png" }
     },
     {
       "id": "wicker-storage-basket",
       "label": "藤編置物籃外壁",
       "category": "floor",
-      "background": { "source": "image/backgroud/Wicker Storage Basket Exterior Weave.png" }
+      "background": { "source": "image/backgroud/floor/Wicker Storage Basket Exterior Weave.png" }
     },
     {
       "id": "wooden-edge",
       "label": "木質邊緣",
       "category": "floor",
-      "background": { "source": "image/backgroud/Wooden Edge.png" }
+      "background": { "source": "image/backgroud/floor/Wooden Edge.png" }
     },
     {
       "id": "wooden-picket-fence",
       "sway": { "strength": 0.8, "rootY": 1, "tipY": 0 },
       "label": "木柵欄前視面",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Wooden Picket Fence Front View.png" }
+      "background": { "source": "image/backgroud/outdoor/Wooden Picket Fence Front View.png" }
     },
     {
       "id": "woven-outdoor-rug",
       "label": "陽台編織地墊",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Woven Outdoor Rug Mat.png" }
+      "background": { "source": "image/backgroud/outdoor/Woven Outdoor Rug Mat.png" }
     },
     {
       "id": "window-side-wall-shelf",
       "sway": { "strength": 0.7, "rootY": 0.36, "tipY": 0.78, "hang": true, "region": { "x0": 0.7, "x1": 0.95 } },
       "label": "窗邊牆架",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Window-Side Wall Shelf.png" }
+      "background": { "source": "image/backgroud/indoor/Window-Side Wall Shelf.png" }
     },
     {
       "id": "corner-woven-hanging-basket",
       "sway": { "strength": 0.7, "rootY": 0.12, "tipY": 0.7, "hang": true, "region": { "x0": 0.1, "x1": 0.4 } },
       "label": "牆角編織掛籃",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Corner Woven Hanging Basket.png" }
+      "background": { "source": "image/backgroud/indoor/Corner Woven Hanging Basket.png" }
     },
     {
       "id": "kitchen-subway-tile-countertop-edge",
       "label": "廚房地鐵磚牆與檯面邊緣",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Kitchen Subway Tile Wall & Countertop Edge.png" }
+      "background": { "source": "image/backgroud/indoor/Kitchen Subway Tile Wall & Countertop Edge.png" }
     },
     {
       "id": "balcony-herb-garden-corner",
       "sway": { "strength": 1, "rootY": 0.8, "tipY": 0.04, "region": { "x1": 0.6 } },
       "label": "陽台香草花圃一角",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Balcony Herb Garden Corner.png" }
+      "background": { "source": "image/backgroud/outdoor/Balcony Herb Garden Corner.png" }
     },
     {
       "id": "tropical-coral-reef-shallows",
       "label": "熱帶珊瑚礁淺灘",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Tropical coral reef shallows.png" }
+      "background": { "source": "image/backgroud/underwater/Tropical coral reef shallows.png" }
     },
     {
       "id": "seagrass-meadow",
       "label": "海草床",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Seagrass meadow.png" }
+      "background": { "source": "image/backgroud/underwater/Seagrass meadow.png" }
     },
     {
       "id": "rocky-tide-pool",
       "label": "岩石潮池",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Rocky tide pool.png" }
+      "background": { "source": "image/backgroud/underwater/Rocky tide pool.png" }
     },
     {
       "id": "rippled-sand-seabed",
       "label": "沙紋海床",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Rippled sand seabed.png" }
+      "background": { "source": "image/backgroud/underwater/Rippled sand seabed.png" }
     },
     {
       "id": "kelp-forest",
       "label": "巨藻森林",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Kelp forest.png" }
+      "background": { "source": "image/backgroud/underwater/Kelp forest.png" }
     },
     {
       "id": "deep-blue-seabed",
       "label": "深海藍調海床",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Deep-blue seabed.png" }
+      "background": { "source": "image/backgroud/underwater/Deep-blue seabed.png" }
     },
     {
       "id": "sand-beside-shipwreck",
       "label": "沉船殘骸旁的沙地",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Sand beside a shipwreck.png" }
+      "background": { "source": "image/backgroud/underwater/Sand beside a shipwreck.png" }
     },
     {
       "id": "pebble-shallows-clear-water",
       "label": "卵石淺灘（清澈海水）",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Pebble shallows in clear water.png" }
+      "background": { "source": "image/backgroud/underwater/Pebble shallows in clear water.png" }
     },
     {
       "id": "anemone-soft-coral-garden",
       "label": "海葵與軟珊瑚花園",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Anemone and soft coral garden.png" }
+      "background": { "source": "image/backgroud/underwater/Anemone and soft coral garden.png" }
     },
     {
       "id": "shallow-sea-sunset-light",
       "label": "黃昏暖光的淺海",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Shallow sea in warm sunset light.png" }
+      "background": { "source": "image/backgroud/underwater/Shallow sea in warm sunset light.png" }
     },
     {
       "id": "clear-blue-sky",
       "label": "晴朗藍天白雲",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Clear Blue Sky.png" }
+      "background": { "source": "image/backgroud/sky/Clear Blue Sky.png" }
     },
     {
       "id": "golden-sunset-sky",
       "label": "金色夕陽",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Golden Sunset Sky.png" }
+      "background": { "source": "image/backgroud/sky/Golden Sunset Sky.png" }
     },
     {
       "id": "pastel-dawn-sky",
       "label": "粉彩黎明",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Pastel Dawn Sky.png" }
+      "background": { "source": "image/backgroud/sky/Pastel Dawn Sky.png" }
     },
     {
       "id": "starry-night-sky",
       "label": "星空夜晚",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Starry Night Sky.png" }
+      "background": { "source": "image/backgroud/sky/Starry Night Sky.png" }
     },
     {
       "id": "rainbow-after-rain",
       "label": "雨後彩虹",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Rainbow After Rain.png" }
+      "background": { "source": "image/backgroud/sky/Rainbow After Rain.png" }
     },
     {
       "id": "dramatic-storm-clouds",
       "label": "暴風雨前",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Dramatic Storm Clouds.png" }
+      "background": { "source": "image/backgroud/sky/Dramatic Storm Clouds.png" }
     },
     {
       "id": "high-cirrus-sky",
       "label": "高空卷雲",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/High Cirrus Sky.png" }
+      "background": { "source": "image/backgroud/sky/High Cirrus Sky.png" }
     },
     {
       "id": "cotton-candy-cloudscape",
       "label": "棉花糖雲海",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Cotton Candy Cloudscape.png" }
+      "background": { "source": "image/backgroud/sky/Cotton Candy Cloudscape.png" }
     },
     {
       "id": "blue-hour-twilight",
       "label": "黃昏藍調",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Blue Hour Twilight.png" }
+      "background": { "source": "image/backgroud/sky/Blue Hour Twilight.png" }
     },
     {
       "id": "sky-through-leafy-canopy",
       "label": "透過樹葉仰望天空",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Sky Through Leafy Canopy.png" }
+      "background": { "source": "image/backgroud/sky/Sky Through Leafy Canopy.png" }
     },
     {
       "id": "autumn-leaf-forest-floor",
       "label": "秋天落葉林地",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Autumn Leaf Forest Floor.png" }
+      "background": { "source": "image/backgroud/outdoor/Autumn Leaf Forest Floor.png" }
     },
     {
       "id": "mossy-forest-floor",
       "label": "青苔森林地面",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Mossy Forest Floor.png" }
+      "background": { "source": "image/backgroud/outdoor/Mossy Forest Floor.png" }
     },
     {
       "id": "wildflower-meadow-ground",
       "label": "野花草原",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Wildflower Meadow Ground.png" }
+      "background": { "source": "image/backgroud/outdoor/Wildflower Meadow Ground.png" }
     },
     {
       "id": "dry-sandy-beach",
       "label": "乾燥沙灘",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Dry Sandy Beach.png" }
+      "background": { "source": "image/backgroud/outdoor/Dry Sandy Beach.png" }
     },
     {
       "id": "cracked-desert-earth",
       "label": "沙漠龜裂土地",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Cracked Desert Earth.png" }
+      "background": { "source": "image/backgroud/outdoor/Cracked Desert Earth.png" }
     },
     {
       "id": "vegetable-garden-soil",
       "label": "菜園泥土",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Vegetable Garden Soil.png" }
+      "background": { "source": "image/backgroud/outdoor/Vegetable Garden Soil.png" }
     },
     {
       "id": "alpine-gravel-with-lichen",
       "label": "山間碎石地衣",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Alpine Gravel with Lichen.png" }
+      "background": { "source": "image/backgroud/outdoor/Alpine Gravel with Lichen.png" }
     },
     {
       "id": "rainforest-floor-with-ferns",
       "label": "熱帶雨林地面",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Rainforest Floor with Ferns.png" }
+      "background": { "source": "image/backgroud/outdoor/Rainforest Floor with Ferns.png" }
     },
     {
       "id": "country-dirt-path",
       "label": "鄉間泥土小徑",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Country Dirt Path.png" }
+      "background": { "source": "image/backgroud/outdoor/Country Dirt Path.png" }
     },
     {
       "id": "pine-needle-forest-floor",
       "label": "松針林地",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Pine Needle Forest Floor.png" }
+      "background": { "source": "image/backgroud/outdoor/Pine Needle Forest Floor.png" }
     },
     {
       "id": "cherry-petal-ground",
       "label": "櫻花花瓣地面",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Cherry Petal Ground.png" }
+      "background": { "source": "image/backgroud/outdoor/Cherry Petal Ground.png" }
     },
     {
       "id": "harvested-rice-field",
       "label": "收割後稻田",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Harvested Rice Field.png" }
+      "background": { "source": "image/backgroud/outdoor/Harvested Rice Field.png" }
     },
     {
       "id": "volcanic-black-sand",
       "label": "火山黑沙",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Volcanic Black Sand.png" }
+      "background": { "source": "image/backgroud/outdoor/Volcanic Black Sand.png" }
     },
     {
       "id": "cobblestone-plaza",
       "label": "石板廣場",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Cobblestone Plaza.png" }
+      "background": { "source": "image/backgroud/outdoor/Cobblestone Plaza.png" }
     },
     {
       "id": "bamboo-forest-floor",
       "label": "竹林地面",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Bamboo Forest Floor.png" }
+      "background": { "source": "image/backgroud/outdoor/Bamboo Forest Floor.png" }
     },
     {
       "id": "red-clay-earth",
       "label": "紅土地",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Red Clay Earth.png" }
+      "background": { "source": "image/backgroud/outdoor/Red Clay Earth.png" }
     },
     {
       "id": "zen-raked-gravel",
       "label": "枯山水砂紋",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Zen Raked Gravel.png" }
+      "background": { "source": "image/backgroud/outdoor/Zen Raked Gravel.png" }
     },
     {
       "id": "sand-dune-ripples",
       "label": "沙丘風紋",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Sand Dune Ripples.png" }
+      "background": { "source": "image/backgroud/outdoor/Sand Dune Ripples.png" }
     },
     {
       "id": "frozen-pond-ice",
       "label": "結冰湖面",
       "category": "outdoor",
-      "background": { "source": "image/backgroud/Frozen Pond Ice.png" }
+      "background": { "source": "image/backgroud/outdoor/Frozen Pond Ice.png" }
     },
     {
       "id": "warm-wooden-floor",
       "label": "溫暖木地板",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Warm Wooden Floor.png" }
+      "background": { "source": "image/backgroud/indoor/Warm Wooden Floor.png" }
     },
     {
       "id": "kitchen-checkered-tiles",
       "label": "廚房格紋磁磚",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Kitchen Checkered Tiles.png" }
+      "background": { "source": "image/backgroud/indoor/Kitchen Checkered Tiles.png" }
     },
     {
       "id": "living-room-wool-rug",
       "label": "客廳羊毛地毯",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Living Room Wool Rug.png" }
+      "background": { "source": "image/backgroud/indoor/Living Room Wool Rug.png" }
     },
     {
       "id": "bathroom-mosaic-tiles",
       "label": "浴室馬賽克磁磚",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Bathroom Mosaic Tiles.png" }
+      "background": { "source": "image/backgroud/indoor/Bathroom Mosaic Tiles.png" }
     },
     {
       "id": "wooden-study-desk",
       "label": "木頭書桌桌面",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Wooden Study Desk.png" }
+      "background": { "source": "image/backgroud/indoor/Wooden Study Desk.png" }
     },
     {
       "id": "checkered-tablecloth-dining-table",
       "label": "格紋桌布餐桌",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Checkered Tablecloth Dining Table.png" }
+      "background": { "source": "image/backgroud/indoor/Checkered Tablecloth Dining Table.png" }
     },
     {
       "id": "japanese-tatami-room",
       "label": "和室榻榻米",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Japanese Tatami Room.png" }
+      "background": { "source": "image/backgroud/indoor/Japanese Tatami Room.png" }
     },
     {
       "id": "garage-concrete-floor",
       "label": "車庫水泥地",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Garage Concrete Floor.png" }
+      "background": { "source": "image/backgroud/indoor/Garage Concrete Floor.png" }
     },
     {
       "id": "windowsill-with-potted-plants",
       "label": "窗台盆栽",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Windowsill with Potted Plants.png" }
+      "background": { "source": "image/backgroud/indoor/Windowsill with Potted Plants.png" }
     },
     {
       "id": "kids-room-play-mat",
       "label": "兒童房遊戲地墊",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Kids Room Play Mat.png" }
+      "background": { "source": "image/backgroud/indoor/Kids Room Play Mat.png" }
     },
     {
       "id": "barn-hay-floor",
       "label": "穀倉乾草地面",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Barn Hay Floor.png" }
+      "background": { "source": "image/backgroud/indoor/Barn Hay Floor.png" }
     },
     {
       "id": "herringbone-parquet-floor",
       "label": "人字拼木地板",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Herringbone Parquet Floor.png" }
+      "background": { "source": "image/backgroud/indoor/Herringbone Parquet Floor.png" }
     },
     {
       "id": "kitchen-cutting-board-counter",
       "label": "料理台木砧板",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Kitchen Cutting Board Counter.png" }
+      "background": { "source": "image/backgroud/indoor/Kitchen Cutting Board Counter.png" }
     },
     {
       "id": "white-bed-linen",
       "label": "白色床單",
       "category": "indoor",
-      "background": { "source": "image/backgroud/White Bed Linen.png" }
+      "background": { "source": "image/backgroud/indoor/White Bed Linen.png" }
     },
     {
       "id": "persian-rug",
       "label": "波斯地毯",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Persian Rug.png" }
+      "background": { "source": "image/backgroud/indoor/Persian Rug.png" }
     },
     {
       "id": "greenhouse-potting-bench",
       "label": "溫室育苗台",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Greenhouse Potting Bench.png" }
+      "background": { "source": "image/backgroud/indoor/Greenhouse Potting Bench.png" }
     },
     {
       "id": "craft-cutting-mat",
       "label": "手作切割墊",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Craft Cutting Mat.png" }
+      "background": { "source": "image/backgroud/indoor/Craft Cutting Mat.png" }
     },
     {
       "id": "fireplace-brick-hearth",
       "label": "壁爐紅磚地",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Fireplace Brick Hearth.png" }
+      "background": { "source": "image/backgroud/indoor/Fireplace Brick Hearth.png" }
     },
     {
       "id": "velvet-sofa-cushion",
       "label": "絲絨沙發",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Velvet Sofa Cushion.png" }
+      "background": { "source": "image/backgroud/indoor/Velvet Sofa Cushion.png" }
     },
     {
       "id": "floured-baking-counter",
       "label": "撒麵粉的烘焙檯",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Floured Baking Counter.png" }
+      "background": { "source": "image/backgroud/indoor/Floured Baking Counter.png" }
     },
     {
       "id": "stone-cellar-floor",
       "label": "石砌地窖地板",
       "category": "indoor",
-      "background": { "source": "image/backgroud/Stone Cellar Floor.png" }
+      "background": { "source": "image/backgroud/indoor/Stone Cellar Floor.png" }
     },
     {
       "id": "mangrove-shallows",
       "label": "紅樹林淺水",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Mangrove Shallows.png" }
+      "background": { "source": "image/backgroud/underwater/Mangrove Shallows.png" }
     },
     {
       "id": "lotus-pond",
       "label": "荷花池",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Lotus Pond.png" }
+      "background": { "source": "image/backgroud/underwater/Lotus Pond.png" }
     },
     {
       "id": "volcanic-rock-reef",
       "label": "火山岩礁",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Volcanic Rock Reef.png" }
+      "background": { "source": "image/backgroud/underwater/Volcanic Rock Reef.png" }
     },
     {
       "id": "bioluminescent-night-sea",
       "label": "夜光藻海面",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Bioluminescent Night Sea.png" }
+      "background": { "source": "image/backgroud/underwater/Bioluminescent Night Sea.png" }
     },
     {
       "id": "open-ocean-surface",
       "label": "深海水面俯視",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Open Ocean Surface.png" }
+      "background": { "source": "image/backgroud/underwater/Open Ocean Surface.png" }
     },
     {
       "id": "polar-ice-floe-water",
       "label": "極地浮冰海水",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Polar Ice Floe Water.png" }
+      "background": { "source": "image/backgroud/underwater/Polar Ice Floe Water.png" }
     },
     {
       "id": "seashell-sandy-shallows",
       "label": "貝殼淺灘",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Seashell Sandy Shallows.png" }
+      "background": { "source": "image/backgroud/underwater/Seashell Sandy Shallows.png" }
     },
     {
       "id": "coral-rubble-reef-flat",
       "label": "珊瑚碎石礁台",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Coral Rubble Reef Flat.png" }
+      "background": { "source": "image/backgroud/underwater/Coral Rubble Reef Flat.png" }
     },
     {
       "id": "garden-koi-pond",
       "label": "庭園錦鯉池",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Garden Koi Pond.png" }
+      "background": { "source": "image/backgroud/underwater/Garden Koi Pond.png" }
     },
     {
       "id": "turquoise-sandbar",
       "label": "沙洲漸層淺海",
       "category": "underwater",
       "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Turquoise Sandbar.png" }
+      "background": { "source": "image/backgroud/underwater/Turquoise Sandbar.png" }
     },
     {
       "id": "aurora-night-sky",
       "label": "北極光夜空",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Aurora Night Sky.png" }
+      "background": { "source": "image/backgroud/sky/Aurora Night Sky.png" }
     },
     {
       "id": "full-moon-cloudy-night",
       "label": "滿月雲夜",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Full Moon Cloudy Night.png" }
+      "background": { "source": "image/backgroud/sky/Full Moon Cloudy Night.png" }
     },
     {
       "id": "mackerel-sky",
       "label": "魚鱗雲",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Mackerel Sky.png" }
+      "background": { "source": "image/backgroud/sky/Mackerel Sky.png" }
     },
     {
       "id": "lavender-dusk-sky",
       "label": "薰衣草紫暮色",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Lavender Dusk Sky.png" }
+      "background": { "source": "image/backgroud/sky/Lavender Dusk Sky.png" }
     },
     {
       "id": "snowfall-sky",
       "label": "飄雪灰白天空",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Snowfall Sky.png" }
+      "background": { "source": "image/backgroud/sky/Snowfall Sky.png" }
     },
     {
       "id": "milky-way-sky",
       "label": "銀河星空",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Milky Way Sky.png" }
+      "background": { "source": "image/backgroud/sky/Milky Way Sky.png" }
     },
     {
       "id": "summer-noon-sky",
       "label": "夏日正午晴空",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Summer Noon Sky.png" }
+      "background": { "source": "image/backgroud/sky/Summer Noon Sky.png" }
     },
     {
       "id": "sunbeams-through-clouds",
       "label": "雲隙光",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Sunbeams Through Clouds.png" }
+      "background": { "source": "image/backgroud/sky/Sunbeams Through Clouds.png" }
     },
     {
       "id": "misty-morning-sky",
       "label": "晨霧淡雲",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Misty Morning Sky.png" }
+      "background": { "source": "image/backgroud/sky/Misty Morning Sky.png" }
     },
     {
       "id": "sky-through-cherry-blossoms",
       "label": "櫻花枝仰望天空",
       "category": "sky",
       "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
-      "background": { "source": "image/backgroud/Sky Through Cherry Blossoms.png" }
+      "background": { "source": "image/backgroud/sky/Sky Through Cherry Blossoms.png" }
+    },
+    {
+      "id": "jack-o-lantern-porch",
+      "label": "南瓜燈門廊",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Jack-o'-Lantern Porch.png" }
+    },
+    {
+      "id": "trick-or-treat-candy-table",
+      "label": "不給糖就搗蛋糖果桌",
+      "category": "indoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Trick-or-Treat Candy Table.png" }
+    },
+    {
+      "id": "witchs-kitchen-stone-floor",
+      "label": "女巫廚房石地板",
+      "category": "indoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Witch's Kitchen Stone Floor.png" }
+    },
+    {
+      "id": "moonlit-halloween-lawn",
+      "label": "月光萬聖節草地",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Moonlit Halloween Lawn.png" }
+    },
+    {
+      "id": "witchs-potion-pond",
+      "label": "女巫魔藥池塘",
+      "category": "outdoor",
+      "theme": "halloween",
+      "bands": [{ "zone": "water", "y0": 315, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Witch's Potion Pond.png" }
+    },
+    {
+      "id": "halloween-harvest-moon-sky",
+      "label": "萬聖節滿月夜空",
+      "category": "sky",
+      "theme": "halloween",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Halloween Harvest Moon Sky.png" }
+    },
+    {
+      "id": "haunted-attic-floor",
+      "label": "老屋閣樓地板",
+      "category": "indoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Haunted Attic Floor.png" }
+    },
+    {
+      "id": "corn-maze-path",
+      "label": "玉米迷宮小路",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Corn Maze Path.png" }
+    },
+    {
+      "id": "halloween-party-tablecloth",
+      "label": "萬聖派對桌布",
+      "category": "indoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Halloween Party Tablecloth.png" }
+    },
+    {
+      "id": "purple-halloween-twilight-sky",
+      "label": "紫色暮光天空",
+      "category": "sky",
+      "theme": "halloween",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Purple Halloween Twilight Sky.png" }
+    },
+    {
+      "id": "enchanted-halloween-forest-floor",
+      "label": "魔法蘑菇森林地面",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Enchanted Halloween Forest Floor.png" }
+    },
+    {
+      "id": "pumpkin-carving-table",
+      "label": "雕南瓜工作桌",
+      "category": "indoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Pumpkin Carving Table.png" }
+    },
+    {
+      "id": "halloween-doorstep-mat",
+      "label": "萬聖門口地墊",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Halloween Doorstep Mat.png" }
+    },
+    {
+      "id": "harvest-farmyard-hay",
+      "label": "秋收農場稻草地",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Harvest Farmyard Hay.png" }
+    },
+    {
+      "id": "witchs-spellbook-desk",
+      "label": "女巫魔法書桌",
+      "category": "indoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Witch's Spellbook Desk.png" }
+    },
+    {
+      "id": "castle-hall-floor",
+      "label": "古堡大廳石地板",
+      "category": "indoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Castle Hall Floor.png" }
+    },
+    {
+      "id": "halloween-cookie-baking-counter",
+      "label": "萬聖節烘焙檯",
+      "category": "indoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Halloween Cookie Baking Counter.png" }
+    },
+    {
+      "id": "costume-dress-up-rug",
+      "label": "變裝派對地毯",
+      "category": "indoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Costume Dress-Up Rug.png" }
+    },
+    {
+      "id": "trick-or-treat-sidewalk",
+      "label": "不給糖人行道",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Trick-or-Treat Sidewalk.png" }
+    },
+    {
+      "id": "pumpkin-spice-cafe-table",
+      "label": "南瓜拿鐵咖啡桌",
+      "category": "indoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Pumpkin Spice Cafe Table.png" }
+    },
+    {
+      "id": "halloween-gravel-garden-path",
+      "label": "庭院碎石小徑",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Halloween Gravel Garden Path.png" }
+    },
+    {
+      "id": "glowing-mushroom-ring",
+      "label": "夜光蘑菇圈",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Glowing Mushroom Ring.png" }
+    },
+    {
+      "id": "purple-and-orange-leaf-carpet",
+      "label": "紫橘落葉地毯",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Purple and Orange Leaf Carpet.png" }
+    },
+    {
+      "id": "witchs-herb-garden",
+      "label": "女巫香草園",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Witch's Herb Garden.png" }
+    },
+    {
+      "id": "halloween-candy-land",
+      "label": "萬聖糖果樂園",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Halloween Candy Land.png" }
+    },
+    {
+      "id": "bobbing-for-apples-barrel",
+      "label": "咬蘋果木桶",
+      "category": "outdoor",
+      "theme": "halloween",
+      "patches": [{ "zone": "water", "x": 560, "y": 180, "w": 430, "h": 500 }],
+      "background": { "source": "image/backgroud/halloween/Bobbing for Apples Barrel.png" }
+    },
+    {
+      "id": "spooky-swamp-boardwalk",
+      "label": "沼澤木棧道",
+      "category": "outdoor",
+      "theme": "halloween",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 315 }, { "zone": "water", "y0": 560, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Spooky Swamp Boardwalk.png" }
+    },
+    {
+      "id": "glowing-potion-stream",
+      "label": "魔藥小溪",
+      "category": "outdoor",
+      "theme": "halloween",
+      "bands": [{ "zone": "water", "y0": 285, "y1": 595 }],
+      "background": { "source": "image/backgroud/halloween/Glowing Potion Stream.png" }
+    },
+    {
+      "id": "moonlit-lantern-lake",
+      "label": "月光漂浮燈籠湖",
+      "category": "underwater",
+      "theme": "halloween",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Moonlit Lantern Lake.png" }
+    },
+    {
+      "id": "misty-swamp-water",
+      "label": "霧氣沼澤水面",
+      "category": "underwater",
+      "theme": "halloween",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Misty Swamp Water.png" }
+    },
+    {
+      "id": "moonlit-rocky-shore",
+      "label": "月夜岩岸",
+      "category": "outdoor",
+      "theme": "halloween",
+      "bands": [{ "zone": "water", "y0": 340, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Moonlit Rocky Shore.png" }
+    },
+    {
+      "id": "floating-pumpkin-pool",
+      "label": "南瓜漂浮水池",
+      "category": "underwater",
+      "theme": "halloween",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Floating Pumpkin Pool.png" }
+    },
+    {
+      "id": "stormy-halloween-sky",
+      "label": "雷雨萬聖夜空",
+      "category": "sky",
+      "theme": "halloween",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Stormy Halloween Sky.png" }
+    },
+    {
+      "id": "bare-branches-moon-sky",
+      "label": "枯枝滿月",
+      "category": "sky",
+      "theme": "halloween",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Bare Branches Moon Sky.png" }
+    },
+    {
+      "id": "witchy-green-aurora-sky",
+      "label": "綠色極光女巫夜空",
+      "category": "sky",
+      "theme": "halloween",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Witchy Green Aurora Sky.png" }
+    },
+    {
+      "id": "pumpkin-orange-sunset-clouds",
+      "label": "南瓜色晚霞",
+      "category": "sky",
+      "theme": "halloween",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Pumpkin Orange Sunset Clouds.png" }
+    },
+    {
+      "id": "foggy-starry-halloween-night",
+      "label": "霧夜星空",
+      "category": "sky",
+      "theme": "halloween",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Foggy Starry Halloween Night.png" }
+    },
+    {
+      "id": "pastel-halloween-cloudscape",
+      "label": "粉彩萬聖雲朵",
+      "category": "sky",
+      "theme": "halloween",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/halloween/Pastel Halloween Cloudscape.png" }
+    },
+    {
+      "id": "watercolor-halloween-meadow",
+      "label": "水彩萬聖草地",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Watercolor Halloween Meadow.png" }
+    },
+    {
+      "id": "clay-halloween-garden",
+      "label": "黏土萬聖節花園",
+      "category": "outdoor",
+      "theme": "halloween",
+      "background": { "source": "image/backgroud/halloween/Clay Halloween Garden.png" }
     }
 
   ]

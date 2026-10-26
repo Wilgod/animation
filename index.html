@@ -20,6 +20,14 @@
   <div class="sidebar" id="sidebar">
     <h1>Path Animator</h1>
 
+    <label class="scrub-label">
+      Video format
+      <select id="videoFormatSelect" title="Applies to every export: Export Video, Batch Export and Generate Video">
+        <option value="landscape">16:9 — 4K (YouTube video)</option>
+        <option value="short">9:16 — 1080×1920 (YouTube Shorts)</option>
+      </select>
+    </label>
+
     <div id="autoGenSection">
       <button id="autoGenerateBtn">Generate Video…</button>
       <p class="hint" id="autoGenSectionHint">
@@ -198,6 +206,15 @@
     <p class="modal-message">Generate Video</p>
     <p class="hint">Choose which animals can appear, which backgrounds to generate, and how many seconds each video should run.</p>
 
+    <label class="scrub-label">
+      Video format
+      <select id="autoGenFormat">
+        <option value="landscape">16:9 — 4K (YouTube video)</option>
+        <option value="short">9:16 — 1080×1920 (YouTube Shorts)</option>
+      </select>
+    </label>
+    <p class="hint" id="autoGenFormatHint"></p>
+
     <label class="autogen-random">
       <input type="checkbox" id="autoGenRandom" />
       Random mix — each video gets a random background, random animals and a random path,
@@ -207,10 +224,10 @@
       <label class="autogen-random">
         <input type="checkbox" id="autoGenJoin" />
         Join into one long video — every screen gets a new random background and animals,
-        never the same as the screen before (up to 2 hours)
+        never the same as the screen before (up to 2 hours; a YouTube Short up to 3 minutes)
       </label>
       <div id="autoGenScreensSection" hidden>
-        <span class="hint">Screens folder — every screen is kept here, sorted into sky / ground / sea / mixed folders</span>
+        <span class="hint">Screens folder — every screen is kept here, sorted into sky / ground / sea / mixed / halloween folders</span>
         <div class="controls-row output-dir-row">
           <input type="text" id="autoGenScreensDir" spellcheck="false" placeholder="Full path to a folder" />
           <button id="autoGenScreensBrowseBtn">Browse…</button>
@@ -243,6 +260,7 @@
         <option value="ground">地上 (ground animals only)</option>
         <option value="air">天空 (sky animals only)</option>
         <option value="variants">同品種不同顏色 (same species, different colors)</option>
+        <option value="halloween">萬聖節 (Halloween backgrounds only)</option>
       </select>
     </label>
     <p class="hint" id="autoGenCategoryHint"></p>
@@ -270,6 +288,11 @@
         <span>to</span>
         <input type="number" id="autoGenSpeedMax" min="0.25" max="3" step="0.05" value="1.6" />
       </span>
+    </label>
+
+    <label class="autogen-random">
+      <input type="checkbox" id="autoGenPreyMotion" checked />
+      Prey motion (sudden darts, freezes and hiding at the edges)
     </label>
 
     <div id="autoGenIntroSection" hidden>

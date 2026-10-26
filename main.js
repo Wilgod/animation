@@ -265,6 +265,7 @@ app.whenReady().then(async () => {
       gif: !!opts?.gif,
       segment,
       minDurationMs: Number(opts?.minDurationMs) || 0,
+      format: opts?.format === "short" ? "short" : "landscape",
       layoutId: opts?.layoutId,
       name: opts?.name,
       onProgress: (frame, total, phase) => {
@@ -295,7 +296,7 @@ app.whenReady().then(async () => {
     };
     // introPath: optional opening video (片頭) played before the segments.
     if (opts?.introPath) send(0, 0, "intro");
-    const intro = opts?.introPath ? await preparedIntro(opts.introPath) : null;
+    const intro = opts?.introPath ? await preparedIntro(opts.introPath, opts?.format === "short" ? "short" : "landscape") : null;
     let totalSeconds = Number(opts?.totalSeconds) || 0;
     if (key && intro && totalSeconds > 0) totalSeconds += await probeDuration(intro).catch(() => 0);
     const result = await joinVideos({
@@ -486,13 +487,15 @@ function defaultIntroPath() {
 // Opening videos re-encoded to the export format, cached by path + size +
 // modified time so a batch of videos (or a re-run) encodes each one once.
 const introJobs = new Map();
-function preparedIntro(introPath) {
+function preparedIntro(introPath, format = "landscape") {
   const file = String(introPath).trim();
   if (!path.isAbsolute(file) || !fs.existsSync(file)) {
     return Promise.reject(new Error(`Opening video not found: "${file}"`));
   }
   const stat = fs.statSync(file);
-  const key = require("crypto").createHash("sha1").update(`${file}|${stat.size}|${stat.mtimeMs}`).digest("hex");
+  // Landscape keeps its old key so intros already in the cache are reused.
+  const formatKey = format === "landscape" ? "" : `|${format}`;
+  const key = require("crypto").createHash("sha1").update(`${file}|${stat.size}|${stat.mtimeMs}${formatKey}`).digest("hex");
   const cacheDir = path.join(app.getPath("temp"), "pathanim-segments", "intro-cache");
   const out = path.join(cacheDir, `${key}.mp4`);
   if (fs.existsSync(out)) return Promise.resolve(out);
@@ -501,7 +504,7 @@ function preparedIntro(introPath) {
     const tmp = path.join(cacheDir, `${key}.part.mp4`);
     introJobs.set(
       key,
-      encodeIntro(file, tmp)
+      encodeIntro(file, tmp, format)
         .then(() => {
           fs.renameSync(tmp, out);
           return out;

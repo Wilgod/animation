@@ -18,6 +18,18 @@ const GIF_WIDTH = 800;
 const CANVAS_WIDTH = 3840;
 const CANVAS_HEIGHT = 2160;
 
+// Output size per video format. "short" (YouTube Shorts, 9:16) renders the
+// normal 16:9 scene and keeps only its full-height centre strip — auto-
+// generated paths keep the animals inside that strip (see app.js videoFrame).
+const VIDEO_SIZES = {
+  landscape: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT },
+  short: { width: 1080, height: 1920 },
+};
+
+function videoSize(format) {
+  return VIDEO_SIZES[format] || VIDEO_SIZES.landscape;
+}
+
 // Frame capture is the memory-heavy phase: every hidden 4K capture window
 // holds its own full-size canvases + WebGL buffers, and each captured frame
 // is a 33-75 MB native bitmap in this (main) process. Running 4 of those at
@@ -28,7 +40,11 @@ const CANVAS_HEIGHT = 2160;
 // start while earlier videos were still encoding made all of them crawl and
 // delayed every finished MP4 instead of delivering each one as soon as it
 // was ready.
-const MAX_CONCURRENT_CAPTURES = 2;
+// Default 2. With frames now streamed straight to ffmpeg (no JPEG backlog)
+// more can be tried: set PATHANIM_MAX_EXPORTS=3 (1-4) before starting the
+// app. Each running export also runs its own 4K x264 encoder, so a higher
+// number only helps while the CPU still has spare capacity.
+const MAX_CONCURRENT_CAPTURES = Math.max(1, Math.min(4, Math.round(Number(process.env.PATHANIM_MAX_EXPORTS)) || 2));
 let activeCaptures = 0;
 const captureQueue = [];
 async function withCaptureSlot(fn) {
@@ -229,7 +245,7 @@ function setContentSizeReliably(win, width, height) {
   }
 }
 
-async function captureFrames({ port, sceneId, layoutId, framesDir, minDurationMs = 0, onProgress }) {
+async function captureFrames({ port, sceneId, layoutId, framesDir, minDurationMs = 0, format = "landscape", onProgress, onFrame = null }) {
   // Created small and offscreen, then grown via setContentSize() below —
   // Windows caps a *newly created* window (even a hidden/offscreen one) to
   // roughly the monitor's resolution when a size is requested directly in
@@ -285,10 +301,20 @@ async function captureFrames({ port, sceneId, layoutId, framesDir, minDurationMs
     // Capture the canvas element's own bounding rect (not an assumed (0,0)
     // origin) — mirrors Puppeteer's element-scoped screenshot behavior and
     // stays correct regardless of surrounding page layout/padding.
-    const canvasRect = await win.webContents.executeJavaScript(
+    const stageRect = await win.webContents.executeJavaScript(
       `(() => { const r = document.getElementById('stage').getBoundingClientRect();
-        return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) }; })()`
+        return { x: r.x, y: r.y, width: r.width, height: r.height }; })()`
     );
+    // A non-16:9 format captures only the centred part of the canvas with
+    // that format's aspect ratio (full height for a portrait Short).
+    const size = videoSize(format);
+    const cropWidth = Math.min(stageRect.width, (stageRect.height * size.width) / size.height);
+    const canvasRect = {
+      x: Math.round(stageRect.x + (stageRect.width - cropWidth) / 2),
+      y: Math.round(stageRect.y),
+      width: Math.round(cropWidth),
+      height: Math.round(stageRect.height),
+    };
 
     // minDurationMs: long-video segments are padded to their full slot
     // length (animals have already walked off by then) so every segment of
@@ -305,7 +331,22 @@ async function captureFrames({ port, sceneId, layoutId, framesDir, minDurationMs
       // display DPI (and so the main editor window can stay at native
       // HiDPI resolution rather than forcing scale-factor 1 app-wide).
       const image = await win.webContents.capturePage(canvasRect);
-      const resized = image.resize({ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, quality: "best" });
+      // Skip the resize when the capture already has the exact output size
+      // (a display at 100% scaling): a "best"-quality 4K resize on every
+      // frame is costly, and a same-size resize changes nothing.
+      const captured = image.getSize();
+      if (i === 0) console.log(`[export] ${sceneId}: captured ${captured.width}x${captured.height}, output ${size.width}x${size.height}`);
+      const resized =
+        captured.width === size.width && captured.height === size.height
+          ? image
+          : image.resize({ width: size.width, height: size.height, quality: "best" });
+      if (onFrame) {
+        // Streamed straight into the running encoder: no JPEG, no disk.
+        await onFrame(resized, size);
+        onProgress?.(i + 1, frameCount);
+        if (i % GC_EVERY_N_FRAMES === GC_EVERY_N_FRAMES - 1) forceGc();
+        continue;
+      }
       // JPEG, not PNG: these frames are throwaway intermediates immediately
       // re-encoded to lossy H.264 by ffmpeg below, and profiling showed
       // PNG's own encode step (resized.toPNG()) was ~78% of total export
@@ -338,10 +379,10 @@ async function captureFrames({ port, sceneId, layoutId, framesDir, minDurationMs
 // identical stream layouts for the concat step to copy them without
 // re-encoding, so it always gets a 48 kHz stereo AAC track (silence when the
 // scene has no sound) padded/trimmed to exactly the video's length.
-function encodeVideo(framesDir, outputFile, audioPath, frameCount, onProgress, { segment = false } = {}) {
+function encodeVideo(framesDir, outputFile, audioPath, frameCount, onProgress, { segment = false, encoderArgs = X264_ARGS } = {}) {
   return new Promise((resolve, reject) => {
     const cmd = ffmpeg().input(path.join(framesDir, "frame_%05d.jpg")).inputFPS(FPS);
-    const outputOptions = ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-r", String(FPS)];
+    const outputOptions = [...encoderArgs, "-pix_fmt", "yuv420p", "-r", String(FPS)];
     if (segment) {
       if (audioPath) cmd.input(audioPath);
       else cmd.input("anullsrc=r=48000:cl=stereo").inputFormat("lavfi");
@@ -362,6 +403,133 @@ function encodeVideo(framesDir, outputFile, audioPath, frameCount, onProgress, {
       .on("error", reject)
       .on("end", resolve)
       .save(outputFile);
+  });
+}
+
+// ---------------------------------------------------------------------
+// Video encoder: NVIDIA NVENC (on the graphics card) when it works on this
+// machine, otherwise libx264 (CPU) exactly as before. Chosen once per app
+// run by a tiny test encode, so every video, segment and intro of a run
+// uses the same encoder (segments of one long video must match to be
+// joined without re-encoding).
+// PATHANIM_ENCODER=x264 forces the CPU encoder; =nvenc skips the fallback.
+// ---------------------------------------------------------------------
+const X264_ARGS = ["-c:v", "libx264", "-crf", "18"];
+// Highest-quality preset, constant-quality mode at a level comparable to
+// x264 CRF 18, capped near YouTube's recommended 4K60 upload bitrate.
+const NVENC_ARGS = [
+  "-c:v", "h264_nvenc", "-preset", "p7", "-tune", "hq", "-profile:v", "high",
+  "-rc", "vbr", "-cq", "17", "-b:v", "0", "-maxrate", "100M", "-bufsize", "200M",
+  "-spatial-aq", "1", "-temporal-aq", "1", "-rc-lookahead", "32", "-bf", "3",
+];
+
+let encoderChoice = null;
+function videoEncoder() {
+  if (!encoderChoice) encoderChoice = pickVideoEncoder();
+  return encoderChoice;
+}
+
+async function pickVideoEncoder() {
+  const forced = (process.env.PATHANIM_ENCODER || "").toLowerCase();
+  if (forced === "x264") return logEncoder({ name: "libx264 (CPU)", args: X264_ARGS });
+  const nvenc = { name: "h264_nvenc (GPU)", args: NVENC_ARGS };
+  if (forced === "nvenc") return logEncoder(nvenc);
+  const works = await new Promise((resolve) => {
+    const proc = require("child_process").spawn(ffmpegPath, [
+      "-hide_banner", "-loglevel", "error",
+      "-f", "lavfi", "-i", "color=c=black:s=1280x720:r=60", "-frames:v", "30",
+      ...NVENC_ARGS, "-pix_fmt", "yuv420p", "-f", "null", "-",
+    ]);
+    proc.on("error", () => resolve(false));
+    proc.on("close", (code) => resolve(code === 0));
+  });
+  return logEncoder(works ? nvenc : { name: "libx264 (CPU) — NVENC not available", args: X264_ARGS });
+}
+
+function logEncoder(choice) {
+  console.log(`[export] video encoder: ${choice.name}`);
+  return choice;
+}
+
+// Direct-to-encoder export: each captured frame is piped into an ffmpeg
+// process as raw pixels while capture keeps going, instead of every frame
+// being saved as a JPEG and encoded in a second pass afterwards. Same
+// encoder settings as encodeVideo (libx264, CRF 18, 60 fps, yuv420p), so
+// quality is unchanged (if anything slightly better: no JPEG step).
+// Set PATHANIM_LEGACY_EXPORT=1 to go back to the JPEG-frames path.
+const DIRECT_EXPORT = process.env.PATHANIM_LEGACY_EXPORT !== "1";
+
+function startFrameEncoder(outputFile, { width, height }, encoderArgs = X264_ARGS) {
+  const args = [
+    "-hide_banner", "-loglevel", "error", "-y",
+    "-f", "rawvideo", "-pix_fmt", "bgra", "-s", `${width}x${height}`, "-framerate", String(FPS), "-i", "pipe:0",
+    "-an", ...encoderArgs, "-pix_fmt", "yuv420p", "-r", String(FPS),
+    "-f", "mp4", outputFile,
+  ];
+  const proc = require("child_process").spawn(ffmpegPath, args, { stdio: ["pipe", "ignore", "pipe"] });
+  let stderr = "";
+  let failure = null;
+  proc.stderr.on("data", (d) => (stderr += d));
+  const exited = new Promise((resolve) => {
+    proc.on("error", (err) => { failure = err; resolve(); });
+    proc.on("close", (code) => {
+      if (code !== 0 && !failure) failure = new Error(`ffmpeg (video encode) exited with code ${code}: ${stderr.trim()}`);
+      resolve();
+    });
+  });
+  proc.stdin.on("error", (err) => { if (!failure) failure = err; });
+
+  return {
+    // Waits for the pipe to drain, so at most a frame or two is ever held
+    // in memory and capture runs at the encoder's pace when it's slower.
+    async write(image, size) {
+      if (failure) throw failure;
+      const bitmap = image.toBitmap();
+      if (bitmap.length !== size.width * size.height * 4) {
+        throw new Error(`Unexpected frame buffer size ${bitmap.length} for ${size.width}x${size.height}`);
+      }
+      if (!proc.stdin.write(bitmap)) {
+        await new Promise((resolve) => {
+          const done = () => { proc.stdin.off("drain", done); proc.off("close", done); resolve(); };
+          proc.stdin.once("drain", done);
+          proc.once("close", done);
+        });
+      }
+      if (failure) throw failure;
+    },
+    async finish() {
+      proc.stdin.end();
+      await exited;
+      if (failure) throw failure;
+    },
+    abort() {
+      try { proc.stdin.destroy(); } catch {}
+      try { proc.kill(); } catch {}
+    },
+  };
+}
+
+// Adds the audio track to a video-only encode without touching the video
+// (stream copy), with exactly the same audio handling as encodeVideo.
+function muxAudio(videoFile, outputFile, audioPath, frameCount, { segment = false } = {}) {
+  return new Promise((resolve, reject) => {
+    const cmd = ffmpeg().input(videoFile);
+    const outputOptions = ["-c:v", "copy"];
+    if (segment) {
+      if (audioPath) cmd.input(audioPath);
+      else cmd.input("anullsrc=r=48000:cl=stereo").inputFormat("lavfi");
+      outputOptions.push(
+        "-map", "0:v:0", "-map", "1:a:0",
+        "-af", "apad", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
+        "-t", (frameCount / FPS).toFixed(3)
+      );
+    } else if (audioPath) {
+      cmd.input(audioPath);
+      outputOptions.push("-map", "0:v:0", "-map", "1:a:0", "-c:a", "aac", "-b:a", "192k", "-shortest");
+    } else {
+      outputOptions.push("-map", "0:v:0");
+    }
+    cmd.outputOptions(outputOptions).format("mp4").on("error", reject).on("end", resolve).save(outputFile);
   });
 }
 
@@ -418,20 +586,34 @@ function reserveOutputPath(outputDir, base, ext) {
 // onProgress(frame, total, phase): optional progress callback; phase is
 // "capture" while rendering frames, then "encode" while ffmpeg builds the MP4
 // minDurationMs / segment: see captureFrames / encodeVideo (long-video pieces)
-async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = false, minDurationMs = 0, segment = false, onProgress }) {
+// format: "landscape" (4K 16:9, default) or "short" (1080x1920 YouTube Short)
+async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = false, minDurationMs = 0, segment = false, format = "landscape", onProgress }) {
   const framesDir = fs.mkdtempSync(path.join(os.tmpdir(), "pathanim-frames-"));
   fs.mkdirSync(outputDir, { recursive: true });
 
   try {
     return await withCaptureSlot(async () => {
-      const { frameCount, audioPath } = await captureFrames({
-        port,
-        sceneId,
-        layoutId,
-        framesDir,
-        minDurationMs,
-        onProgress: (frame, total) => onProgress?.(frame, total, "capture"),
-      });
+      const direct = DIRECT_EXPORT && !gif; // a GIF is made from saved frames
+      const videoOnlyFile = path.join(framesDir, "video-only.mp4");
+      const { args: encoderArgs } = await videoEncoder();
+      const encoder = direct ? startFrameEncoder(videoOnlyFile, videoSize(format), encoderArgs) : null;
+      let frameCount, audioPath;
+      try {
+        ({ frameCount, audioPath } = await captureFrames({
+          port,
+          sceneId,
+          layoutId,
+          framesDir,
+          minDurationMs,
+          format,
+          onProgress: (frame, total) => onProgress?.(frame, total, "capture"),
+          onFrame: encoder ? (image, size) => encoder.write(image, size) : null,
+        }));
+        if (encoder) await encoder.finish();
+      } catch (err) {
+        encoder?.abort();
+        throw err;
+      }
 
       const base = `${safeFileName(name || sceneId)}-${timestampSuffix()}`;
       const outputFile = reserveOutputPath(outputDir, base, ".mp4");
@@ -440,7 +622,12 @@ async function exportScene({ port, sceneId, layoutId, name, outputDir, gif = fal
       // screens are kept and reused later, so that matters).
       const partFile = outputFile.replace(/\.mp4$/, ".part.mp4");
       try {
-        await encodeVideo(framesDir, partFile, audioPath, frameCount, onProgress, { segment });
+        if (direct) {
+          onProgress?.(frameCount, frameCount, "encode");
+          await muxAudio(videoOnlyFile, partFile, audioPath, frameCount, { segment });
+        } else {
+          await encodeVideo(framesDir, partFile, audioPath, frameCount, onProgress, { segment, encoderArgs });
+        }
         fs.renameSync(partFile, outputFile);
       } catch (err) {
         fs.rmSync(partFile, { force: true });
@@ -517,20 +704,23 @@ function probeDuration(file) {
 }
 
 // Re-encodes an opening video (片頭) of any size/frame rate into the same
-// format as segment-encoded exports (4K 60fps H.264 + 48 kHz stereo AAC), so
-// joinVideos can put it in front of them. Letterboxed, never stretched.
-async function encodeIntro(inputFile, outputFile) {
+// format as segment-encoded exports (60fps H.264 + 48 kHz stereo AAC, at the
+// video format's size), so joinVideos can put it in front of them.
+// Letterboxed, never stretched.
+async function encodeIntro(inputFile, outputFile, format = "landscape") {
   const withAudio = await hasAudioStream(inputFile);
+  const { args: encoderArgs } = await videoEncoder();
+  const { width, height } = videoSize(format);
   return new Promise((resolve, reject) => {
     const cmd = ffmpeg().input(inputFile);
     if (!withAudio) cmd.input("anullsrc=r=48000:cl=stereo").inputFormat("lavfi");
     const vf =
-      `scale=${CANVAS_WIDTH}:${CANVAS_HEIGHT}:force_original_aspect_ratio=decrease:flags=lanczos,` +
-      `pad=${CANVAS_WIDTH}:${CANVAS_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black,setsar=1,fps=${FPS}`;
+      `scale=${width}:${height}:force_original_aspect_ratio=decrease:flags=lanczos,` +
+      `pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:black,setsar=1,fps=${FPS}`;
     cmd
       .outputOptions([
         "-map", "0:v:0", "-map", withAudio ? "0:a:0" : "1:a:0",
-        "-vf", vf, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-r", String(FPS),
+        "-vf", vf, ...encoderArgs, "-pix_fmt", "yuv420p", "-r", String(FPS),
         "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
         ...(withAudio ? [] : ["-shortest"]),
       ])

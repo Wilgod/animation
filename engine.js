@@ -14,6 +14,14 @@
   const SEGMENT_ARC_SAMPLES = 64;
   // Start/stop acceleration time for a 2D path (capped at half a segment).
   const PATH_RAMP_MS = 350;
+  // Prey motion (auto-generated "dart & freeze" paths): stops and starts
+  // happen over a much shorter ramp, so the animal snaps still and bolts
+  // off the way a mouse or bird does — the movement cats react to.
+  const PREY_RAMP_MS = 90;
+
+  function rampMsFor(actor) {
+    return actor.options && actor.options.preyMotion ? PREY_RAMP_MS : PATH_RAMP_MS;
+  }
   // Actor shadow layers (offset/blur in logical px at size 1, scaled with
   // the actor). Light comes from the upper left, so shadows fall down-right.
   const GROUND_SHADOW_LAYERS = [
@@ -202,16 +210,54 @@
   function distanceFractionForSegment(actor, segIndex, lastSegIndex, localT) {
     const duration = segDurationMs(actor, segIndex);
     if (duration <= 0) return localT;
-    const ramp = Math.min(0.5, PATH_RAMP_MS / duration);
+    const ramp = Math.min(0.5, rampMsFor(actor) / duration);
     const rampIn = segIndex === 0 || isStationarySegment(actor, segIndex - 1) ? ramp : 0;
     const rampOut = segIndex === lastSegIndex || isStationarySegment(actor, segIndex + 1) ? ramp : 0;
     return rampedProgress(localT, rampIn, rampOut);
+  }
+
+  // Point of a motion table (cumulative-distance samples) at a distance along it.
+  function pointAtDistance(points, target) {
+    let low = 1, high = points.length - 1;
+    while (low < high) {
+      const mid = (low + high) >> 1;
+      if (points[mid].distance < target) low = mid + 1;
+      else high = mid;
+    }
+    const a = points[low - 1], b = points[low];
+    const fraction = b.distance > a.distance ? (target - a.distance) / (b.distance - a.distance) : 0;
+    return { x: a.x + (b.x - a.x) * fraction, y: a.y + (b.y - a.y) * fraction };
+  }
+
+  // Direction of travel to keep while an actor stands still (a pause at a
+  // waypoint): the way it last moved, or else the way it's about to move.
+  // Without this, a frozen animal has no movement to face and snaps to
+  // facing right for the length of the pause.
+  function heldDirection(actor, tMs, total) {
+    const here = getPositionAt(actor, tMs);
+    const STEP_MS = 40;
+    for (let k = 1; k <= 200; k++) {
+      const t = tMs - k * STEP_MS;
+      if (t < 0) break;
+      const p = getPositionAt(actor, t);
+      const dx = here.x - p.x, dy = here.y - p.y;
+      if (Math.hypot(dx, dy) > 0.5) return { dx, dy };
+    }
+    for (let k = 1; k <= 200; k++) {
+      const t = tMs + k * STEP_MS;
+      if (t > total) break;
+      const p = getPositionAt(actor, t);
+      const dx = p.x - here.x, dy = p.y - here.y;
+      if (Math.hypot(dx, dy) > 0.5) return { dx, dy };
+    }
+    return { dx: 0, dy: 0 };
   }
 
   // Position at absolute time tMs (ms), clamped to [0, actor's own total duration].
   function get3DPositionAt(actor, tMs, total) {
     if (!actor.motionTable) {
       const points = [{ ...actor.path[0], distance: 0 }];
+      const segStarts = [0];
       let distance = 0;
       for (let segment = 0; segment < actor.path.length - 1; segment++) {
         for (let sample = 1; sample <= 64; sample++) {
@@ -220,11 +266,22 @@
           distance += Math.hypot(point.x - previous.x, point.y - previous.y);
           points.push({ ...point, distance });
         }
+        segStarts.push(distance);
       }
-      actor.motionTable = { points, distance };
+      actor.motionTable = { points, distance, segStarts };
     }
-    const { points, distance } = actor.motionTable;
+    const { points, distance, segStarts } = actor.motionTable;
     if (total <= 0 || distance === 0) return points[points.length - 1];
+    // Prey motion follows each segment's own timing (fast darts, slow
+    // creeps, frozen pauses at repeated waypoints) instead of one even
+    // cruise over the whole path, which would erase every stop.
+    if (actor.options && actor.options.preyMotion) {
+      const seg = findSegment(actor, Math.max(0, Math.min(total, tMs)));
+      if (!seg) return points[0];
+      const fraction = distanceFractionForSegment(actor, seg.index, actor.path.length - 2, seg.localT);
+      const start = segStarts[seg.index];
+      return pointAtDistance(points, start + (segStarts[seg.index + 1] - start) * fraction);
+    }
     // One continuous cruise across waypoints, with short acceleration and
     // deceleration ramps only at the start/end. Preserve total path duration.
     const time = Math.max(0, Math.min(total, tMs));
@@ -367,8 +424,9 @@
       const tAfter = Math.min(total, clamped + HEADING_EPSILON_MS);
       const before = getPositionAt(actor, tBefore);
       const after = getPositionAt(actor, tAfter);
-      const dx = after.x - before.x;
-      const dy = after.y - before.y;
+      let dx = after.x - before.x;
+      let dy = after.y - before.y;
+      if (Math.hypot(dx, dy) < 0.01) ({ dx, dy } = heldDirection(actor, clamped, total));
       // A top-down 3D model turns 180deg to head left; a side-angled one
       // (snail, sparrow…) would end up upside down, so it mirrors instead.
       flipped = actor.options.flip && dx < 0 && !(actor.model3d && !actor.model3d.angled && actor.options.rotationFollowsPath);

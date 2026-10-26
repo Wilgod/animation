@@ -86,6 +86,7 @@
   const autoGenSpeedMinEl = document.getElementById("autoGenSpeedMin");
   const autoGenSpeedMaxEl = document.getElementById("autoGenSpeedMax");
   const autoGenCameraDriftEl = document.getElementById("autoGenCameraDrift");
+  const autoGenPreyMotionEl = document.getElementById("autoGenPreyMotion");
   const autoGenBgLabelEl = document.getElementById("autoGenBgLabel");
   const autoGenAnimalLabelEl = document.getElementById("autoGenAnimalLabel");
   const autoGenCategoryEl = document.getElementById("autoGenCategory");
@@ -94,6 +95,9 @@
   const autoGenScreensDirEl = document.getElementById("autoGenScreensDir");
   const autoGenScreensBrowseBtn = document.getElementById("autoGenScreensBrowseBtn");
   const autoGenUseSavedEl = document.getElementById("autoGenUseSaved");
+  const videoFormatSelectEl = document.getElementById("videoFormatSelect");
+  const autoGenFormatEl = document.getElementById("autoGenFormat");
+  const autoGenFormatHintEl = document.getElementById("autoGenFormatHint");
   const longJobResumeEl = document.getElementById("longJobResume");
   const longJobResumeTextEl = document.getElementById("longJobResumeText");
   const longJobContinueBtn = document.getElementById("longJobContinueBtn");
@@ -206,8 +210,40 @@
     return { bands: [], patches: [] };
   }
 
-  function isHabitatAvailableInScene(habitat, zones) {
-    return window.SceneZones.hasZone(zones, habitat, window.AnimEngine.CANVAS_WIDTH, window.AnimEngine.CANVAS_HEIGHT);
+  // frame: the part of the canvas the video shows (see videoFrame) — a
+  // habitat counts only if some of its area falls inside it.
+  function isHabitatAvailableInScene(habitat, zones, frame = null) {
+    const W = window.AnimEngine.CANVAS_WIDTH;
+    const H = window.AnimEngine.CANVAS_HEIGHT;
+    if (!frame) return window.SceneZones.hasZone(zones, habitat, W, H);
+    return window.SceneZones.candidateRects(zones, habitat, W, H).some(
+      (r) => r.x < frame.x + frame.w && r.x + r.w > frame.x && r.y < frame.y + frame.h && r.y + r.h > frame.y
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // Video format. "landscape" is the normal 4K 16:9 video; "short" is a
+  // 9:16 YouTube Short made from the same 16:9 scene by keeping only its
+  // full-height centre strip (electronExport.js crops it at capture time).
+  // Auto-generated paths stay inside that strip, and the editor outlines it.
+  // ---------------------------------------------------------------------
+  const VIDEO_FORMAT_STORAGE_KEY = "pathAnimator.videoFormat";
+  const SHORTS_MAX_SECONDS = 3 * 60; // YouTube's limit for a Short
+
+  function videoFormat() {
+    return videoFormatSelectEl?.value === "short" ? "short" : "landscape";
+  }
+
+  function videoFrame(format = videoFormat()) {
+    const W = window.AnimEngine.CANVAS_WIDTH;
+    const H = window.AnimEngine.CANVAS_HEIGHT;
+    if (format !== "short") return { x: 0, y: 0, w: W, h: H };
+    const w = (H * 9) / 16;
+    return { x: (W - w) / 2, y: 0, w, h: H };
+  }
+
+  function formatName(format) {
+    return format === "short" ? "YouTube Short (9:16)" : "16:9 video";
   }
 
   function isPointAllowedForAnimal(animalId, x, y) {
@@ -240,6 +276,9 @@
       bobbingAmplitude: o.bobbingAmplitude ?? 6,
       strideLengthPx: o.strideLengthPx ?? def.strideLengthPx ?? 140,
       pathSpeedMultiplier: o.pathSpeedMultiplier ?? 1,
+      // Auto-generated "dart & freeze" paths: the engine follows each
+      // segment's own timing with sharp stops and starts (see engine.js).
+      preyMotion: !!o.preyMotion,
       // config "defaultSize" (e.g. 0.7 for insects) applies to newly placed
       // animals; saved layouts keep their own size.
       sizeScale: o.sizeScale ?? def.defaultSize ?? 1,
@@ -259,6 +298,9 @@
       bobbingAmplitude: Number(bobAmplitude.value),
       strideLengthPx: Number(strideLength.value),
       pathSpeedMultiplier: Number(pathSpeed.value) || 1,
+      // Not editable in the sidebar; kept so editing a generated animal
+      // doesn't quietly turn its dart & freeze movement off.
+      preyMotion: !!(editingAnimalId && window.AnimEngine.getActorOptions(editingAnimalId).preyMotion),
       sizeScale: Number(sizeScale.value) || 1,
       shadow: optShadow.checked,
       airborne: habitatFor(editingAnimalId) === "air",
@@ -524,6 +566,22 @@
     overlayCtx.save();
     overlayCtx.translate(canvasRect.left - stagePadRect.left, canvasRect.top - stagePadRect.top);
     overlayCtx.scale(scaleX, scaleY);
+
+    // Shorts: shade what the 9:16 video won't show, so paths can be placed
+    // inside the part that will.
+    if (videoFormat() === "short") {
+      const f = videoFrame("short");
+      const W = window.AnimEngine.CANVAS_WIDTH;
+      const H = window.AnimEngine.CANVAS_HEIGHT;
+      overlayCtx.fillStyle = "rgba(0, 0, 0, 0.45)";
+      overlayCtx.fillRect(0, 0, f.x, H);
+      overlayCtx.fillRect(f.x + f.w, 0, W - f.x - f.w, H);
+      overlayCtx.lineWidth = 2 / scaleX;
+      overlayCtx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+      overlayCtx.setLineDash([10 / scaleX, 8 / scaleX]);
+      overlayCtx.strokeRect(f.x, f.y, f.w, f.h);
+      overlayCtx.setLineDash([]);
+    }
 
     if (editingAnimalId) {
       overlayCtx.lineWidth = 2 / scaleX;
@@ -1966,11 +2024,26 @@
     { key: "floor", label: "Floor / Other" },
   ];
 
+  // Themed scenes (e.g. "halloween") keep their normal category — it still
+  // drives habitat filtering and outdoor effects — but are listed in a group
+  // of their own and only join a random mix when that theme is picked.
+  const SCENE_THEMES = [{ key: "halloween", label: "Halloween" }];
+
+  function themeLabel(key) {
+    return SCENE_THEMES.find((t) => t.key === key)?.label || key;
+  }
+
   function populateSceneDropdown() {
     sceneSelect.innerHTML = "";
     const byCategory = new Map(SCENE_CATEGORY_ORDER.map((c) => [c.key, []]));
+    const byTheme = new Map();
     const uncategorized = [];
     scenes.forEach((scene) => {
+      if (scene.theme) {
+        if (!byTheme.has(scene.theme)) byTheme.set(scene.theme, []);
+        byTheme.get(scene.theme).push(scene);
+        return;
+      }
       const bucket = byCategory.get(scene.category);
       if (bucket) bucket.push(scene);
       else uncategorized.push(scene);
@@ -1990,6 +2063,7 @@
     };
 
     SCENE_CATEGORY_ORDER.forEach(({ key, label }) => appendGroup(label, byCategory.get(key)));
+    byTheme.forEach((list, key) => appendGroup(themeLabel(key), list));
     appendGroup("Other", uncategorized);
   }
 
@@ -2121,21 +2195,43 @@
     return sides[Math.floor(Math.random() * sides.length)];
   }
 
-  function randomEdgePoint(side, w, h, margin) {
+  // frame: the visible part of the canvas ({ x, y, w, h }, see videoFrame).
+  function randomEdgePoint(side, frame, margin) {
+    const { x, y, w, h } = frame;
     switch (side) {
       case "left":
-        return { x: -margin, y: randRange(0, h) };
+        return { x: x - margin, y: randRange(y, y + h) };
       case "right":
-        return { x: w + margin, y: randRange(0, h) };
+        return { x: x + w + margin, y: randRange(y, y + h) };
       case "top":
-        return { x: randRange(0, w), y: -margin };
+        return { x: randRange(x, x + w), y: y - margin };
       default:
-        return { x: randRange(0, w), y: h + margin };
+        return { x: randRange(x, x + w), y: y + h + margin };
     }
   }
 
-  function randomInteriorPoint(w, h, pad) {
-    return { x: randRange(pad, w - pad), y: randRange(pad, h - pad) };
+  function randomInteriorPoint(frame, pad) {
+    return { x: randRange(frame.x + pad, frame.x + frame.w - pad), y: randRange(frame.y + pad, frame.y + frame.h - pad) };
+  }
+
+  function pointInFrame(p, frame) {
+    return p.x >= frame.x && p.x <= frame.x + frame.w && p.y >= frame.y && p.y <= frame.y + frame.h;
+  }
+
+  // A point of the habitat's own zone that's also inside the frame
+  // (rejection-sampled; a Short's frame is about a third of the canvas).
+  function sampleZonePointInFrame(zones, habitat, frame) {
+    const W = window.AnimEngine.CANVAS_WIDTH;
+    const H = window.AnimEngine.CANVAS_HEIGHT;
+    let p = window.SceneZones.sampleZonePoint(zones, habitat, W, H);
+    for (let attempt = 0; attempt < 60 && !pointInFrame(p, frame); attempt++) {
+      p = window.SceneZones.sampleZonePoint(zones, habitat, W, H);
+    }
+    if (pointInFrame(p, frame)) return p;
+    return {
+      x: Math.max(frame.x, Math.min(frame.x + frame.w, p.x)),
+      y: Math.max(frame.y, Math.min(frame.y + frame.h, p.y)),
+    };
   }
 
   // Ground's dwell point additionally avoids landing inside another zone
@@ -2144,12 +2240,12 @@
   // than just the rectangle, since "ground" has no rect of its own (it's
   // whatever isn't claimed by another zone). Falls back to the plain
   // interior point if the scene is unusually zone-dense.
-  function randomGroundDwellPoint(zones, w, h, pad) {
+  function randomGroundDwellPoint(zones, frame, pad) {
     for (let attempt = 0; attempt < 30; attempt++) {
-      const p = randomInteriorPoint(w, h, pad);
+      const p = randomInteriorPoint(frame, pad);
       if (window.SceneZones.zoneAt(zones, p.x, p.y) === "ground") return p;
     }
-    return randomInteriorPoint(w, h, pad);
+    return randomInteriorPoint(frame, pad);
   }
 
   // Entry -> dwell (a clearly-on-screen point, visited twice in a row so the
@@ -2167,21 +2263,21 @@
   // from outside the frame. Either way, calling this again — even for the
   // same animal — produces a visibly different path (used to guarantee every
   // background gets its own route).
-  function generateAutoWalkPath(habitat, zones, wanderStops = 0) {
-    const w = window.AnimEngine.CANVAS_WIDTH;
-    const h = window.AnimEngine.CANVAS_HEIGHT;
-    const pad = Math.round(Math.min(w, h) * AUTO_GEN_INTERIOR_PAD_FRACTION);
+  // frame: the visible part of the canvas (see videoFrame) — "off-screen"
+  // and "on-screen" are relative to it, so a Short's animals stay in its strip.
+  function generateAutoWalkPath(habitat, zones, wanderStops = 0, frame = videoFrame("landscape")) {
+    const pad = Math.round(Math.min(frame.w, frame.h) * AUTO_GEN_INTERIOR_PAD_FRACTION);
 
     let entry, dwell, exit, pickStop;
     if (habitat === "ground") {
       const entrySide = pickRandomSide();
       const exitSide = Math.random() < 0.55 ? entrySide : pickRandomSide(entrySide);
-      entry = randomEdgePoint(entrySide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
-      dwell = randomGroundDwellPoint(zones, w, h, pad);
-      exit = randomEdgePoint(exitSide, w, h, AUTO_GEN_OFFSCREEN_MARGIN);
-      pickStop = () => randomGroundDwellPoint(zones, w, h, pad);
+      entry = randomEdgePoint(entrySide, frame, AUTO_GEN_OFFSCREEN_MARGIN);
+      dwell = randomGroundDwellPoint(zones, frame, pad);
+      exit = randomEdgePoint(exitSide, frame, AUTO_GEN_OFFSCREEN_MARGIN);
+      pickStop = () => randomGroundDwellPoint(zones, frame, pad);
     } else {
-      pickStop = () => window.SceneZones.sampleZonePoint(zones, habitat, w, h);
+      pickStop = () => sampleZonePointInFrame(zones, habitat, frame);
       entry = pickStop();
       dwell = pickStop();
       exit = pickStop();
@@ -2206,10 +2302,10 @@
   // A walk shape whose natural length fills most of budgetMs: adds wander
   // stops (up to 3) until it does, so in a long video the animal keeps
   // moving around the scene instead of crossing it once.
-  function generateAutoWalkForBudget(habitat, zones, budgetMs) {
-    let shape = generateAutoWalkPath(habitat, zones, 0);
+  function generateAutoWalkForBudget(habitat, zones, budgetMs, frame) {
+    let shape = generateAutoWalkPath(habitat, zones, 0, frame);
     for (let stops = 1; stops <= 3 && sum(shape.durations) < budgetMs * 0.8; stops++) {
-      shape = generateAutoWalkPath(habitat, zones, stops);
+      shape = generateAutoWalkPath(habitat, zones, stops, frame);
     }
     return shape;
   }
@@ -2251,6 +2347,112 @@
     return points.map((p, i) => ({ x: p.x, y: p.y, durationToNextMs: i < durations.length ? durations[i] : 0 }));
   }
 
+  // ---------------------------------------------------------------------
+  // Prey motion ("dart & freeze"): the way a mouse, lizard or bird moves,
+  // which is what holds a cat's attention. Instead of one even walk, the
+  // path is a chain of beats, each followed (usually) by a freeze:
+  //   dart  – a fast bolt to a new spot
+  //   creep – a slow, short sneak
+  //   twitch – a tiny, quick hop
+  //   hide  – (ground only) bolt to the edge, half out of view, wait, bolt back
+  // Every leg's duration comes from its own speed, so the engine (which
+  // follows per-segment timing for prey-motion actors) plays sudden speed
+  // changes and real stops. A freeze is a repeated waypoint.
+  // ---------------------------------------------------------------------
+  const PREY_MIN_LEG_MS = 160; // shortest move, so a twitch isn't a teleport
+  const PREY_MIN_FREEZE_MS = 150;
+
+  function generatePreyWalkPath(habitat, zones, budgetMs, frame = videoFrame("landscape")) {
+    const pad = Math.round(Math.min(frame.w, frame.h) * AUTO_GEN_INTERIOR_PAD_FRACTION);
+    const ground = habitat === "ground";
+    let entry, exit, pickStop;
+    if (ground) {
+      const entrySide = pickRandomSide();
+      const exitSide = Math.random() < 0.55 ? entrySide : pickRandomSide(entrySide);
+      entry = randomEdgePoint(entrySide, frame, AUTO_GEN_OFFSCREEN_MARGIN);
+      exit = randomEdgePoint(exitSide, frame, AUTO_GEN_OFFSCREEN_MARGIN);
+      pickStop = () => randomGroundDwellPoint(zones, frame, pad);
+    } else {
+      pickStop = () => sampleZonePointInFrame(zones, habitat, frame);
+      entry = pickStop();
+      exit = pickStop();
+    }
+    // A stop roughly `want` px away from `from` (best of several samples, so
+    // it stays inside the animal's own habitat).
+    const stopNear = (from, minD, maxD) => {
+      const want = randRange(minD, maxD);
+      let best = null;
+      let bestErr = Infinity;
+      for (let i = 0; i < 16; i++) {
+        const c = pickStop();
+        const err = Math.abs(Math.hypot(c.x - from.x, c.y - from.y) - want);
+        if (err < bestErr) [best, bestErr] = [c, err];
+      }
+      return best;
+    };
+    // Half out of view at a frame edge: hiding, but still peeking.
+    const edgePeek = () => randomEdgePoint(pickRandomSide(), frame, randRange(-10, 35));
+
+    const base = randRange(AUTO_GEN_SPEED_MIN, AUTO_GEN_SPEED_MAX);
+    const points = [entry];
+    const durations = [];
+    let cur = entry;
+    const move = (to, speedMult) => {
+      const dist = Math.hypot(to.x - cur.x, to.y - cur.y);
+      durations.push(Math.max(PREY_MIN_LEG_MS, Math.round((dist / (base * speedMult)) * 1000)));
+      points.push(to);
+      cur = to;
+    };
+    const freeze = (ms) => {
+      durations.push(Math.round(ms));
+      points.push({ x: cur.x, y: cur.y });
+    };
+    const randomFreeze = () => {
+      const r = Math.random();
+      if (r < 0.15) freeze(randRange(3000, 5000)); // long, tense stillness
+      else if (r < 0.85) freeze(randRange(500, 2500));
+      else freeze(randRange(200, 450)); // a split-second hesitation
+    };
+
+    // Bolt in, then freeze as if checking for danger.
+    move(pickStop(), randRange(1.8, 3));
+    freeze(randRange(700, 2500));
+
+    while (sum(durations) < budgetMs * 0.8 && points.length < 80) {
+      const r = Math.random();
+      if (ground && r < 0.12) {
+        move(edgePeek(), randRange(2.2, 3.5));
+        freeze(randRange(800, 2500));
+        move(pickStop(), randRange(2, 3.2));
+      } else if (r < 0.32) {
+        move(stopNear(cur, 25, 70), randRange(1.5, 2.5)); // twitch
+      } else if (r < 0.5) {
+        move(stopNear(cur, 80, 220), randRange(0.35, 0.6)); // creep
+      } else {
+        move(pickStop(), randRange(2.2, 4)); // dart
+      }
+      if (Math.random() < 0.8) randomFreeze();
+    }
+    move(exit, randRange(2.2, 3.5)); // bolt away
+    return { points, durations };
+  }
+
+  // Squeezes a prey path into budgetMs: every leg and freeze shrinks by the
+  // same factor (never below its floor), so the rhythm of darts and pauses
+  // survives in a short clip.
+  function fitPreyWalkToBudget({ points, durations }, budgetMs) {
+    const total = sum(durations);
+    let fitted = durations;
+    if (total > budgetMs) {
+      const factor = budgetMs / total;
+      fitted = durations.map((d, i) => {
+        const still = points[i].x === points[i + 1].x && points[i].y === points[i + 1].y;
+        return Math.max(still ? PREY_MIN_FREEZE_MS : PREY_MIN_LEG_MS, Math.round(d * factor));
+      });
+    }
+    return { path: buildWalkPath(points, fitted), totalDurationMs: sum(fitted) };
+  }
+
   // Builds a full saved-layout object (same shape as buildLayoutData/what
   // /api/path/:sceneId expects) for one background: every animal in
   // animalIds gets its own random walk path, and start times are staggered
@@ -2271,8 +2473,8 @@
   // loaded). Animals whose habitat has nowhere to go in this scene (e.g. a
   // goldfish selected for a scene with no water patch) are silently dropped
   // rather than generated somewhere wrong.
-  function buildAutoLayoutForScene(sceneId, animalIds, totalMs, zones) {
-    const eligibleIds = animalIds.filter((id) => isHabitatAvailableInScene(habitatFor(id), zones));
+  function buildAutoLayoutForScene(sceneId, animalIds, totalMs, zones, frame = videoFrame("landscape")) {
+    const eligibleIds = animalIds.filter((id) => isHabitatAvailableInScene(habitatFor(id), zones, frame));
     const n = eligibleIds.length;
     const shuffled = [...eligibleIds].sort(() => Math.random() - 0.5);
     const animals = {};
@@ -2290,13 +2492,15 @@
       const [speedMin, speedMax] = autoGenSpeedRange();
       const pathSpeedMultiplier = Math.round(randRange(speedMin, speedMax) * 20) / 20;
       const rawBudget = budget * pathSpeedMultiplier;
-      const shape = generateAutoWalkForBudget(habitatFor(id), zones, rawBudget);
-      const { path, totalDurationMs } = fitAutoWalkToBudget(shape, rawBudget);
+      const preyMotion = !autoGenPreyMotionEl || autoGenPreyMotionEl.checked;
+      const { path, totalDurationMs } = preyMotion
+        ? fitPreyWalkToBudget(generatePreyWalkPath(habitatFor(id), zones, rawBudget, frame), rawBudget)
+        : fitAutoWalkToBudget(generateAutoWalkForBudget(habitatFor(id), zones, rawBudget, frame), rawBudget);
       const playedDurationMs = totalDurationMs / pathSpeedMultiplier;
 
       const maxStart = Math.max(0, totalMs - playedDurationMs);
       const startAtMs = Math.round(Math.min(maxStart, desiredStart));
-      animals[id] = { path, options: normalizeOptions(id, { pathSpeedMultiplier }, sceneId), startAtMs };
+      animals[id] = { path, options: normalizeOptions(id, { pathSpeedMultiplier, preyMotion }, sceneId), startAtMs };
     });
 
     return { sceneId, activeAnimals: shuffled, animals, placedOrnaments: [] };
@@ -2328,6 +2532,10 @@
   }
 
   function sceneMatchesCategory(scene, category) {
+    // A theme category picks exactly that theme's backgrounds; every other
+    // category leaves themed backgrounds out of the mix.
+    if (SCENE_THEMES.some((t) => t.key === category)) return scene.theme === category;
+    if (scene.theme) return false;
     // Color variants include sea animals (fish) as well as land ones; the
     // planner pairs each group only with backgrounds it can live on.
     if (category === "all" || category === "variants") return true;
@@ -2359,7 +2567,9 @@
     autoGenCategoryHintEl.textContent =
       category === "variants"
         ? "Each video shows 2+ of the same animal in different colors."
-        : category === "all"
+        : SCENE_THEMES.some((t) => t.key === category)
+          ? `Every video uses only ${themeLabel(category)} backgrounds, with any animal that can live on them.`
+          : category === "all"
           ? ""
           : random
             ? "Every video uses only animals from this category."
@@ -2387,13 +2597,24 @@
   // the cap selected, the newest picks beyond the cap are deselected again.
   function renderAutoGenBgList() {
     autoGenBgSelectEl.innerHTML = "";
+    const themeGroups = new Map();
     scenes.forEach((scene) => {
       const opt = document.createElement("option");
       opt.value = scene.id;
       opt.textContent = scene.label || scene.id;
       opt.selected = autoGenSelectedBgIds.has(scene.id);
-      autoGenBgSelectEl.appendChild(opt);
+      if (!scene.theme) {
+        autoGenBgSelectEl.appendChild(opt);
+        return;
+      }
+      if (!themeGroups.has(scene.theme)) {
+        const group = document.createElement("optgroup");
+        group.label = themeLabel(scene.theme);
+        themeGroups.set(scene.theme, group);
+      }
+      themeGroups.get(scene.theme).appendChild(opt);
     });
+    themeGroups.forEach((group) => autoGenBgSelectEl.appendChild(group));
     updateAutoGenBgHint();
   }
 
@@ -2646,20 +2867,33 @@
     return Math.max(3, Math.min(120, Number(autoGenSecondsEl.value) || 8));
   }
 
+  // A joined Short must stay within YouTube's Shorts length limit.
   function autoGenMaxCount() {
     if (useSavedScreens()) return Math.max(1, savedScreens.length);
-    return autoGenJoinEl.checked ? Math.floor(AUTO_GEN_LONG_MAX_SECONDS / autoGenSeconds()) : AUTO_GEN_MAX_VIDEOS;
+    const maxSeconds = videoFormat() === "short" ? SHORTS_MAX_SECONDS : AUTO_GEN_LONG_MAX_SECONDS;
+    return autoGenJoinEl.checked ? Math.max(1, Math.floor(maxSeconds / autoGenSeconds())) : AUTO_GEN_MAX_VIDEOS;
   }
 
-  // Screens folder sub-folders. A screen goes to sky / ground / sea when
-  // all its animals live there, otherwise to mixed.
+  // Screens folder sub-folders. A screen on a themed background goes to that
+  // theme's folder (e.g. halloween); otherwise to sky / ground / sea when all
+  // its animals live there, else to mixed. Shorts screens get the same names
+  // with a "short-" prefix: screens are joined without re-encoding, so 9:16
+  // and 16:9 screens must never be mixed.
   const SCREEN_FOLDERS = ["sky", "ground", "sea", "mixed"];
-  const SCREEN_FOLDERS_BY_CATEGORY = { sea: ["sea"], ground: ["ground"], air: ["sky"] };
+  const SCREEN_FOLDERS_BY_CATEGORY = { sea: ["sea"], ground: ["ground"], air: ["sky"], halloween: ["halloween"] };
 
-  function screenFolderFor(animalIds) {
+  function screenFolderFor(animalIds, sceneId, format = "landscape") {
+    const prefix = format === "short" ? "short-" : "";
+    const theme = scenes.find((s) => s.id === sceneId)?.theme;
+    if (theme) return prefix + theme;
     const habitats = new Set(animalIds.map(habitatFor));
-    if (habitats.size !== 1) return "mixed";
-    return { water: "sea", air: "sky", ground: "ground" }[[...habitats][0]] || "mixed";
+    if (habitats.size !== 1) return prefix + "mixed";
+    return prefix + ({ water: "sea", air: "sky", ground: "ground" }[[...habitats][0]] || "mixed");
+  }
+
+  function screenFoldersForCategory(category, format = videoFormat()) {
+    const folders = SCREEN_FOLDERS_BY_CATEGORY[category] || SCREEN_FOLDERS;
+    return format === "short" ? folders.map((f) => `short-${f}`) : folders;
   }
 
   function screensDirValue() {
@@ -2672,7 +2906,7 @@
   async function refreshSavedScreens() {
     const request = ++savedScreensRequest;
     autoGenLengthHintEl.textContent = "Looking for saved screens…";
-    const folders = SCREEN_FOLDERS_BY_CATEGORY[autoGenCategoryEl.value] || SCREEN_FOLDERS;
+    const folders = screenFoldersForCategory(autoGenCategoryEl.value);
     let found = [];
     try {
       found = await window.electronAPI.listScreens(screensDirValue(), folders);
@@ -2698,7 +2932,7 @@
     const max = autoGenMaxCount();
     autoGenCountEl.max = String(max);
     if (useSavedScreens()) {
-      const folders = (SCREEN_FOLDERS_BY_CATEGORY[autoGenCategoryEl.value] || SCREEN_FOLDERS).join(" / ");
+      const folders = screenFoldersForCategory(autoGenCategoryEl.value).join(" / ");
       const total = savedScreens.reduce((sum, f) => sum + f.seconds, 0);
       autoGenCountLabelEl.textContent = `Saved screens to use (up to ${savedScreens.length})`;
       if (savedScreens.length === 0) {
@@ -2719,7 +2953,9 @@
     }
     const count = Math.max(1, Math.min(max, Math.round(Number(autoGenCountEl.value) || 1)));
     const seconds = autoGenSeconds();
-    autoGenLengthHintEl.textContent = `${count} screens × ${seconds}s = ${formatLength(count * seconds)} in one video.`;
+    autoGenLengthHintEl.textContent =
+      `${count} screens × ${seconds}s = ${formatLength(count * seconds)} in one video.` +
+      (videoFormat() === "short" ? ` (A Short can be at most ${formatLength(SHORTS_MAX_SECONDS)}.)` : "");
   }
 
   autoGenJoinEl.addEventListener("change", () => {
@@ -2823,7 +3059,7 @@
   // combination in the pool has been used, the history starts over.
   // Paths are generated fresh for every video, so even a reused
   // combination never looks the same.
-  async function planRandomMix(count, animalPool, bgPool, maxAnimals, category = "all") {
+  async function planRandomMix(count, animalPool, bgPool, maxAnimals, category = "all", frame = null) {
     const zonesByBg = new Map(await Promise.all(bgPool.map(async (id) => [id, await fetchSceneZones(id)])));
     let history = [];
     try {
@@ -2838,7 +3074,7 @@
     const minSize = category === "variants" ? 2 : 1;
     const groupsByBg = new Map();
     for (const sceneId of bgPool) {
-      const eligible = animalPool.filter((id) => isHabitatAvailableInScene(habitatFor(id), zonesByBg.get(sceneId)));
+      const eligible = animalPool.filter((id) => isHabitatAvailableInScene(habitatFor(id), zonesByBg.get(sceneId), frame));
       const groups = category === "variants" ? variantGroups(eligible) : [eligible];
       groupsByBg.set(sceneId, groups.filter((g) => g.length >= minSize).map((g) => [...g].sort()));
     }
@@ -2910,11 +3146,12 @@
     const count = Math.max(1, Math.min(autoGenMaxCount(), Math.round(Number(autoGenCountEl.value) || 1)));
     const maxAnimals = Math.max(1, Math.min(4, Math.round(Number(autoGenMaxAnimalsEl.value) || 1)));
     const totalMs = seconds * 1000;
+    const format = videoFormat();
     const category = autoGenCategoryEl.value;
     if (category !== "all") {
       animalPool = animalPool.filter((id) => animalMatchesCategory(animalDefFor(id) || { id }, category));
     }
-    const { plan, history } = await planRandomMix(count, animalPool, bgPool, maxAnimals, category);
+    const { plan, history } = await planRandomMix(count, animalPool, bgPool, maxAnimals, category, videoFrame(format));
     if (plan.length === 0) {
       autoGenModalStatusEl.textContent =
         category === "variants"
@@ -2935,11 +3172,11 @@
       : "";
     const confirmed = await confirmDialog(
       join
-        ? `This makes one ${formatLength(plan.length * seconds)} video: ${plan.length} screens of ${seconds}s, each with a ` +
+        ? `This makes one ${formatLength(plan.length * seconds)} ${formatName(format)}: ${plan.length} screens of ${seconds}s, each with a ` +
             `new random background, animals and paths. Rendering takes a long time and needs free disk space. ` +
             `If it stops (error, closing the app, restart), you can continue it later.` +
             `${introConfirmText(introPath, true)}${replaceText} Continue?`
-        : `This makes ${plan.length} video(s), ${seconds}s each, with random backgrounds, animals and paths. ` +
+        : `This makes ${plan.length} ${formatName(format)}(s), ${seconds}s each, with random backgrounds, animals and paths. ` +
             `Your saved scene layouts are not changed.${introConfirmText(introPath, false)} Continue?`
     );
     if (!confirmed) return;
@@ -2962,12 +3199,13 @@
         runId,
         createdAt: new Date().toISOString(),
         seconds,
+        format,
         introPath,
         outputDir: outputDirInput.value.trim(),
         screensDir: screensDirValue(),
         camera: autoGenCameraDriftEl.checked,
         history,
-        screens: jobs.map((job) => ({ ...job, folder: screenFolderFor(job.animals), file: null })),
+        screens: jobs.map((job) => ({ ...job, folder: screenFolderFor(job.animals, job.sceneId, format), file: null })),
       });
       return;
     }
@@ -2977,7 +3215,7 @@
     const succeeded = [];
     const camera = autoGenCameraDriftEl.checked;
     async function renderOne(job) {
-      const result = await renderRandomScreen(job, { seconds, camera, introPath });
+      const result = await renderRandomScreen(job, { seconds, camera, introPath, format });
       setAutoGenRowStatus(job.rowKey, `Done: ${result.outputFile}`, "done");
       succeeded.push(job.key);
     }
@@ -3030,10 +3268,10 @@
   // Renders one random-mix video: a fresh random path for job.animals on
   // job.sceneId. screensFolder set = a long-video screen, padded to exactly
   // `seconds` and kept in that sub-folder of the screens folder.
-  async function renderRandomScreen(job, { seconds, camera, introPath = null, screensDir = "", screensFolder = null }) {
+  async function renderRandomScreen(job, { seconds, camera, introPath = null, screensDir = "", screensFolder = null, format = "landscape" }) {
     setAutoGenRowStatus(job.rowKey, "Generating path…", "info", 0);
     const zones = await fetchSceneZones(job.sceneId);
-    const layout = buildAutoLayoutForScene(job.sceneId, job.animals, seconds * 1000, zones);
+    const layout = buildAutoLayoutForScene(job.sceneId, job.animals, seconds * 1000, zones, videoFrame(format));
     layout.effects = randomSceneEffects(job.sceneId, zones, Math.random, { camera });
     const saveRes = await fetch(`/api/auto-layout/${job.rowKey}`, {
       method: "POST",
@@ -3048,6 +3286,7 @@
     try {
       return await exportWithIntro(job.sceneId, {
         gif: false,
+        format,
         layoutId: job.rowKey,
         progressKey: job.rowKey,
         name: `${sceneLabel(job.sceneId)}-${job.animals.map(screenAnimalName).join("-")}`,
@@ -3092,6 +3331,7 @@
               camera: job.camera,
               screensDir: job.screensDir,
               screensFolder: sc.folder,
+              format: job.format || "landscape", // tasks saved before Shorts existed are 16:9
             });
             sc.file = result.outputFile;
             setAutoGenRowStatus(sc.rowKey, "Done.", "done");
@@ -3130,9 +3370,10 @@
     try {
       const result = await joinLongVideo(done.map((sc) => sc.file), {
         outputDir: job.outputDir,
-        name: `long-video-${formatLength(total).replace(/\s+/g, "")}`,
+        name: `${job.format === "short" ? "short" : "long-video"}-${formatLength(total).replace(/\s+/g, "")}`,
         introPath: job.introPath,
         totalSeconds: total,
+        format: job.format || "landscape",
       });
       await window.electronAPI.clearLongJob();
       summaryEl.textContent =
@@ -3150,7 +3391,7 @@
     const done = job.screens.filter((sc) => sc.file).length;
     const started = new Date(job.createdAt);
     return (
-      `Unfinished long video (${formatLength(job.screens.length * job.seconds)}, started ` +
+      `Unfinished ${job.format === "short" ? "YouTube Short" : "long video"} (${formatLength(job.screens.length * job.seconds)}, started ` +
       `${started.toLocaleString()}): ${done} / ${job.screens.length} screens done, ` +
       `${job.screens.length - done} to go.`
     );
@@ -3241,8 +3482,9 @@
     const count = Math.max(1, Math.min(screens.length, Math.round(Number(autoGenCountEl.value) || 1)));
     const picked = orderScreens(shuffled(screens).slice(0, count));
     const total = Math.round(picked.reduce((sum, f) => sum + f.seconds, 0));
+    const format = videoFormat();
     const confirmed = await confirmDialog(
-      `This makes one ${formatLength(total)} video from ${picked.length} saved screens picked at random. ` +
+      `This makes one ${formatLength(total)} ${formatName(format)} from ${picked.length} saved screens picked at random. ` +
         `Nothing is rendered, and the saved screens are kept.${introConfirmText(introPath, true)} Continue?`
     );
     if (!confirmed) return;
@@ -3257,9 +3499,10 @@
     try {
       const result = await joinLongVideo(picked.map((f) => f.file), {
         outputDir: outputDirInput.value.trim(),
-        name: `long-video-${formatLength(total).replace(/\s+/g, "")}`,
+        name: `${format === "short" ? "short" : "long-video"}-${formatLength(total).replace(/\s+/g, "")}`,
         introPath,
         totalSeconds: picked.reduce((sum, f) => sum + f.seconds, 0),
+        format,
       });
       summaryEl.textContent = `Done: ${result.outputFile} (${formatLength(total)})`;
     } catch (err) {
@@ -3301,11 +3544,12 @@
     }
     const totalMs = seconds * 1000;
     const canExport = !!window.electronAPI;
+    const format = videoFormat();
 
     const confirmed = await confirmDialog(
       canExport
         ? `This generates and overwrites the saved layout for ${sceneIds.length} background(s), then exports ` +
-          `${sceneIds.length} video(s) at ${seconds}s each.${introConfirmText(introPath, false)} Continue?`
+          `${sceneIds.length} ${formatName(format)}(s) at ${seconds}s each.${introConfirmText(introPath, false)} Continue?`
         : `This generates and overwrites the saved layout for ${sceneIds.length} background(s) at ${seconds}s ` +
           `each. No video file is produced here — open the desktop app to render them. Continue?`
     );
@@ -3318,7 +3562,7 @@
     async function generateAndSaveOne(sceneId, i) {
       setAutoGenRowStatus(sceneId, "Generating path…", "info");
       const zones = await fetchSceneZones(sceneId);
-      const layout = buildAutoLayoutForScene(sceneId, selectedAnimalIds, totalMs, zones);
+      const layout = buildAutoLayoutForScene(sceneId, selectedAnimalIds, totalMs, zones, videoFrame(format));
 
       setAutoGenRowStatus(sceneId, "Saving…", "info");
       const saveRes = await fetch(`/api/path/${sceneId}`, {
@@ -3338,7 +3582,7 @@
         setAutoGenRowStatus(sceneId, exportProgressText(frame, total, phase), "info", exportFraction(frame, total, phase));
       });
       try {
-        const result = await exportWithIntro(sceneId, { gif: false }, introPath);
+        const result = await exportWithIntro(sceneId, { gif: false, format }, introPath);
         setAutoGenRowStatus(sceneId, `Done: ${result.outputFile}`, "done");
         return result;
       } finally {
@@ -3368,7 +3612,35 @@
     setExportUIState(false);
   });
 
+  // The video format applies to every export (single, Batch, Generate Video)
+  // and is remembered per machine. The Generate Video dialog has its own
+  // copy of the sidebar's select; the two stay in sync.
+  function initVideoFormat() {
+    if (!videoFormatSelectEl) return;
+    try {
+      if (localStorage.getItem(VIDEO_FORMAT_STORAGE_KEY) === "short") videoFormatSelectEl.value = "short";
+    } catch (err) { /* use default */ }
+    const onChange = (source) => {
+      if (source === autoGenFormatEl) videoFormatSelectEl.value = autoGenFormatEl.value;
+      autoGenFormatEl.value = videoFormat();
+      try { localStorage.setItem(VIDEO_FORMAT_STORAGE_KEY, videoFormat()); } catch (err) { /* not persisted */ }
+      autoGenFormatHintEl.textContent =
+        videoFormat() === "short"
+          ? `Made from the centre of each background (the editor shades the rest). ` +
+            `A joined Short is at most ${formatLength(SHORTS_MAX_SECONDS)}.`
+          : "";
+      if (!useSavedScreens() && Number(autoGenCountEl.value) > autoGenMaxCount()) autoGenCountEl.value = autoGenMaxCount();
+      updateAutoGenLengthHint();
+      if (useSavedScreens()) refreshSavedScreens();
+      if (!isExportMode && currentScene) drawOverlay();
+    };
+    videoFormatSelectEl.addEventListener("change", () => onChange(videoFormatSelectEl));
+    autoGenFormatEl.addEventListener("change", () => onChange(autoGenFormatEl));
+    onChange(null);
+  }
+
   async function init() {
+    initVideoFormat();
     const config = await fetchConfig();
     scenes = config.scenes || [];
     animalDefs = config.animals || [];
@@ -3431,14 +3703,14 @@
   // Joins files into one long video, feeding the overall progress bar.
   // totalSeconds: the files' combined length (the opening video, if any, is
   // measured by the main process).
-  async function joinLongVideo(files, { outputDir, name, introPath, totalSeconds }) {
+  async function joinLongVideo(files, { outputDir, name, introPath, totalSeconds, format = "landscape" }) {
     const progressKey = `join-${Date.now().toString(36)}`;
     setAutoGenJoinProgress(0);
     exportProgressRoutes.set(progressKey, (frame, total, phase) => {
       setAutoGenJoinProgress(phase === "join" && total > 0 ? frame / total : 0);
     });
     try {
-      const result = await window.electronAPI.joinSegments(null, files, { outputDir, name, introPath, progressKey, totalSeconds });
+      const result = await window.electronAPI.joinSegments(null, files, { outputDir, name, introPath, progressKey, totalSeconds, format });
       setAutoGenJoinProgress(1);
       return result;
     } finally {
@@ -3459,6 +3731,7 @@
       outputDir: outputDirInput.value.trim(),
       name: opts.name || sceneLabel(sceneId),
       introPath,
+      format: opts.format || videoFormat(),
     });
   }
 
@@ -3470,8 +3743,8 @@
 
   function updateAutoGenIntroHint() {
     autoGenIntroHintEl.textContent = autoGenJoinEl.checked && autoGenRandomEl.checked
-      ? "Plays once at the start of the long video. Any size works — it's fitted to 4K."
-      : "Every generated video starts with it. Any size works — it's fitted to 4K.";
+      ? "Plays once at the start of the long video. Any size works — it's fitted to the video format."
+      : "Every generated video starts with it. Any size works — it's fitted to the video format.";
   }
 
   // The opening-video choice is remembered per machine; first run defaults
@@ -3529,6 +3802,7 @@
     // passes its own name.
     return window.electronAPI.exportScene(sceneId, {
       name: sceneLabel(sceneId),
+      format: videoFormat(),
       ...opts,
       outputDir: outputDirInput.value.trim(),
     });
