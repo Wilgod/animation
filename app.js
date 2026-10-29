@@ -2039,7 +2039,10 @@
   // Themed scenes (e.g. "halloween") keep their normal category — it still
   // drives habitat filtering and outdoor effects — but are listed in a group
   // of their own and only join a random mix when that theme is picked.
-  const SCENE_THEMES = [{ key: "halloween", label: "Halloween" }];
+  const SCENE_THEMES = [
+    { key: "halloween", label: "Halloween" },
+    { key: "night-garden", label: "Night Garden" },
+  ];
 
   function themeLabel(key) {
     return SCENE_THEMES.find((t) => t.key === key)?.label || key;
@@ -2892,7 +2895,7 @@
   // with a "short-" prefix: screens are joined without re-encoding, so 9:16
   // and 16:9 screens must never be mixed.
   const SCREEN_FOLDERS = ["sky", "ground", "sea", "mixed"];
-  const SCREEN_FOLDERS_BY_CATEGORY = { sea: ["sea"], ground: ["ground"], air: ["sky"], halloween: ["halloween"] };
+  const SCREEN_FOLDERS_BY_CATEGORY = { sea: ["sea"], ground: ["ground"], air: ["sky"], halloween: ["halloween"], "night-garden": ["night-garden"] };
 
   function screenFolderFor(animalIds, sceneId, format = "landscape") {
     const prefix = format === "short" ? "short-" : "";

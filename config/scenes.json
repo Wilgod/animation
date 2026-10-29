@@ -2842,7 +2842,301 @@
       "category": "outdoor",
       "theme": "halloween",
       "background": { "source": "image/backgroud/halloween/Clay Halloween Garden.png" }
+    },
+    {
+      "id": "moonlit-garden-lawn",
+      "label": "月光草坪",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Garden Lawn.png" }
+    },
+    {
+      "id": "lantern-stepping-stone-path",
+      "label": "燈籠石板小徑",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Lantern Stepping Stone Path.png" }
+    },
+    {
+      "id": "night-water-lily-pond",
+      "label": "夜晚睡蓮池",
+      "category": "underwater",
+      "theme": "night-garden",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Night Water Lily Pond.png" }
+    },
+    {
+      "id": "moonflower-bed",
+      "label": "夜光花圃",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonflower Bed.png" }
+    },
+    {
+      "id": "string-lights-patio-deck",
+      "label": "燈串木平台",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/String Lights Patio Deck.png" }
+    },
+    {
+      "id": "moonlit-mossy-rocks",
+      "label": "月光青苔石",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Mossy Rocks.png" }
+    },
+    {
+      "id": "moonlit-vegetable-patch",
+      "label": "夜晚菜園",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Vegetable Patch.png" }
+    },
+    {
+      "id": "moonlit-treetop-sky",
+      "label": "樹梢月夜星空",
+      "category": "sky",
+      "theme": "night-garden",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Moonlit Treetop Sky.png" }
+    },
+    {
+      "id": "twinkle-light-wildflower-meadow",
+      "label": "夜晚野花草地",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Twinkle Light Wildflower Meadow.png" }
+    },
+    {
+      "id": "moonlit-raked-gravel-garden",
+      "label": "月光枯山水",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Raked Gravel Garden.png" }
+    },
+    {
+      "id": "moonlit-lavender-rows",
+      "label": "月光薰衣草田",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Lavender Rows.png" }
+    },
+    {
+      "id": "moonlit-rose-garden-path",
+      "label": "玫瑰花園石板路",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Rose Garden Path.png" }
+    },
+    {
+      "id": "night-greenhouse-brick-floor",
+      "label": "夜晚溫室紅磚地",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Night Greenhouse Brick Floor.png" }
+    },
+    {
+      "id": "candlelit-brick-patio",
+      "label": "燭光紅磚露台",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Candlelit Brick Patio.png" }
+    },
+    {
+      "id": "moonlit-pine-needle-path",
+      "label": "月光松針小徑",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Pine Needle Path.png" }
+    },
+    {
+      "id": "moonlit-clover-patch",
+      "label": "月光三葉草地",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Clover Patch.png" }
+    },
+    {
+      "id": "moonlit-hydrangea-corner",
+      "label": "繡球花角落",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Hydrangea Corner.png" }
+    },
+    {
+      "id": "moonlit-petal-strewn-lawn",
+      "label": "月光落花草坪",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Petal-Strewn Lawn.png" }
+    },
+    {
+      "id": "moonlit-herb-raised-beds",
+      "label": "香草高架花圃",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Herb Raised Beds.png" }
+    },
+    {
+      "id": "moonlit-pebble-mosaic-courtyard",
+      "label": "卵石馬賽克庭院",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Pebble Mosaic Courtyard.png" }
+    },
+    {
+      "id": "moonlit-strawberry-patch",
+      "label": "夜晚草莓園",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Strawberry Patch.png" }
+    },
+    {
+      "id": "moonlit-bamboo-grove-floor",
+      "label": "竹林地面",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Bamboo Grove Floor.png" }
+    },
+    {
+      "id": "moonlit-picnic-blanket",
+      "label": "月光野餐墊",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Picnic Blanket.png" }
+    },
+    {
+      "id": "moonlit-sunflower-bed",
+      "label": "夜晚向日葵花圃",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Sunflower Bed.png" }
+    },
+    {
+      "id": "moonlit-fern-hollow",
+      "label": "蕨類小谷",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Fern Hollow.png" }
+    },
+    {
+      "id": "moonlit-wooden-garden-bridge",
+      "label": "木板小橋",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Wooden Garden Bridge.png" }
+    },
+    {
+      "id": "moonlit-tulip-bed",
+      "label": "夜晚鬱金香花圃",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Tulip Bed.png" }
+    },
+    {
+      "id": "moonlit-dandelion-lawn",
+      "label": "月光蒲公英草坪",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Moonlit Dandelion Lawn.png" }
+    },
+    {
+      "id": "lantern-gazebo-floor",
+      "label": "涼亭木地板",
+      "category": "outdoor",
+      "theme": "night-garden",
+      "background": { "source": "image/backgroud/night-garden/Lantern Gazebo Floor.png" }
+    },
+    {
+      "id": "lantern-koi-pond",
+      "label": "燈籠錦鯉池",
+      "category": "underwater",
+      "theme": "night-garden",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Lantern Koi Pond.png" }
+    },
+    {
+      "id": "moonlit-garden-stream",
+      "label": "月光花園小溪",
+      "category": "underwater",
+      "theme": "night-garden",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Moonlit Garden Stream.png" }
+    },
+    {
+      "id": "moonlit-fountain-basin",
+      "label": "石砌噴泉水池",
+      "category": "underwater",
+      "theme": "night-garden",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Moonlit Fountain Basin.png" }
+    },
+    {
+      "id": "moonlit-lotus-water-bowl",
+      "label": "荷花水缸",
+      "category": "underwater",
+      "theme": "night-garden",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Moonlit Lotus Water Bowl.png" }
+    },
+    {
+      "id": "petal-reflecting-pool",
+      "label": "花瓣倒影池",
+      "category": "underwater",
+      "theme": "night-garden",
+      "bands": [{ "zone": "water", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Petal Reflecting Pool.png" }
+    },
+    {
+      "id": "garden-milky-way-sky",
+      "label": "花園銀河星空",
+      "category": "sky",
+      "theme": "night-garden",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Garden Milky Way Sky.png" }
+    },
+    {
+      "id": "crescent-moon-wispy-cloud-sky",
+      "label": "新月薄雲夜空",
+      "category": "sky",
+      "theme": "night-garden",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Crescent Moon Wispy Cloud Sky.png" }
+    },
+    {
+      "id": "wisteria-pergola-lights-sky",
+      "label": "紫藤花架燈串",
+      "category": "sky",
+      "theme": "night-garden",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Wisteria Pergola Lights Sky.png" }
+    },
+    {
+      "id": "cherry-blossom-night-sky",
+      "label": "夜櫻星空",
+      "category": "sky",
+      "theme": "night-garden",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Cherry Blossom Night Sky.png" }
+    },
+    {
+      "id": "blue-hour-garden-sky",
+      "label": "藍色時刻花園天空",
+      "category": "sky",
+      "theme": "night-garden",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Blue Hour Garden Sky.png" }
+    },
+    {
+      "id": "paper-lantern-night-sky",
+      "label": "紙燈籠夜空",
+      "category": "sky",
+      "theme": "night-garden",
+      "bands": [{ "zone": "air", "y0": 0, "y1": 900 }],
+      "background": { "source": "image/backgroud/night-garden/Paper Lantern Night Sky.png" }
     }
+
 
   ]
 }
