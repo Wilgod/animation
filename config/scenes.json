@@ -1864,6 +1864,182 @@
       "modelAnimation": "fly",
       "modelView": "angled",
       "walkSound": { "source": "audio/bat-fly.wav" }
+    },
+    {
+      "id": "chipmunk",
+      "label": "3D 棕花栗鼠",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/chipmunk.glb",
+      "strideLengthPx": 59,
+      "walkSound": { "source": "audio/chipmunk-walk.wav" }
+    },
+    {
+      "id": "chipmunk-grey",
+      "label": "3D 灰花栗鼠",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/chipmunk.glb",
+      "modelColor": "#8c8c8c",
+      "modelColorMaterials": "coat|hair",
+      "strideLengthPx": 59,
+      "walkSound": { "source": "audio/chipmunk-walk.wav" }
+    },
+    {
+      "id": "chipmunk-gold",
+      "label": "3D 金花栗鼠",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/chipmunk.glb",
+      "modelColor": "#d9a441",
+      "modelColorMaterials": "coat|hair",
+      "strideLengthPx": 59,
+      "walkSound": { "source": "audio/chipmunk-walk.wav" }
+    },
+    {
+      "id": "hedgehog",
+      "label": "3D 棕刺蝟",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/hedgehog.glb",
+      "strideLengthPx": 47,
+      "walkSound": { "source": "audio/hedgehog-walk.wav" }
+    },
+    {
+      "id": "hedgehog-white",
+      "label": "3D 白刺蝟",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/hedgehog.glb",
+      "modelColor": "#ece4d6",
+      "modelColorMaterials": "spine$|coat|hair",
+      "strideLengthPx": 47,
+      "walkSound": { "source": "audio/hedgehog-walk.wav" }
+    },
+    {
+      "id": "hedgehog-chocolate",
+      "label": "3D 巧克力刺蝟",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/hedgehog.glb",
+      "modelColor": "#6b4630",
+      "modelColorMaterials": "spine$",
+      "strideLengthPx": 47,
+      "walkSound": { "source": "audio/hedgehog-walk.wav" }
+    },
+    {
+      "id": "skink",
+      "label": "3D 藍尾石龍子",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/skink.glb",
+      "strideLengthPx": 45,
+      "walkSound": { "source": "audio/skink-walk.wav" }
+    },
+    {
+      "id": "skink-green",
+      "label": "3D 綠尾石龍子",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/skink.glb",
+      "modelHue": 90,
+      "strideLengthPx": 45,
+      "walkSound": { "source": "audio/skink-walk.wav" }
+    },
+    {
+      "id": "skink-purple",
+      "label": "3D 紫尾石龍子",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/skink.glb",
+      "modelHue": 300,
+      "strideLengthPx": 45,
+      "walkSound": { "source": "audio/skink-walk.wav" }
+    },
+    {
+      "id": "robin",
+      "label": "3D 紅胸知更鳥",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/robin.glb",
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/robin-fly.wav" }
+    },
+    {
+      "id": "robin-blue",
+      "label": "3D 藍知更鳥",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/robin.glb",
+      "modelHue": 180,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/robin-fly.wav" }
+    },
+    {
+      "id": "robin-green",
+      "label": "3D 綠知更鳥",
+      "habitat": "air",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/robin.glb",
+      "modelHue": 240,
+      "modelAnimation": "fly",
+      "modelView": "angled",
+      "walkSound": { "source": "audio/robin-fly.wav" }
+    },
+    {
+      "id": "koi",
+      "label": "3D 紅白錦鯉",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/koi.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/koi-swim.wav" }
+    },
+    {
+      "id": "koi-blue",
+      "label": "3D 藍白錦鯉",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/koi.glb",
+      "modelHue": 180,
+      "modelColorMaterials": "kohaku|red patch",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/koi-swim.wav" }
+    },
+    {
+      "id": "koi-gold",
+      "label": "3D 金錦鯉",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/koi.glb",
+      "modelColor": "#f0b030",
+      "modelColorMaterials": "kohaku|red patch|belly",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/koi-swim.wav" }
+    },
+    {
+      "id": "tadpoles",
+      "label": "3D 黑蝌蚪群",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/tadpoles.glb",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/tadpoles-swim.wav" }
+    },
+    {
+      "id": "tadpoles-green",
+      "label": "3D 綠蝌蚪群",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/tadpoles.glb",
+      "modelColor": "#5c8f35",
+      "modelColorMaterials": "tadpole skin",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/tadpoles-swim.wav" }
+    },
+    {
+      "id": "tadpoles-brown",
+      "label": "3D 棕蝌蚪群",
+      "habitat": "water",
+      "rotationOffsetDeg": 0,
+      "model3d": "assets/models/tadpoles.glb",
+      "modelColor": "#9a5a2b",
+      "modelColorMaterials": "tadpole skin",
+      "modelAnimation": "fly",
+      "walkSound": { "source": "audio/tadpoles-swim.wav" }
     }
   ],
 

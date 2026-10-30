@@ -863,6 +863,81 @@ def lacewing():
         L.add(wing_whoosh(L.rng, .16, 150, 1500), c * period, L.rng.uniform(.5, .8))
     return L
 
+
+def chipmunk():
+    rng = np.random.default_rng(41)
+    cycle, cycles = walk_loop(59, 4.2)
+    L = Loop(cycle * cycles, 41)
+    # Bound like the squirrel, but lighter and quicker, with a 'chip' call.
+    for c in range(cycles):
+        t0 = c * cycle
+        for p, w in ((0, .5), (.94, .5), (.5, .75), (.44, .75)):
+            L.add(paw_pat(rng, w), t0 + (1 - p) % 1 * cycle, 1)
+    for t0 in (L.seconds * .3, L.seconds * .36):
+        L.add(bird_chirp(rng, 4200, 3000, .04), t0, .2)
+    return L
+
+
+def hedgehog():
+    rng = np.random.default_rng(43)
+    cycle, cycles = walk_loop(47)
+    L = Loop(cycle * cycles, 43)
+    # Trot: diagonal pairs land together; spines rustle on each step and
+    # the nose snuffles now and then.
+    for t in touchdowns(cycle, cycles, [0, .5], rng):
+        L.add(paw_pat(rng, .55), t, rng.uniform(.6, 1))
+        L.add(burst(.06, 2500, 9000, .005, .03, rng), t + .01, .18)
+    for t0 in (L.seconds * .25, L.seconds * .7):
+        for k in range(3):
+            L.add(burst(.04, 800, 4000, .004, .02, rng), t0 + k * .07, .35)
+    return L
+
+
+def skink():
+    # Light, quick claw scrapes; diagonal pairs land together (build-skink).
+    rng = np.random.default_rng(61)
+    cycle, cycles = walk_loop(45)
+    L = Loop(cycle * cycles, 61)
+    for t in touchdowns(cycle, cycles, [0, .5], rng):
+        L.add(claw_scrape(rng), t, .8)
+        L.add(claw_scrape(rng), t + rng.uniform(.01, .025), .5)
+    return L
+
+
+def robin():
+    period = 16 / 60
+    L, cycles = flap_loop(period, 4.0, 47)
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .16, 400, 3500), c * period, L.rng.uniform(.7, 1))
+    # A short warbling phrase: falling, then rising notes.
+    for t0, hi, lo in ((.6, 6200, 4200), (.72, 4800, 5600), (.84, 6800, 5000), (2.5, 5600, 4000)):
+        L.add(bird_chirp(L.rng, hi, lo, .08), t0, .45)
+    return L
+
+
+def koi():
+    period = 48 / 60
+    L, cycles = flap_loop(period, 4.8, 53)
+    L.bed(colored(L.n, 40, 450, L.rng), .3)  # underwater hush
+    for c in range(cycles):
+        L.add(wing_whoosh(L.rng, .45, 100, 700), c * period, .5)  # slow tail sweep
+    for _ in range(6):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.25, .55))
+    return L
+
+
+def tadpoles():
+    # Many tiny, quick wriggles (each tadpole beats 6-10 times per 2 s).
+    period = 120 / 60
+    L, cycles = flap_loop(period, 4.0, 59)
+    L.bed(colored(L.n, 60, 700, L.rng), .3)
+    for c in range(cycles):
+        for _ in range(28):
+            L.add(wing_whoosh(L.rng, .08, 500, 3000), c * period + L.rng.uniform(0, period), L.rng.uniform(.06, .16))
+    for _ in range(10):
+        L.add(bubble(L.rng), L.rng.uniform(0, L.seconds), L.rng.uniform(.12, .3))
+    return L
+
 # Output file, generator, and loudness target (RMS dBFS before the limiter's
 # ~+3 dB): quiet for small insects, louder for birds, frog and buzzing wings.
 SOUNDS = {
@@ -924,6 +999,12 @@ SOUNDS = {
     'swallowtail':   ('swallowtail-fly.wav',    swallowtail,          ('rms', -36)),
     'locust-flying': ('locust-flying-fly.wav',  locust_flying,        ('rms', -32)),
     'lacewing':      ('lacewing-fly.wav',       lacewing,             ('rms', -38)),
+    'chipmunk':      ('chipmunk-walk.wav',      chipmunk,             ('rms', -31)),
+    'hedgehog':      ('hedgehog-walk.wav',      hedgehog,             ('rms', -32)),
+    'skink':         ('skink-walk.wav',         skink,                ('rms', -34)),
+    'robin':         ('robin-fly.wav',          robin,                ('rms', -29)),
+    'koi':           ('koi-swim.wav',           koi,                  ('rms', -33)),
+    'tadpoles':      ('tadpoles-swim.wav',      tadpoles,             ('rms', -35)),
 }
 
 
